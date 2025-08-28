@@ -230,14 +230,14 @@ export function SkillMatching({ user }) {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold dark:text-white mb-2">Find Your Perfect Study Partner</h1>
+        <h1 className="text-3xl font-bold dark:text-white mb-4">Find Your Perfect Study Partner</h1>
         <p className="text-gray-600 dark:text-gray-300">Connect with students who can teach you new skills and learn from your expertise</p>
       </div>
 
       {/* Search and Filters */}
-      <Card className="dark:bg-gray-800 dark:border-gray-700">
-        <CardContent className="p-6">
-          <div className="space-y-4">
+      <Card className="dark:bg-gray-800 dark:border-gray-700 ">
+        <CardContent className="p-6 ">
+          <div className="space-y-4 mb-4 mt-4">
             {/* Search Bar */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -251,7 +251,7 @@ export function SkillMatching({ user }) {
             
             {/* Filters */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div>
+              <div className="flex flex-col gap-2 mt-4">
                 <Label>Skill</Label>
                 <Select value={selectedSkill} onValueChange={setSelectedSkill}>
                   <SelectTrigger>
@@ -266,7 +266,7 @@ export function SkillMatching({ user }) {
                 </Select>
               </div>
               
-              <div>
+              <div className="flex flex-col gap-2 mt-4">
                 <Label>University</Label>
                 <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
                   <SelectTrigger>
@@ -281,7 +281,7 @@ export function SkillMatching({ user }) {
                 </Select>
               </div>
               
-              <div>
+              <div className="flex flex-col gap-2 mt-4">
                 <Label>Skill Level</Label>
                 <Select value={selectedLevel} onValueChange={setSelectedLevel}>
                   <SelectTrigger>
@@ -297,7 +297,7 @@ export function SkillMatching({ user }) {
                 </Select>
               </div>
               
-              <div className="flex items-end">
+              <div className="flex items-end mt-4">
                 <Button 
                   variant="outline" 
                   className="w-full"

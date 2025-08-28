@@ -5,7 +5,6 @@ import { Signup } from './components/Signup';
 import { Dashboard } from './components/Dashboard';
 import { Profile } from './components/Profile';
 import { SkillMatching } from './components/SkillMatching';
-import { SkillsManagement } from './components/SkillsManagement';
 import { QAForum } from './components/QAForum';
 import { Leaderboard } from './components/Leaderboard';
 import { Settings } from './components/Settings';
@@ -15,6 +14,8 @@ import { About } from './components/About';
 import { Blog } from './components/Blog';
 import { Sidebar } from './components/Navigation';
 import { Toaster } from './components/ui/sonner';
+import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // API Configuration - Update these for your backend
 // const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -106,12 +107,16 @@ const mockUser = {
 };
 
 // Protected Route Component
-function ProtectedRoute({ children }) {
-  const isLoggedIn = localStorage.getItem('authToken');
+function ProtectedRoute({ children, user, loading }) {
   const location = useLocation();
 
-  if (!isLoggedIn) {
-    // Redirect to landing page but save the attempted location
+  // Show loading state while checking authentication
+  if (loading) {
+    return <FullPageLoading text="Loading..." />;
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
@@ -119,10 +124,13 @@ function ProtectedRoute({ children }) {
 }
 
 // Public Route Component (redirects authenticated users)
-function PublicRoute({ children }) {
-  const isLoggedIn = localStorage.getItem('authToken');
+function PublicRoute({ children, user, loading }) {
+  // Show loading state while checking authentication
+  if (loading) {
+    return <FullPageLoading text="Loading..." />;
+  }
   
-  if (isLoggedIn) {
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -139,27 +147,48 @@ function AuthProvider({ children }) {
   // Check for existing session on app load
   useEffect(() => {
     const checkExistingSession = async () => {
-      const token = localStorage.getItem('authToken');
-      const savedUser = localStorage.getItem('user');
-      
-      if (token && savedUser) {
-        try {
-          // TODO: Verify token with backend
-          // const userData = await api.getProfile(JSON.parse(savedUser).id);
-          
-          // For now, use saved user data
-          setUser(JSON.parse(savedUser));
-        } catch (error) {
-          console.error('Session verification failed:', error);
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
+      try {
+        const token = localStorage.getItem('authToken');
+        const savedUser = localStorage.getItem('user');
+        
+        if (token && savedUser) {
+          try {
+            // TODO: Verify token with backend
+            // const userData = await api.getProfile(JSON.parse(savedUser).id);
+            
+            // For now, use saved user data
+            const userData = JSON.parse(savedUser);
+            setUser(userData);
+          } catch (error) {
+            console.error('Session verification failed:', error);
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            setUser(null);
+          }
+        } else {
+          setUser(null);
         }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        setUser(null);
+      } finally {
+        // Add a small delay to ensure smooth transitions
+        setTimeout(() => setLoading(false), 100);
       }
-      setLoading(false);
     };
 
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('Authentication check timed out, setting loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     checkExistingSession();
-  }, []);
+
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   // Authentication Handlers
   const handleLogin = async (credentials, redirectPath) => {
@@ -249,11 +278,32 @@ function AppLayout({
   const isLoggedIn = !!user;
   
   // Pages that should not show sidebar
-  const noSidebarRoutes = ['/signup', '/skills-management'];
+  const noSidebarRoutes = ['/signup', '/faq', '/contact', '/about', '/blog'];
   const showSidebar = isLoggedIn && !noSidebarRoutes.includes(location.pathname);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return <FullPageLoading text="Loading your Student Hub..." />;
+  }
+
+  // Add a small loading state for route transitions
+  const [isRouteChanging, setIsRouteChanging] = useState(false);
+  
+  useEffect(() => {
+    setIsRouteChanging(true);
+    const timer = setTimeout(() => setIsRouteChanging(false), 150);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Route transition loading indicator */}
+      {isRouteChanging && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-50">
+          <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 animate-pulse"></div>
+        </div>
+      )}
+      
       {showSidebar && (
         <Sidebar 
           user={user}
@@ -264,7 +314,7 @@ function AppLayout({
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={
-            <PublicRoute>
+            <PublicRoute user={user} loading={loading}>
               <LandingPage 
                 loading={loading}
                 error={error}
@@ -274,7 +324,7 @@ function AppLayout({
           } />
           
           <Route path="/signup" element={
-            <PublicRoute>
+            <PublicRoute user={user} loading={loading}>
               <SignupPage 
                 loading={loading}
                 error={error}
@@ -291,50 +341,52 @@ function AppLayout({
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <Dashboard user={user} />
             </ProtectedRoute>
           } />
 
           <Route path="/profile" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <ProfilePage user={user} updateUser={updateUser} />
             </ProtectedRoute>
           } />
 
-          <Route path="/skills-management" element={
-            <ProtectedRoute>
-              <SkillsManagementPage user={user} updateUser={updateUser} />
-            </ProtectedRoute>
-          } />
+          
 
           <Route path="/matching" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <SkillMatching user={user} />
             </ProtectedRoute>
           } />
 
           <Route path="/qa" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <QAForum user={user} />
             </ProtectedRoute>
           } />
 
           <Route path="/leaderboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <Leaderboard user={user} />
             </ProtectedRoute>
           } />
 
           <Route path="/settings" element={
-            <ProtectedRoute>
+            <ProtectedRoute user={user} loading={loading}>
               <SettingsPage user={user} />
             </ProtectedRoute>
           } />
 
           {/* Catch-all route - redirect to dashboard if logged in, landing if not */}
           <Route path="*" element={
-            user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />
+            loading ? (
+              <FullPageLoading text="Loading..." />
+            ) : user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
           } />
         </Routes>
       </main>
@@ -359,10 +411,7 @@ function ProfilePage({ user, updateUser }) {
   return <Profile user={user} onUpdateUser={updateUser} />;
 }
 
-function SkillsManagementPage({ user, updateUser }) {
-  const navigate = useNavigate();
-  return <SkillsManagement user={user} onBack={() => navigate('/profile')} onUpdateUser={updateUser} />;
-}
+
 
 function SettingsPage({ user }) {
   const [settings, setSettings] = useState({
@@ -446,10 +495,12 @@ function SettingsPage({ user }) {
 // Main App Component
 export default function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppLayout />
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppLayout />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }

@@ -172,7 +172,7 @@ export function Dashboard({ user }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold dark:text-white">Welcome back, {user.name}! 👋</h1>
-          <p className="text-gray-600 dark:text-gray-300">Ready to learn and share knowledge today?</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-4">Ready to learn and share knowledge today?</p>
         </div>
         <Button onClick={() => navigate('/matching')} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -212,7 +212,7 @@ export function Dashboard({ user }) {
                     <Users className="h-5 w-5 text-blue-600" />
                     Suggested Study Partners
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300">
+                  <CardDescription className="dark:text-gray-300 mt-4">
                     AI-matched partners based on your learning goals
                   </CardDescription>
                 </div>
@@ -298,7 +298,7 @@ export function Dashboard({ user }) {
                     <Target className="h-5 w-5 text-green-600" />
                     Your Teaching Skills
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300">
+                  <CardDescription className="dark:text-gray-300 mt-4">
                     Skills ready to share with the community
                   </CardDescription>
                 </div>
