@@ -157,7 +157,7 @@ export function Profile({ user, onUpdateUser }) {
                 />
                 {isEditing ? (
                   <div className="space-y-3">
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
@@ -165,7 +165,7 @@ export function Profile({ user, onUpdateUser }) {
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="college">College/University</Label>
                       <Input
                         id="college"
@@ -173,7 +173,7 @@ export function Profile({ user, onUpdateUser }) {
                         onChange={(e) => setFormData(prev => ({ ...prev, college: e.target.value }))}
                       />
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="educationLevel">Education Level</Label>
                       <Select 
                         value={formData.educationLevel} 
@@ -279,7 +279,7 @@ export function Profile({ user, onUpdateUser }) {
             </CardHeader>
             <CardContent>
               {isEditing ? (
-                <div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea
                     id="bio"
@@ -304,7 +304,7 @@ export function Profile({ user, onUpdateUser }) {
                 <BookOpen className="h-5 w-5 text-blue-600" />
                 Learning Goals
               </CardTitle>
-              <CardDescription className="dark:text-gray-300">
+              <CardDescription className="dark:text-gray-300 mt-4">
                 {user.skillsWantToLearn?.length || 0} skills you want to master
               </CardDescription>
             </CardHeader>
@@ -353,7 +353,7 @@ export function Profile({ user, onUpdateUser }) {
                     <Target className="h-5 w-5 text-green-600" />
                     Teaching Skills
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300">
+                  <CardDescription className="dark:text-gray-300 mt-4">
                     {user.skillsCanTeach?.length || 0} skills available for sharing
                   </CardDescription>
                 </div>
