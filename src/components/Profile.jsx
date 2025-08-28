@@ -534,17 +534,16 @@ export function Profile({ user, onUpdateUser }) {
             </TabsContent>
           </Tabs>
 
-            <div className="flex gap-3 pt-2">
-              <Button onClick={handleSaveSkills} className="flex-1">
-                <Save className="h-4 w-4 mr-2" />
-                Save Skills
-              </Button>
-              <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          
+          <div className="flex gap-3 pt-2">
+            <Button onClick={handleSaveSkills} className="flex-1">
+              <Save className="h-4 w-4 mr-2" />
+              Save Skills
+            </Button>
+            <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
