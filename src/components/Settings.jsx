@@ -144,7 +144,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
@@ -152,7 +152,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                     onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
                   />
                 </div>
-                <div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
@@ -163,7 +163,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                 </div>
               </div>
               
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="college">College/University</Label>
                 <Input
                   id="college"
@@ -172,7 +172,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                 />
               </div>
               
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="bio">Bio</Label>
                 <textarea
                   id="bio"
@@ -193,7 +193,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="timezone">Timezone</Label>
                   <Select value={profile.timezone} onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}>
                     <SelectTrigger>
@@ -210,7 +210,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="language">Language</Label>
                   <Select value={profile.language} onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}>
                     <SelectTrigger>

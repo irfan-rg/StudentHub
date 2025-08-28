@@ -203,84 +203,6 @@ export function Dashboard({ user }) {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Clean Skills Overview */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 dark:text-white">
-                    <Target className="h-5 w-5 text-green-600" />
-                    Your Teaching Skills
-                  </CardTitle>
-                  <CardDescription className="dark:text-gray-300">
-                    Skills ready to share with the community
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Quick Overview */}
-                  <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{user.skillsCanTeach.length}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                        {user.skillsCanTeach.filter(s => s.level === 'expert' || s.level === 'advanced').length}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced+</div>
-                    </div>
-                  </div>
-                  
-                  {/* Top Skills List */}
-                  <div className="space-y-2">
-                    {user.skillsCanTeach.slice(0, 4).map((skill, index) => {
-                      const config = levelConfig[skill.level];
-                      return (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{config.icon}</span>
-                            <span className="font-medium text-sm dark:text-white">{skill.name}</span>
-                          </div>
-                          <span className={`text-xs font-medium ${config.color}`}>
-                            {config.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {user.skillsCanTeach.length > 4 && (
-                    <div className="text-center pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
-                        View {user.skillsCanTeach.length - 4} more skills
-                        <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Add your skills to start teaching</p>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Skills
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Suggested Connections with Cleaner Skills Display */}
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
@@ -364,6 +286,84 @@ export function Dashboard({ user }) {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Clean Skills Overview */}
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                    <Target className="h-5 w-5 text-green-600" />
+                    Your Teaching Skills
+                  </CardTitle>
+                  <CardDescription className="dark:text-gray-300">
+                    Skills ready to share with the community
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Quick Overview */}
+                  <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{user.skillsCanTeach.length}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        {user.skillsCanTeach.filter(s => s.level === 'expert' || s.level === 'advanced').length}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced+</div>
+                    </div>
+                  </div>
+                  
+                  {/* Top Skills List */}
+                  <div className="space-y-2">
+                    {user.skillsCanTeach.slice(0, 4).map((skill, index) => {
+                      const config = levelConfig[skill.level];
+                      return (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{config.icon}</span>
+                            <span className="font-medium text-sm dark:text-white">{skill.name}</span>
+                          </div>
+                          <span className={`text-xs font-medium ${config.color}`}>
+                            {config.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {user.skillsCanTeach.length > 4 && (
+                    <div className="text-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+                        View {user.skillsCanTeach.length - 4} more skills
+                        <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Add your skills to start teaching</p>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Skills
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

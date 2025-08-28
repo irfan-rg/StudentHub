@@ -448,16 +448,16 @@ export function Profile({ user, onUpdateUser }) {
 
       {/* Manage Skills Modal */}
       <Dialog open={manageSkillsOpen} onOpenChange={setManageSkillsOpen}>
-        <DialogContent className="max-w-[1100px] w-[1100px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ maxWidth: '900px', width: '900px' }}> 
           <DialogHeader>
             <DialogTitle>Manage Skills</DialogTitle>
             <DialogDescription>Update your teaching skills and learning goals</DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="teach" className="space-y-6">
+          <Tabs defaultValue="learn" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="teach">Skills I Can Teach</TabsTrigger>
               <TabsTrigger value="learn">Skills I Want to Learn</TabsTrigger>
+              <TabsTrigger value="teach">Skills I Can Teach</TabsTrigger>
             </TabsList>
 
             <TabsContent value="teach" className="space-y-4">
@@ -476,13 +476,13 @@ export function Profile({ user, onUpdateUser }) {
                   })}
                 </div>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto">
                 {availableSkills
                   .filter((n) => !teachSkills.find((s) => s.name === n))
                   .map((name) => (
                     <div key={name} className="space-y-1">
-                      <div className="text-sm font-medium dark:text-white">{name}</div>
-                      <div className="flex gap-1">
+                      <div className="text-sm font-medium dark:text-white text-center mt-2">{name}</div>
+                      <div className="flex gap-1 justify-center">
                         {['beginner','intermediate','advanced','expert'].map((lvl) => {
                           const info = levelLabels[lvl];
                           return (
@@ -516,7 +516,7 @@ export function Profile({ user, onUpdateUser }) {
                   ))}
                 </div>
               )}
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto">
                 {availableSkills
                   .filter((name) => !learnSkills.includes(name))
                   .map((name) => (
