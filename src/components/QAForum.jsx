@@ -32,6 +32,10 @@ export function QAForum({ user }) {
   const [newQuestion, setNewQuestion] = useState({ title: '', content: '', tags: [] });
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [newAnswer, setNewAnswer] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterTag, setFilterTag] = useState('');
+  const [filterAnswered, setFilterAnswered] = useState('all');
+  const [filterTime, setFilterTime] = useState('all');
 
   const [questions, setQuestions] = useState([
     {
@@ -50,7 +54,7 @@ export function QAForum({ user }) {
       views: 156,
       timeAgo: "2 hours ago",
       isAnswered: true,
-      userVote: 0, // -1 for downvote, 0 for no vote, 1 for upvote
+      userVote: 0,
       answerList: [
         {
           id: 1,
@@ -146,13 +150,18 @@ export function QAForum({ user }) {
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          question.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = !selectedTag || question.tags.includes(selectedTag);
-    return matchesSearch && matchesTag;
+    const matchesTag = !filterTag || question.tags.includes(filterTag);
+    const matchesAnswered = filterAnswered === 'all' || 
+                          (filterAnswered === 'answered' && question.isAnswered) || 
+                          (filterAnswered === 'unanswered' && !question.isAnswered);
+    const matchesTime = filterTime === 'all' || 
+                       (filterTime === 'last24h' && ['2 hours ago', '4 hours ago'].includes(question.timeAgo)) || 
+                       (filterTime === 'last7d' && ['1 day ago', '2 days ago'].includes(question.timeAgo));
+    return matchesSearch && matchesTag && matchesAnswered && matchesTime;
   });
 
   const handleVote = (questionId, voteType, isAnswer = false, answerId = null) => {
     if (isAnswer && answerId) {
-      // Handle answer voting
       setQuestions(prev => prev.map(q => {
         if (q.id === questionId) {
           return {
@@ -176,7 +185,6 @@ export function QAForum({ user }) {
         return q;
       }));
     } else {
-      // Handle question voting
       setQuestions(prev => prev.map(q => {
         if (q.id === questionId) {
           const currentVote = q.userVote;
@@ -281,7 +289,6 @@ export function QAForum({ user }) {
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex gap-4">
-          {/* Vote Section */}
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
             <Button 
               variant="ghost" 
@@ -302,7 +309,6 @@ export function QAForum({ user }) {
             </Button>
           </div>
 
-          {/* Content */}
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <h3 
@@ -321,21 +327,19 @@ export function QAForum({ user }) {
 
             <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{question.content}</p>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-3">
               {question.tags.map((tag) => (
                 <Badge 
                   key={tag} 
                   variant="outline" 
                   className="text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900"
-                  onClick={() => setSelectedTag(tag)}
+                  onClick={() => setFilterTag(tag)}
                 >
                   {tag}
                 </Badge>
               ))}
             </div>
 
-            {/* Stats and Author */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
@@ -383,7 +387,6 @@ export function QAForum({ user }) {
         
         {question && (
           <div className="space-y-6">
-            {/* Question */}
             <div className="flex gap-4">
               <div className="flex flex-col items-center gap-1 min-w-[60px]">
                 <Button 
@@ -426,7 +429,6 @@ export function QAForum({ user }) {
               </div>
             </div>
 
-            {/* Answers */}
             <div>
               <h3 className="text-lg font-semibold mb-4">
                 {question.answerList.length} Answer{question.answerList.length !== 1 ? 's' : ''}
@@ -477,7 +479,6 @@ export function QAForum({ user }) {
               </div>
             </div>
 
-            {/* Add Answer */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-4">Your Answer</h3>
               <Textarea
@@ -499,7 +500,6 @@ export function QAForum({ user }) {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Q&A Forum</h1>
@@ -545,7 +545,6 @@ export function QAForum({ user }) {
               <div>
                 <Label>Tags</Label>
                 <div className="space-y-3">
-                  {/* Selected tags */}
                   {newQuestion.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {newQuestion.tags.map((tag) => (
@@ -561,7 +560,6 @@ export function QAForum({ user }) {
                     </div>
                   )}
                   
-                  {/* Available tags */}
                   <div className="flex flex-wrap gap-2">
                     {popularTags
                       .filter(tag => !newQuestion.tags.includes(tag))
@@ -592,7 +590,6 @@ export function QAForum({ user }) {
         </Dialog>
       </div>
 
-      {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -607,30 +604,68 @@ export function QAForum({ user }) {
                 />
               </div>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={selectedTag === '' ? 'default' : 'outline'}
-                onClick={() => setSelectedTag('')}
-                size="sm"
-              >
-                All
-              </Button>
-              {popularTags.slice(0, 4).map((tag) => (
-                <Button
-                  key={tag}
-                  variant={selectedTag === tag ? 'default' : 'outline'}
-                  onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
-                  size="sm"
-                >
-                  {tag}
+            <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
                 </Button>
-              ))}
-            </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Filter Questions</DialogTitle>
+                  <DialogDescription>
+                    Adjust filters to refine your search
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Tag</Label>
+                    <select
+                      value={filterTag}
+                      onChange={(e) => setFilterTag(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">All Tags</option>
+                      {popularTags.map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Answered Status</Label>
+                    <select
+                      value={filterAnswered}
+                      onChange={(e) => setFilterAnswered(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="all">All</option>
+                      <option value="answered">Answered</option>
+                      <option value="unanswered">Unanswered</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Time Range</Label>
+                    <select
+                      value={filterTime}
+                      onChange={(e) => setFilterTime(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="last24h">Last 24 Hours</option>
+                      <option value="last7d">Last 7 Days</option>
+                    </select>
+                  </div>
+                  <Button onClick={() => setFiltersOpen(false)} className="w-full">
+                    Apply Filters
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
 
-      {/* Question Tabs */}
       <Tabs defaultValue="recent" className="space-y-4">
         <TabsList>
           <TabsTrigger value="recent" className="flex items-center gap-2">
@@ -692,7 +727,6 @@ export function QAForum({ user }) {
         </TabsContent>
       </Tabs>
 
-      {/* Tag Cloud */}
       <Card>
         <CardHeader>
           <CardTitle>Popular Tags</CardTitle>
@@ -705,7 +739,7 @@ export function QAForum({ user }) {
                 key={tag} 
                 variant={selectedTag === tag ? "default" : "outline"}
                 className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900"
-                onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
+                onClick={() => setFilterTag(selectedTag === tag ? '' : tag)}
               >
                 {tag}
               </Badge>
@@ -714,7 +748,6 @@ export function QAForum({ user }) {
         </CardContent>
       </Card>
 
-      {/* Question Detail Modal */}
       <QuestionDetail question={selectedQuestion} />
     </div>
   );
