@@ -162,7 +162,7 @@ function AuthProvider({ children }) {
   }, []);
 
   // Authentication Handlers
-  const handleLogin = async (credentials) => {
+  const handleLogin = async (credentials, redirectPath) => {
     setLoading(true);
     setError(null);
 
@@ -177,8 +177,10 @@ function AuthProvider({ children }) {
       setUser(response.user);
       
       // Navigate to dashboard or the page they were trying to access
-      const location = window.location.state?.from?.pathname || '/dashboard';
-      navigate(location, { replace: true });
+      const safePath = typeof redirectPath === 'string' && redirectPath.startsWith('/')
+        ? redirectPath
+        : '/dashboard';
+      navigate(safePath, { replace: true });
     } catch (error) {
       console.error('Login failed:', error);
       setError('Login failed. Please check your credentials.');
@@ -234,7 +236,15 @@ function AuthProvider({ children }) {
 }
 
 // Main App Layout Component
-function AppLayout({ user, handleLogout }) {
+function AppLayout({ 
+  user, 
+  loading, 
+  error, 
+  handleLogin, 
+  handleSignup, 
+  handleLogout, 
+  updateUser 
+}) {
   const location = useLocation();
   const isLoggedIn = !!user;
   
@@ -250,22 +260,26 @@ function AppLayout({ user, handleLogout }) {
           onLogout={handleLogout}
         />
       )}
-      <main className={showSidebar ? "ml-64" : ""}>
+      <main className={showSidebar ? "pl-64" : ""} style={showSidebar ? { paddingLeft: '16rem' } : undefined}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={
             <PublicRoute>
-              <AuthProvider>
-                <LandingPage />
-              </AuthProvider>
+              <LandingPage 
+                loading={loading}
+                error={error}
+                handleLogin={handleLogin}
+              />
             </PublicRoute>
           } />
           
           <Route path="/signup" element={
             <PublicRoute>
-              <AuthProvider>
-                <SignupPage />
-              </AuthProvider>
+              <SignupPage 
+                loading={loading}
+                error={error}
+                handleSignup={handleSignup}
+              />
             </PublicRoute>
           } />
 
@@ -284,17 +298,13 @@ function AppLayout({ user, handleLogout }) {
 
           <Route path="/profile" element={
             <ProtectedRoute>
-              <AuthProvider>
-                <ProfilePage />
-              </AuthProvider>
+              <ProfilePage user={user} updateUser={updateUser} />
             </ProtectedRoute>
           } />
 
           <Route path="/skills-management" element={
             <ProtectedRoute>
-              <AuthProvider>
-                <SkillsManagementPage />
-              </AuthProvider>
+              <SkillsManagementPage user={user} updateUser={updateUser} />
             </ProtectedRoute>
           } />
 
@@ -318,9 +328,7 @@ function AppLayout({ user, handleLogout }) {
 
           <Route path="/settings" element={
             <ProtectedRoute>
-              <AuthProvider>
-                <SettingsPage />
-              </AuthProvider>
+              <SettingsPage user={user} />
             </ProtectedRoute>
           } />
 
@@ -337,7 +345,9 @@ function AppLayout({ user, handleLogout }) {
 
 // Page Wrapper Components
 function LandingPage({ user, loading, error, handleLogin }) {
-  return <Landing onLogin={handleLogin} loading={loading} error={error} />;
+  const location = useLocation();
+  const fromPath = (location.state && location.state.from && location.state.from.pathname) ? location.state.from.pathname : '/dashboard';
+  return <Landing onLogin={(creds) => handleLogin(creds, fromPath)} loading={loading} error={error} />;
 }
 
 function SignupPage({ user, loading, error, handleSignup }) {

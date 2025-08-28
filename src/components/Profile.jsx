@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -37,6 +39,59 @@ export function Profile({ user, onUpdateUser }) {
     bio: user.bio || "Passionate about learning and sharing knowledge with fellow students."
   });
 
+  const [manageSkillsOpen, setManageSkillsOpen] = useState(false);
+  const [teachSkills, setTeachSkills] = useState(user.skillsCanTeach || []);
+  const [learnSkills, setLearnSkills] = useState(user.skillsWantToLearn || []);
+
+  const availableSkills = [
+    'JavaScript', 'Python', 'Java', 'C++', 'React', 'Node.js', 'HTML/CSS', 'TypeScript',
+    'Angular', 'Vue.js', 'PHP', 'Ruby', 'Go', 'Rust', 'Swift', 'Kotlin',
+    'Data Science', 'Machine Learning', 'Data Analysis', 'Statistics', 'SQL', 'R Programming',
+    'Power BI', 'Tableau', 'Excel', 'Google Analytics',
+    'UI/UX Design', 'Graphic Design', 'Adobe Photoshop', 'Adobe Illustrator', 'Figma',
+    'Video Editing', 'Animation', '3D Modeling', 'Photography',
+    'Digital Marketing', 'Project Management', 'Business Analysis', 'Financial Analysis',
+    'Content Writing', 'Social Media Marketing', 'SEO', 'Public Speaking',
+    'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Psychology',
+    'History', 'Literature', 'Philosophy', 'Sociology',
+    'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean',
+    'Portuguese', 'Italian', 'Russian',
+    'DevOps', 'Cloud Computing', 'Cybersecurity', 'Blockchain', 'Game Development',
+    'Mobile Development', 'Research Skills', 'Technical Writing', 'Networking'
+  ];
+
+  const levelLabels = {
+    beginner: { label: 'Beginner', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: '🌱' },
+    intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', icon: '📚' },
+    advanced: { label: 'Advanced', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', icon: '🎯' },
+    expert: { label: 'Expert', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', icon: '⭐' }
+  };
+
+  const addTeachSkill = (name, level) => {
+    if (!teachSkills.find((s) => s.name === name)) {
+      setTeachSkills((prev) => [...prev, { name, level }]);
+    }
+  };
+
+  const removeTeachSkill = (name) => {
+    setTeachSkills((prev) => prev.filter((s) => s.name !== name));
+  };
+
+  const toggleLearnSkill = (name) => {
+    setLearnSkills((prev) => prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]);
+  };
+
+  const handleSaveSkills = () => {
+    if (onUpdateUser) {
+      onUpdateUser({
+        ...user,
+        skillsCanTeach: teachSkills,
+        skillsWantToLearn: learnSkills
+      });
+    }
+    setManageSkillsOpen(false);
+  };
+
   const handleSave = () => {
     // Update user data if onUpdateUser function is provided
     if (onUpdateUser) {
@@ -69,13 +124,23 @@ export function Profile({ user, onUpdateUser }) {
           <h1 className="text-3xl font-bold dark:text-white">My Profile</h1>
           <p className="text-gray-600 dark:text-gray-300">Manage your information and skills</p>
         </div>
-        <Button 
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          className="flex items-center gap-2"
-        >
-          {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-          {isEditing ? 'Save Changes' : 'Edit Profile'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setManageSkillsOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Manage Skills
+          </Button>
+          <Button 
+            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+            {isEditing ? 'Save Changes' : 'Edit Profile'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -232,100 +297,6 @@ export function Profile({ user, onUpdateUser }) {
             </CardContent>
           </Card>
 
-          {/* Minimal Skills Overview */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 dark:text-white">
-                    <Target className="h-5 w-5 text-green-600" />
-                    Teaching Skills
-                  </CardTitle>
-                  <CardDescription className="dark:text-gray-300">
-                    {user.skillsCanTeach?.length || 0} skills available for sharing
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/skills-management')}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Manage Skills
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Skills Summary */}
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {user.skillsCanTeach.length}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                        {expertSkills}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Expert Level</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                        {advancedSkills}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced Level</div>
-                    </div>
-                  </div>
-
-                  {/* Top Skills Preview */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Skills</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      {topSkills.map((skill, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg"
-                        >
-                          <span className="font-medium text-sm dark:text-white">{skill.name}</span>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {skill.level}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Call to Action */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button 
-                      onClick={() => navigate('/skills-management')}
-                      variant="ghost" 
-                      className="w-full flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    >
-                      View and manage all skills
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No teaching skills added</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Add your skills to start teaching and helping other students
-                  </p>
-                  <Button onClick={() => navigate('/skills-management')}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Skills
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Learning Goals */}
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
@@ -364,9 +335,95 @@ export function Profile({ user, onUpdateUser }) {
                   <p className="text-gray-500 dark:text-gray-400 mb-4">
                     Add skills you want to learn to get matched with the right mentors
                   </p>
-                  <Button variant="outline" onClick={() => navigate('/skills-management')}>
+                  <Button variant="outline" onClick={() => setManageSkillsOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Set Learning Goals
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Minimal Skills Overview */}
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                    <Target className="h-5 w-5 text-green-600" />
+                    Teaching Skills
+                  </CardTitle>
+                  <CardDescription className="dark:text-gray-300">
+                    {user.skillsCanTeach?.length || 0} skills available for sharing
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Skills Summary */}
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {user.skillsCanTeach.length}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                        {expertSkills}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Expert Level</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                        {advancedSkills}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced Level</div>
+                    </div>
+                  </div>
+                  
+                  {/* Top Skills Preview */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Skills</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {topSkills.map((skill, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg"
+                        >
+                          <span className="font-medium text-sm dark:text-white">{skill.name}</span>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {skill.level}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Call to Action */}
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <Button 
+                      onClick={() => setManageSkillsOpen(true)}
+                      variant="ghost" 
+                      className="w-full flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    >
+                      View and manage all skills
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No teaching skills added</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Add your skills to start teaching and helping other students
+                  </p>
+                  <Button onClick={() => setManageSkillsOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Skills
                   </Button>
                 </div>
               )}
@@ -388,6 +445,108 @@ export function Profile({ user, onUpdateUser }) {
           )}
         </div>
       </div>
+
+      {/* Manage Skills Modal */}
+      <Dialog open={manageSkillsOpen} onOpenChange={setManageSkillsOpen}>
+        <DialogContent className="max-w-[1100px] w-[1100px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Skills</DialogTitle>
+            <DialogDescription>Update your teaching skills and learning goals</DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="teach" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="teach">Skills I Can Teach</TabsTrigger>
+              <TabsTrigger value="learn">Skills I Want to Learn</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="teach" className="space-y-4">
+              {teachSkills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {teachSkills.map((s) => {
+                    const info = levelLabels[s.level];
+                    return (
+                      <span key={s.name} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${info.color}`}>
+                        {info.icon} {s.name}
+                        <button onClick={() => removeTeachSkill(s.name)} className="text-gray-500 hover:text-red-500">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                {availableSkills
+                  .filter((n) => !teachSkills.find((s) => s.name === n))
+                  .map((name) => (
+                    <div key={name} className="space-y-1">
+                      <div className="text-sm font-medium dark:text-white">{name}</div>
+                      <div className="flex gap-1">
+                        {['beginner','intermediate','advanced','expert'].map((lvl) => {
+                          const info = levelLabels[lvl];
+                          return (
+                            <button
+                              key={lvl}
+                              type="button"
+                              onClick={() => addTeachSkill(name, lvl)}
+                              className={`text-xs px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 ${info.color}`}
+                              title={`Add ${name} as ${info.label}`}
+                            >
+                              {info.icon}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="learn" className="space-y-4">
+              {learnSkills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {learnSkills.map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+                      {name}
+                      <button onClick={() => toggleLearnSkill(name)} className="text-gray-500 hover:text-red-500">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
+                {availableSkills
+                  .filter((name) => !learnSkills.includes(name))
+                  .map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => toggleLearnSkill(name)}
+                      className="text-sm p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
+                    >
+                      <Plus className="h-3 w-3 inline mr-1" />
+                      {name}
+                    </button>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+            <div className="flex gap-3 pt-2">
+              <Button onClick={handleSaveSkills} className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
+                Save Skills
+              </Button>
+              <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
