@@ -32,14 +32,32 @@ export const ThemeProvider = ({ children }) => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+  // Function to get current system theme
+  const getSystemTheme = () => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+
+  // Function to apply theme based on current setting
+  const applyTheme = (currentTheme) => {
     const root = document.documentElement;
     
-    if (theme === 'dark') {
+    if (currentTheme === 'auto') {
+      // For auto mode, use system preference
+      const systemTheme = getSystemTheme();
+      if (systemTheme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    } else if (currentTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+  };
+
+  useEffect(() => {
+    applyTheme(theme);
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
@@ -51,16 +69,19 @@ export const ThemeProvider = ({ children }) => {
     
     const handleChange = (e) => {
       if (theme === 'auto') {
-        const root = document.documentElement;
-        if (e.matches) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
+        // Only apply system changes when in auto mode
+        applyTheme('auto');
       }
     };
 
+    // Add listener for system theme changes
     mediaQuery.addEventListener('change', handleChange);
+    
+    // Also check initial system theme when auto mode is selected
+    if (theme === 'auto') {
+      handleChange(mediaQuery);
+    }
+    
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
