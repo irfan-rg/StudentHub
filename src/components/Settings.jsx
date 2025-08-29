@@ -7,6 +7,7 @@ import { Switch } from './ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   User, 
   Bell, 
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export function Settings({ user, settings, onUpdateSettings }) {
-
+  const { theme, setThemeMode } = useTheme();
 
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
@@ -45,7 +46,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
   });
 
   const [appearance, setAppearance] = useState({
-    theme: settings.theme,
+    theme: theme,
     fontSize: settings.fontSize,
     compactMode: settings.compactMode
   });
@@ -55,11 +56,11 @@ export function Settings({ user, settings, onUpdateSettings }) {
   // Update local appearance state when global settings change
   useEffect(() => {
     setAppearance({
-      theme: settings.theme,
+      theme: theme,
       fontSize: settings.fontSize,
       compactMode: settings.compactMode
     });
-  }, [settings]);
+  }, [theme, settings]);
 
   const handleSave = () => {
     // Apply appearance settings globally
@@ -72,10 +73,11 @@ export function Settings({ user, settings, onUpdateSettings }) {
     console.log('Saving settings...', { notifications, privacy, appearance });
   };
 
-  const handleThemeChange = (theme) => {
-    const newAppearance = { ...appearance, theme };
+  const handleThemeChange = (newTheme) => {
+    const newAppearance = { ...appearance, theme: newTheme };
     setAppearance(newAppearance);
     // Apply immediately for better UX
+    setThemeMode(newTheme);
     onUpdateSettings(newAppearance);
   };
 
@@ -103,13 +105,13 @@ export function Settings({ user, settings, onUpdateSettings }) {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-300">Manage your account preferences and privacy settings</p>
       </div>
 
       {/* Settings Tabs */}
       <Tabs defaultValue="notifications" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 bg-white dark:bg-gray-800 dark:border-gray-700">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             Notifications
@@ -124,23 +126,21 @@ export function Settings({ user, settings, onUpdateSettings }) {
           </TabsTrigger>
         </TabsList>
 
-
-
         {/* Notification Settings */}
         <TabsContent value="notifications" className="space-y-6">
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose how and when you want to be notified</CardDescription>
+              <CardTitle className="text-gray-900 dark:text-white">Notification Preferences</CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-300">Choose how and when you want to be notified</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-gray-500" />
+                    <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-gray-500">Receive notifications via email</p>
+                      <Label className="text-gray-900 dark:text-white">Email Notifications</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Receive notifications via email</p>
                     </div>
                   </div>
                   <Switch
@@ -153,10 +153,10 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Smartphone className="h-5 w-5 text-gray-500" />
+                    <Smartphone className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-gray-500">Receive push notifications on your device</p>
+                      <Label className="text-gray-900 dark:text-white">Push Notifications</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Receive push notifications on your device</p>
                     </div>
                   </div>
                   <Switch
@@ -169,10 +169,10 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
+                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
-                      <Label>Session Reminders</Label>
-                      <p className="text-sm text-gray-500">Get reminded about upcoming sessions</p>
+                      <Label className="text-gray-900 dark:text-white">Session Reminders</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Get reminded about upcoming sessions</p>
                     </div>
                   </div>
                   <Switch
@@ -185,10 +185,10 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5 text-gray-500" />
+                    <MessageSquare className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
-                      <Label>New Messages</Label>
-                      <p className="text-sm text-gray-500">Notify when you receive new messages</p>
+                      <Label className="text-gray-900 dark:text-white">New Messages</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Notify when you receive new messages</p>
                     </div>
                   </div>
                   <Switch
@@ -201,10 +201,10 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Bell className="h-5 w-5 text-gray-500" />
+                    <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
-                      <Label>Question Answers</Label>
-                      <p className="text-sm text-gray-500">Notify when your questions are answered</p>
+                      <Label className="text-gray-900 dark:text-white">Question Answers</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Notify when your questions are answered</p>
                     </div>
                   </div>
                   <Switch
@@ -217,8 +217,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Weekly Digest</Label>
-                    <p className="text-sm text-gray-500">Get a weekly summary of platform activity</p>
+                    <Label className="text-gray-900 dark:text-white">Weekly Digest</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Get a weekly summary of platform activity</p>
                   </div>
                   <Switch
                     checked={notifications.weeklyDigest}
@@ -230,8 +230,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Marketing Emails</Label>
-                    <p className="text-sm text-gray-500">Receive updates about new features and tips</p>
+                    <Label className="text-gray-900 dark:text-white">Marketing Emails</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive updates about new features and tips</p>
                   </div>
                   <Switch
                     checked={notifications.marketingEmails}
@@ -245,15 +245,15 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
         {/* Privacy Settings */}
         <TabsContent value="privacy" className="space-y-6">
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Privacy & Visibility</CardTitle>
-              <CardDescription>Control who can see your information and how you appear to others</CardDescription>
+              <CardTitle className="text-gray-900 dark:text-white">Privacy & Visibility</CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-300">Control who can see your information and how you appear to others</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label>Profile Visibility</Label>
-                <p className="text-sm text-gray-500 mb-3">Who can see your full profile</p>
+                <Label className="text-gray-900 dark:text-white">Profile Visibility</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Who can see your full profile</p>
                 <Select value={privacy.profileVisibility} onValueChange={(value) => setPrivacy(prev => ({ ...prev, profileVisibility: value }))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -272,8 +272,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Show Points</Label>
-                    <p className="text-sm text-gray-500">Display your points on your profile</p>
+                    <Label className="text-gray-900 dark:text-white">Show Points</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Display your points on your profile</p>
                   </div>
                   <Switch
                     checked={privacy.showPoints}
@@ -283,8 +283,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Show College</Label>
-                    <p className="text-sm text-gray-500">Display your college/university</p>
+                    <Label className="text-gray-900 dark:text-white">Show College</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Display your college/university</p>
                   </div>
                   <Switch
                     checked={privacy.showCollege}
@@ -294,8 +294,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Allow Messages</Label>
-                    <p className="text-sm text-gray-500">Let other students message you</p>
+                    <Label className="text-gray-900 dark:text-white">Allow Messages</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Let other students message you</p>
                   </div>
                   <Switch
                     checked={privacy.allowMessages}
@@ -305,8 +305,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Show Online Status</Label>
-                    <p className="text-sm text-gray-500">Let others see when you're online</p>
+                    <Label className="text-gray-900 dark:text-white">Show Online Status</Label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Let others see when you're online</p>
                   </div>
                   <Switch
                     checked={privacy.showOnlineStatus}
@@ -317,19 +317,19 @@ export function Settings({ user, settings, onUpdateSettings }) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
+              <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 Danger Zone
               </CardTitle>
-              <CardDescription>Irreversible actions for your account</CardDescription>
+              <CardDescription className="text-gray-600 dark:text-gray-300">Irreversible actions for your account</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-800 rounded-lg">
                 <div>
-                  <Label className="text-red-600">Delete Account</Label>
-                  <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
+                  <Label className="text-red-600 dark:text-red-400">Delete Account</Label>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Permanently delete your account and all data</p>
                 </div>
                 <Button variant="destructive" size="sm" onClick={handleDeleteAccount}>
                   Delete Account
@@ -341,14 +341,14 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
         {/* Appearance Settings */}
         <TabsContent value="appearance" className="space-y-6">
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Theme & Display</CardTitle>
-              <CardDescription>Customize how the platform looks and feels</CardDescription>
+              <CardTitle className="text-gray-900 dark:text-white">Theme & Display</CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-300">Customize how the platform looks and feels</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label>Theme</Label>
+                <Label className="text-gray-900 dark:text-white">Theme</Label>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Choose your preferred theme</p>
                 <div className="grid grid-cols-3 gap-4">
                   <div 
@@ -357,7 +357,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Sun className="h-4 w-4" />
-                      <span className="font-medium">Light</span>
+                      <span className="font-medium text-gray-900 dark:text-white">Light</span>
                     </div>
                     <div className="bg-white border rounded p-2">
                       <div className="h-2 bg-gray-200 rounded mb-1"></div>
@@ -371,7 +371,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Moon className="h-4 w-4" />
-                      <span className="font-medium">Dark</span>
+                      <span className="font-medium text-gray-900 dark:text-white">Dark</span>
                     </div>
                     <div className="bg-gray-800 border rounded p-2">
                       <div className="h-2 bg-gray-600 rounded mb-1"></div>
@@ -385,7 +385,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Globe className="h-4 w-4" />
-                      <span className="font-medium">Auto</span>
+                      <span className="font-medium text-gray-900 dark:text-white">Auto</span>
                     </div>
                     <div className="flex rounded overflow-hidden">
                       <div className="flex-1 bg-white border-r p-1">
@@ -404,7 +404,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
               <Separator />
 
               <div>
-                <Label>Font Size</Label>
+                <Label className="text-gray-900 dark:text-white">Font Size</Label>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Adjust text size for better readability</p>
                 <Select value={appearance.fontSize} onValueChange={handleFontSizeChange}>
                   <SelectTrigger>
@@ -422,7 +422,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Compact Mode</Label>
+                  <Label className="text-gray-900 dark:text-white">Compact Mode</Label>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Use a more condensed layout</p>
                 </div>
                 <Switch

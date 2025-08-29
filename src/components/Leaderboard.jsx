@@ -167,7 +167,7 @@ export function Leaderboard({ user }) {
   };
 
   const LeaderboardRow = ({ user, index }) => (
-    <Card className={`${user.isCurrentUser ? 'ring-2 ring-blue-500 bg-blue-50' : ''} hover:shadow-md transition-shadow`}>
+    <Card className={`${user.isCurrentUser ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-800'} hover:shadow-md transition-shadow dark:border-gray-700`}>
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
           {/* Rank */}
@@ -183,11 +183,11 @@ export function Leaderboard({ user }) {
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{user.name}</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
                 {user.isCurrentUser && <Badge variant="secondary">You</Badge>}
                 {getTrendIcon(user.trend)}
               </div>
-              <p className="text-sm text-gray-600">{user.college}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{user.college}</p>
               <div className="flex gap-2 mt-1">
                 {user.badges.slice(0, 2).map((badge, idx) => (
                   <Badge key={idx} variant="outline" className="text-xs">
@@ -202,9 +202,9 @@ export function Leaderboard({ user }) {
           <div className="text-right">
             <div className="flex items-center gap-1 mb-1">
               <Star className="h-4 w-4 text-yellow-500" />
-              <span className="font-bold text-lg">{user.points.toLocaleString()}</span>
+              <span className="font-bold text-lg text-gray-900 dark:text-white">{user.points.toLocaleString()}</span>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
               <div>{user.sessionsCompleted} sessions</div>
               <div>{user.questionsAnswered} answers</div>
             </div>
@@ -218,8 +218,8 @@ export function Leaderboard({ user }) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">🏆 Leaderboard</h1>
-        <p className="text-gray-600">See how you rank among the community</p>
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">🏆 Leaderboard</h1>
+        <p className="text-gray-600 dark:text-gray-300">See how you rank among the community</p>
       </div>
 
       {/* Current User Stats */}
@@ -257,7 +257,7 @@ export function Leaderboard({ user }) {
 
       {/* Leaderboard Tabs */}
       <Tabs defaultValue="points" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800 dark:border-gray-700">
           <TabsTrigger value="points" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             Points
@@ -331,19 +331,19 @@ export function Leaderboard({ user }) {
         <TabsContent value="achievements" className="space-y-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {achievements.map((achievement, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+              <Card key={index} className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="p-4 text-center">
                   <div className="text-4xl mb-3">{achievement.icon}</div>
-                  <h3 className="font-semibold mb-2">{achievement.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{achievement.description}</p>
+                  <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">{achievement.name}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{achievement.description}</p>
                   <div className="flex items-center justify-between">
                     <Badge 
                       variant="outline" 
                       className={`text-xs ${
-                        achievement.rarity === 'Legendary' ? 'border-purple-500 text-purple-700' :
-                        achievement.rarity === 'Epic' ? 'border-orange-500 text-orange-700' :
-                        achievement.rarity === 'Rare' ? 'border-blue-500 text-blue-700' :
-                        'border-gray-500 text-gray-700'
+                        achievement.rarity === 'Legendary' ? 'border-purple-500 text-purple-700 dark:text-purple-300' :
+                        achievement.rarity === 'Epic' ? 'border-orange-500 text-orange-700 dark:text-orange-300' :
+                        achievement.rarity === 'Rare' ? 'border-blue-500 text-blue-700 dark:text-blue-300' :
+                        'border-gray-500 text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {achievement.rarity}
@@ -361,33 +361,33 @@ export function Leaderboard({ user }) {
       </Tabs>
 
       {/* Achievement Progress */}
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Zap className="h-5 w-5 text-yellow-500" />
             Your Progress
           </CardTitle>
-          <CardDescription>Track your journey to the next achievements</CardDescription>
+          <CardDescription className="text-gray-600 dark:text-gray-300">Track your journey to the next achievements</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span>Knowledge Sharer (Teach 5 skills)</span>
-              <span>3/5</span>
+              <span className="text-gray-900 dark:text-white">Knowledge Sharer (Teach 5 skills)</span>
+              <span className="text-gray-600 dark:text-gray-300">3/5</span>
             </div>
             <Progress value={60} className="h-2" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span>Community Star (50 upvotes)</span>
-              <span>20/50</span>
+              <span className="text-gray-900 dark:text-white">Community Star (50 upvotes)</span>
+              <span className="text-gray-600 dark:text-gray-300">20/50</span>
             </div>
             <Progress value={40} className="h-2" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span>Mentor (50 teaching sessions)</span>
-              <span>12/50</span>
+              <span className="text-gray-900 dark:text-white">Mentor (50 teaching sessions)</span>
+              <span className="text-gray-600 dark:text-gray-300">12/50</span>
             </div>
             <Progress value={24} className="h-2" />
           </div>

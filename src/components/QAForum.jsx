@@ -286,7 +286,7 @@ export function QAForum({ user }) {
   };
 
   const QuestionCard = ({ question }) => (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 dark:border-gray-700">
       <CardContent className="p-6">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
@@ -298,7 +298,7 @@ export function QAForum({ user }) {
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
-            <span className="font-medium text-lg">{question.upvotes}</span>
+            <span className="font-medium text-lg text-gray-900 dark:text-white">{question.upvotes}</span>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -312,7 +312,7 @@ export function QAForum({ user }) {
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <h3 
-                className="font-semibold text-lg hover:text-blue-600 cursor-pointer"
+                className="font-semibold text-lg hover:text-blue-600 cursor-pointer text-gray-900 dark:text-white"
                 onClick={() => setSelectedQuestion(question)}
               >
                 {question.title}
@@ -364,7 +364,7 @@ export function QAForum({ user }) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-sm">
-                  <span className="font-medium">{question.author.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{question.author.name}</span>
                   <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                     <Star className="h-3 w-3 text-yellow-500" />
                     {question.author.points}
@@ -500,109 +500,105 @@ export function QAForum({ user }) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Q&A Forum</h1>
-          <p className="text-gray-600 dark:text-gray-300">Get help from the community and share your knowledge</p>
-        </div>
-        <Dialog open={isAskingQuestion} onOpenChange={setIsAskingQuestion}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600">
-              <Plus className="h-4 w-4" />
-              Ask Question
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Ask a Question</DialogTitle>
-              <DialogDescription>
-                Get help from the community by asking a detailed question
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Question Title</Label>
-                <Input
-                  id="title"
-                  placeholder="What's your programming question? Be specific."
-                  value={newQuestion.title}
-                  onChange={(e) => setNewQuestion(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="content">Question Details</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Provide more details about your question. Include code examples if relevant."
-                  rows={6}
-                  value={newQuestion.content}
-                  onChange={(e) => setNewQuestion(prev => ({ ...prev, content: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label>Tags</Label>
-                <div className="space-y-3">
-                  {newQuestion.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {newQuestion.tags.map((tag) => (
-                        <Badge 
-                          key={tag} 
-                          variant="secondary" 
-                          className="cursor-pointer"
-                          onClick={() => removeTag(tag)}
-                        >
-                          {tag} <X className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {popularTags
-                      .filter(tag => !newQuestion.tags.includes(tag))
-                      .map((tag) => (
-                        <Badge 
-                          key={tag} 
-                          variant="outline" 
-                          className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900"
-                          onClick={() => addTag(tag)}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={handleAskQuestion} className="flex-1">
-                  Post Question
-                </Button>
-                <Button variant="outline" onClick={() => setIsAskingQuestion(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">💬 Q&A Forum</h1>
+        <p className="text-gray-600 dark:text-gray-300">Ask questions, share knowledge, and learn from peers</p>
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search questions..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+      {/* Ask Question Button */}
+      <div className="flex justify-center">
+        <Button 
+          onClick={() => setIsAskingQuestion(true)}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Ask a Question
+        </Button>
+      </div>
+
+      {/* Ask Question Dialog */}
+      <Dialog open={isAskingQuestion} onOpenChange={setIsAskingQuestion}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Ask a Question</DialogTitle>
+            <DialogDescription>
+              Share your question with the community. Be specific and include relevant tags.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="title">Question Title</Label>
+              <Input
+                id="title"
+                placeholder="What's your question? Be specific..."
+                value={newQuestion.title}
+                onChange={(e) => setNewQuestion(prev => ({ ...prev, title: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="content">Question Details</Label>
+              <Textarea
+                id="content"
+                placeholder="Provide more context, code examples, or specific details..."
+                value={newQuestion.content}
+                onChange={(e) => setNewQuestion(prev => ({ ...prev, content: e.target.value }))}
+                rows={6}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {popularTags.map(tag => (
+                  <Badge
+                    key={tag}
+                    variant={newQuestion.tags.includes(tag) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => addTag(tag)}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
               </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {newQuestion.tags.map(tag => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer"
+                    onClick={() => removeTag(tag)}
+                  >
+                    {tag} <X className="h-3 w-3 ml-1" />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsAskingQuestion(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAskQuestion}>
+              Post Question
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Search and Filters */}
+      <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search questions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
             <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
               <DialogTrigger asChild>
@@ -624,7 +620,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterTag}
                       onChange={(e) => setFilterTag(e.target.value)}
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                     >
                       <option value="">All Tags</option>
                       {popularTags.map(tag => (
@@ -637,7 +633,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterAnswered}
                       onChange={(e) => setFilterAnswered(e.target.value)}
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                     >
                       <option value="all">All</option>
                       <option value="answered">Answered</option>
@@ -649,7 +645,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterTime}
                       onChange={(e) => setFilterTime(e.target.value)}
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                     >
                       <option value="all">All Time</option>
                       <option value="last24h">Last 24 Hours</option>
@@ -667,7 +663,7 @@ export function QAForum({ user }) {
       </Card>
 
       <Tabs defaultValue="recent" className="space-y-4">
-        <TabsList>
+        <TabsList className="bg-white dark:bg-gray-800 dark:border-gray-700">
           <TabsTrigger value="recent" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Recent
@@ -727,10 +723,10 @@ export function QAForum({ user }) {
         </TabsContent>
       </Tabs>
 
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Popular Tags</CardTitle>
-          <CardDescription>Browse questions by topic</CardDescription>
+          <CardTitle className="text-gray-900 dark:text-white">Popular Tags</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-300">Browse questions by topic</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">

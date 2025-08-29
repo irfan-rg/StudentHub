@@ -120,8 +120,8 @@ export function Profile({ user, onUpdateUser }) {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold dark:text-white">My Profile</h1>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold dark:text-white mb-2">My Profile</h1>
           <p className="text-gray-600 dark:text-gray-300">Manage your information and skills</p>
         </div>
         <div className="flex items-center gap-2">

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { ThemeToggle } from './ui/theme-toggle';
 import { 
   Home, 
   User, 
@@ -39,6 +40,7 @@ export function Sidebar({ user, onLogout }) {
     <div className="fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border shadow-lg z-10">
       {/* Header */}
       <div className="p-6 border-b border-sidebar-border">
+        {/* Logo and Name */}
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
             <Zap className="h-6 w-6 text-white" />
@@ -46,20 +48,25 @@ export function Sidebar({ user, onLogout }) {
           <span className="font-bold text-xl text-sidebar-foreground">StudyHub</span>
         </div>
         
-        {/* User Info */}
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={user?.avatar} alt={user?.name} />
-            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-              {user?.name?.split(' ').map((n) => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate text-sidebar-foreground">{user?.name}</p>
-            <div className="flex items-center gap-2">
-              <Star className="h-3 w-3 text-yellow-500" />
-              <span className="text-sm text-sidebar-foreground/70">{user?.points} pts</span>
+        {/* User Info with Theme Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Avatar>
+              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                {user?.name?.split(' ').map((n) => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate text-sidebar-foreground">{user?.name}</p>
+              <div className="flex items-center gap-2">
+                <Star className="h-3 w-3 text-yellow-500" />
+                <span className="text-sm text-sidebar-foreground/70">{user?.points} pts</span>
+              </div>
             </div>
+          </div>
+          <div className="flex-shrink-0 ml-2">
+            <ThemeToggle />
           </div>
         </div>
       </div>

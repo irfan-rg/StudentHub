@@ -16,6 +16,7 @@ import { Sidebar } from './components/Navigation';
 import { Toaster } from './components/ui/sonner';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
+import { useTheme } from './contexts/ThemeContext';
 
 // API Configuration - Update these for your backend
 // const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -414,8 +415,9 @@ function ProfilePage({ user, updateUser }) {
 
 
 function SettingsPage({ user }) {
+  const { theme } = useTheme();
   const [settings, setSettings] = useState({
-    theme: 'light',
+    theme: theme,
     fontSize: 'medium',
     compactMode: false
   });
@@ -430,42 +432,10 @@ function SettingsPage({ user }) {
     }
   };
 
-  // Theme Management
+  // Update settings when theme changes
   useEffect(() => {
-    const applyTheme = () => {
-      const root = document.documentElement;
-      
-      if (settings.theme === 'dark') {
-        root.classList.add('dark');
-      } else if (settings.theme === 'light') {
-        root.classList.remove('dark');
-      } else if (settings.theme === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (prefersDark) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      }
-    };
-
-    applyTheme();
-
-    if (settings.theme === 'auto') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e) => {
-        const root = document.documentElement;
-        if (e.matches) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      };
-
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-  }, [settings.theme]);
+    setSettings(prev => ({ ...prev, theme }));
+  }, [theme]);
 
   // Font Size Management
   useEffect(() => {
