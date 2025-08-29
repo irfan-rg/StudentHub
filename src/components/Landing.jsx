@@ -118,26 +118,25 @@ export function Landing({ onLogin, loading, error }) {
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-2xl mx-auto">
               Connect, Learn, and Share Knowledge with Students Worldwide
             </p>
-            <div className="flex justify-center gap-4 mb-12 flex-wrap">
-              <Button 
-                size="lg" 
-                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                onClick={handleGetStarted}
-                disabled={loading}
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={handleSignIn}
-                disabled={loading}
-              >
-                Sign In
-              </Button>
-            </div>
+                         <div className="flex justify-center gap-4 mb-12 flex-wrap">
+               <Button 
+                 size="lg"
+                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                 onClick={handleGetStarted}
+                 disabled={loading}
+               >
+                 Get Started Free
+                 <ArrowRight className="ml-2 h-5 w-5" />
+               </Button>
+               <Button 
+                 size="lg" 
+                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                 onClick={handleSignIn}
+                 disabled={loading}
+               >
+                 Sign In
+               </Button>
+               </div>
             
             {/* Display error if any */}
             {error && (
@@ -280,24 +279,23 @@ export function Landing({ onLogin, loading, error }) {
             Join thousands of students who are already learning and growing together
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Button 
-              size="lg" 
-              className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              onClick={handleGetStarted}
-              disabled={loading}
-            >
-              Start Learning Today
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Link to="/about">
-              <Button 
+                                                   <Button 
                 size="lg" 
-                variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+                className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                onClick={handleGetStarted}
+                disabled={loading}
               >
-                Learn About Us
+                Start Learning Today
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </Link>
+              <Link to="/about">
+                <Button 
+                  size="lg" 
+                  className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                >
+                  Learn About Us
+                </Button>
+              </Link>
           </div>
         </div>
       </div>
@@ -361,7 +359,7 @@ export function Landing({ onLogin, loading, error }) {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
+            <div className="flex flex-col gap-3">
               <Label htmlFor="signin-email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -377,7 +375,7 @@ export function Landing({ onLogin, loading, error }) {
               </div>
             </div>
             
-            <div>
+            <div className="flex flex-col gap-3">
               <Label htmlFor="signin-password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
