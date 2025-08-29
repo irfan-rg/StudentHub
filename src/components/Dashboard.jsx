@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -62,9 +62,14 @@ export function Dashboard({ user }) {
     }
   ]);
   const [connectedUsers, setConnectedUsers] = useState([
-    { id: 1, name: "Emma Watson", college: "Harvard University", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face" },
-    { id: 2, name: "David Kim", college: "Stanford University", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" }
+    { id: 1, name: "Emma Watson", college: "Harvard University", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face", status: "connected" },
+    { id: 2, name: "David Kim", college: "Stanford University", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face", status: "connected" },
+    { id: 3, name: "Sarah Chen", college: "MIT", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face", status: "connected" },
+    { id: 4, name: "John Doe", college: "Oxford University", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face", status: "connected" },
+    { id: 5, name: "Maria Garcia", college: "University of Tokyo", avatar: "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=150&h=150&fit=crop&crop=face", status: "connected" }
   ]);
+  const [connectionRequests, setConnectionRequests] = useState({}); // Track pending connection requests
+  const [connectModal, setConnectModal] = useState({ isOpen: false, partnerId: null, message: '' });
 
   const levelConfig = {
     expert: { 
@@ -133,6 +138,19 @@ export function Dashboard({ user }) {
       points: 2150,
       sessions: 15,
       matchPercentage: 82
+    },
+    {
+      id: 6,
+      name: "Alex Rivera",
+      college: "University of California",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      skillsCanTeach: [
+        { name: "Web Development", level: "intermediate" },
+        { name: "JavaScript", level: "advanced" }
+      ],
+      points: 1800,
+      sessions: 12,
+      matchPercentage: 75
     }
   ];
 
@@ -147,7 +165,7 @@ export function Dashboard({ user }) {
     { label: "Total Points", value: user.points, icon: Trophy, color: "text-yellow-600" },
     { label: "Sessions Completed", value: user.sessionsCompleted, icon: Calendar, color: "text-green-600" },
     { label: "Questions Answered", value: user.questionsAnswered, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Active Connections", value: connectedUsers.length, icon: Users, color: "text-purple-600" }
+    { label: "Active Connections", value: connectedUsers.filter(user => user.status === "connected").length, icon: Users, color: "text-purple-600" }
   ];
 
   const handleScheduleSession = (partnerId, sessionId = null, isEdit = false) => {
@@ -222,16 +240,63 @@ export function Dashboard({ user }) {
     toast.success('Session deleted successfully!');
   };
 
-  const handleConnect = (partnerId) => {
+  const handleConnectRequest = (partnerId) => {
     const partnerToConnect = suggestedConnections.find(conn => conn.id === partnerId);
     if (partnerToConnect && !connectedUsers.some(conn => conn.id === partnerId)) {
-      setConnectedUsers(prev => [...prev, { id: partnerToConnect.id, name: partnerToConnect.name, college: partnerToConnect.college, avatar: partnerToConnect.avatar }]);
-      toast.success(`Connected with ${partnerToConnect.name}`);
+      setConnectionRequests(prev => ({ ...prev, [partnerId]: true }));
+      setConnectModal({ isOpen: false, partnerId: null, message: '' });
+      toast.success(`Connection request sent to ${partnerToConnect.name}`);
+
+      // Simulate acceptance after 2 seconds
+      setTimeout(() => {
+        setConnectedUsers(prev => [
+          ...prev,
+          { id: partnerToConnect.id, name: partnerToConnect.name, college: partnerToConnect.college, avatar: partnerToConnect.avatar, status: "connected" }
+        ]);
+        setConnectionRequests(prev => {
+          const updated = { ...prev };
+          delete updated[partnerId];
+          return updated;
+        });
+        toast.success(`Connected with ${partnerToConnect.name}`);
+      }, 2000);
+    } else if (connectedUsers.some(conn => conn.id === partnerId)) {
+      toast.info('Already connected');
     } else {
-      toast.info('Already connected or invalid partner');
+      toast.error('Invalid partner');
     }
-    setSessionModal({ isOpen: false, partnerId: null });
   };
+
+  const handleDeleteConnection = (connectionId) => {
+    setConnectedUsers(prev => prev.filter(conn => conn.id !== connectionId));
+    toast.success('Connection deleted');
+  };
+
+  const [editConnection, setEditConnection] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', college: '' });
+
+  const handleEditConnection = (connection) => {
+    setEditConnection(connection.id);
+    setEditForm({ name: connection.name, college: connection.college });
+  };
+
+  const handleSaveEdit = () => {
+    setConnectedUsers(prev => prev.map(conn =>
+      conn.id === editConnection ? { ...conn, name: editForm.name, college: editForm.college } : conn
+    ));
+    setEditConnection(null);
+    setEditForm({ name: '', college: '' });
+    toast.success('Connection updated');
+  };
+
+  const handleCancelEdit = () => {
+    setEditConnection(null);
+    setEditForm({ name: '', college: '' });
+  };
+
+  useEffect(() => {
+    // Ensure stats update with connected users
+  }, [connectedUsers]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -342,10 +407,16 @@ export function Dashboard({ user }) {
                         </Button>
                         <Button 
                           size="sm"
-                          onClick={() => handleConnect(connection.id)}
+                          disabled={connectionRequests[connection.id] || connectedUsers.some(conn => conn.id === connection.id)}
+                          onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
                         >
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Connect
+                          {connectionRequests[connection.id] ? (
+                            <Badge variant="secondary">Pending</Badge>
+                          ) : connectedUsers.some(conn => conn.id === connection.id && conn.status === "connected") ? (
+                            <Badge>Connected</Badge>
+                          ) : (
+                            <UserPlus className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -531,16 +602,21 @@ export function Dashboard({ user }) {
               <div className="space-y-4">
                 {connectedUsers.length > 0 ? (
                   connectedUsers.map((connection) => (
-                    <div key={connection.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center gap-3">
-                      <img
-                        src={connection.avatar}
-                        alt={connection.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <h4 className="font-semibold dark:text-white">{connection.name}</h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">{connection.college}</p>
+                    <div key={connection.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={connection.avatar}
+                          alt={connection.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <h4 className="font-semibold dark:text-white">{connection.name}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">{connection.college}</p>
+                        </div>
                       </div>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteConnection(connection.id)}>
+                        <Trash className="h-3 w-3" />
+                      </Button>
                     </div>
                   ))
                 ) : (
@@ -672,6 +748,38 @@ export function Dashboard({ user }) {
                 onClick={() => setSessionModal({ isOpen: false, partnerId: null, isEdit: false, sessionId: null })}
                 className="flex-1"
               >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Request Modal */}
+      <Dialog open={connectModal.isOpen} onOpenChange={(open) => setConnectModal({ isOpen: open, partnerId: null, message: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Connection Request</DialogTitle>
+            <DialogDescription>
+              Send a message to {suggestedConnections.find(conn => conn.id === connectModal.partnerId)?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="connect-message">Message (Optional)</Label>
+              <Textarea
+                id="connect-message"
+                value={connectModal.message}
+                onChange={(e) => setConnectModal(prev => ({ ...prev, message: e.target.value }))}
+                placeholder="Add a personal message..."
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => handleConnectRequest(connectModal.partnerId)} className="flex-1">
+                Send Request
+              </Button>
+              <Button variant="outline" onClick={() => setConnectModal({ isOpen: false, partnerId: null, message: '' })} className="flex-1">
                 Cancel
               </Button>
             </div>
