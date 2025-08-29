@@ -24,20 +24,47 @@ import {
   User,
   MapPin,
   Video,
-  UserPlus
+  UserPlus,
+  Edit,
+  Trash
 } from 'lucide-react';
 
 export function Dashboard({ user }) {
   const navigate = useNavigate();
-  const [sessionModal, setSessionModal] = useState({ isOpen: false, partnerId: null });
+  const [sessionModal, setSessionModal] = useState({ isOpen: false, partnerId: null, isEdit: false, sessionId: null });
   const [sessionForm, setSessionForm] = useState({
     title: '',
     description: '',
     type: 'video',
     duration: '60',
     date: '',
-    time: ''
+    time: '',
+    partnerId: null
   });
+  const [upcomingSessions, setUpcomingSessions] = useState([
+    {
+      id: 1,
+      title: "React Hooks Deep Dive",
+      partner: "Emma Watson",
+      date: "Today",
+      time: "2:00 PM",
+      type: "Video Call",
+      status: "confirmed"
+    },
+    {
+      id: 2,
+      title: "Python Data Analysis",
+      partner: "David Kim",
+      date: "Tomorrow",
+      time: "10:00 AM",
+      type: "Video Call",
+      status: "pending"
+    }
+  ]);
+  const [connectedUsers, setConnectedUsers] = useState([
+    { id: 1, name: "Emma Watson", college: "Harvard University", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face" },
+    { id: 2, name: "David Kim", college: "Stanford University", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" }
+  ]);
 
   const levelConfig = {
     expert: { 
@@ -109,27 +136,6 @@ export function Dashboard({ user }) {
     }
   ];
 
-  const upcomingSessions = [
-    {
-      id: 1,
-      title: "React Hooks Deep Dive",
-      partner: "Emma Watson",
-      date: "Today",
-      time: "2:00 PM",
-      type: "Video Call",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      title: "Python Data Analysis",
-      partner: "David Kim",
-      date: "Tomorrow",
-      time: "10:00 AM",
-      type: "Video Call",
-      status: "pending"
-    }
-  ];
-
   const recentActivity = [
     { type: "session_completed", message: "Completed session with Emma Watson", time: "2 hours ago" },
     { type: "question_answered", message: "Answered question about React State Management", time: "5 hours ago" },
@@ -141,29 +147,90 @@ export function Dashboard({ user }) {
     { label: "Total Points", value: user.points, icon: Trophy, color: "text-yellow-600" },
     { label: "Sessions Completed", value: user.sessionsCompleted, icon: Calendar, color: "text-green-600" },
     { label: "Questions Answered", value: user.questionsAnswered, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Active Connections", value: "23", icon: Users, color: "text-purple-600" }
+    { label: "Active Connections", value: connectedUsers.length, icon: Users, color: "text-purple-600" }
   ];
 
-  const handleScheduleSession = (partnerId) => {
-    setSessionModal({ isOpen: true, partnerId });
+  const handleScheduleSession = (partnerId, sessionId = null, isEdit = false) => {
+    if (isEdit && sessionId) {
+      const sessionToEdit = upcomingSessions.find(session => session.id === sessionId);
+      setSessionForm({
+        title: sessionToEdit.title,
+        description: sessionToEdit.description || '',
+        type: sessionToEdit.type,
+        duration: '60',
+        date: sessionToEdit.date,
+        time: sessionToEdit.time,
+        partnerId: suggestedConnections.find(conn => conn.name === sessionToEdit.partner)?.id || null
+      });
+    } else {
+      setSessionForm({
+        title: '',
+        description: '',
+        type: 'video',
+        duration: '60',
+        date: '',
+        time: '',
+        partnerId: partnerId
+      });
+    }
+    setSessionModal({ isOpen: true, partnerId, isEdit, sessionId });
   };
 
   const handleSubmitSession = () => {
-    if (!sessionForm.title || !sessionForm.date || !sessionForm.time) {
-      toast.error('Please fill in all required fields');
+    if (!sessionForm.title || !sessionForm.date || !sessionForm.time || !sessionForm.partnerId) {
+      toast.error('Please fill in all required fields, including a partner');
       return;
     }
     
-    toast.success('Session scheduled successfully!');
-    setSessionModal({ isOpen: false, partnerId: null });
+    const partnerName = suggestedConnections.find(conn => conn.id === sessionForm.partnerId).name;
+    if (sessionModal.isEdit && sessionModal.sessionId) {
+      setUpcomingSessions(prevSessions =>
+        prevSessions.map(session =>
+          session.id === sessionModal.sessionId
+            ? { ...session, title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: "pending" }
+            : session
+        )
+      );
+      toast.success('Session updated successfully!');
+    } else {
+      const newSession = {
+        id: Date.now(),
+        title: sessionForm.title,
+        partner: partnerName,
+        date: sessionForm.date,
+        time: sessionForm.time,
+        type: sessionForm.type,
+        status: "pending"
+      };
+      setUpcomingSessions(prevSessions => [...prevSessions, newSession]);
+      toast.success('Session scheduled successfully!');
+    }
+    setSessionModal({ isOpen: false, partnerId: null, isEdit: false, sessionId: null });
     setSessionForm({
       title: '',
       description: '',
       type: 'video',
       duration: '60',
       date: '',
-      time: ''
+      time: '',
+      partnerId: null
     });
+  };
+
+  const handleDeleteSession = (sessionId) => {
+    setUpcomingSessions(prevSessions => prevSessions.filter(session => session.id !== sessionId));
+    toast.success('Session deleted successfully!');
+  };
+
+  const handleConnect = (partnerId) => {
+    const partnerToConnect = suggestedConnections.find(conn => conn.id === partnerId);
+    if (partnerToConnect && !connectedUsers.some(conn => conn.id === partnerId)) {
+      setConnectedUsers(prev => [...prev, { id: partnerToConnect.id, name: partnerToConnect.name, college: partnerToConnect.college, avatar: partnerToConnect.avatar }]);
+      toast.success(`Connected with ${partnerToConnect.name}`);
+    } else {
+      toast.info('Already connected or invalid partner');
+    }
+    setSessionModal({ isOpen: false, partnerId: null });
   };
 
   return (
@@ -174,10 +241,6 @@ export function Dashboard({ user }) {
           <h1 className="text-3xl font-bold dark:text-white">Welcome back, {user.name}! 👋</h1>
           <p className="text-gray-600 dark:text-gray-300 mt-4">Ready to learn and share knowledge today?</p>
         </div>
-        <Button onClick={() => navigate('/matching')} className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          Find Study Partners
-        </Button>
       </div>
 
       {/* Stats Overview */}
@@ -277,7 +340,10 @@ export function Dashboard({ user }) {
                           <Calendar className="h-3 w-3 mr-1" />
                           Schedule
                         </Button>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => handleConnect(connection.id)}
+                        >
                           <UserPlus className="h-3 w-3 mr-1" />
                           Connect
                         </Button>
@@ -396,9 +462,30 @@ export function Dashboard({ user }) {
                       <Calendar className="h-3 w-3" />
                       <span>{session.date} at {session.time}</span>
                     </div>
+                    <div className="flex gap-2 mt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleScheduleSession(null, session.id, true)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => handleDeleteSession(session.id)}
+                      >
+                        <Trash className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                <Button variant="outline" size="sm" className="w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleScheduleSession(null)}
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   Schedule New Session
                 </Button>
@@ -429,31 +516,51 @@ export function Dashboard({ user }) {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+          {/* Connections */}
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="dark:text-white">Quick Actions</CardTitle>
+              <CardTitle className="flex items-center gap-2 dark:text-white">
+                <Users className="h-5 w-5 text-purple-600" />
+                Connections
+              </CardTitle>
+              <CardDescription className="dark:text-gray-300 mt-4">
+                Your existing study partners
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/qa')}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Ask a Question
-              </Button>
-              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/matching')}>
-                <Users className="h-4 w-4 mr-2" />
-                Find Study Partners
-              </Button>
-              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/leaderboard')}>
-                <Trophy className="h-4 w-4 mr-2" />
-                View Leaderboard
-              </Button>
+            <CardContent>
+              <div className="space-y-4">
+                {connectedUsers.length > 0 ? (
+                  connectedUsers.map((connection) => (
+                    <div key={connection.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center gap-3">
+                      <img
+                        src={connection.avatar}
+                        alt={connection.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <h4 className="font-semibold dark:text-white">{connection.name}</h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-300">{connection.college}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6">
+                    <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">No connections yet</p>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/matching')}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Find Connections
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Session Scheduling Modal */}
-      <Dialog open={sessionModal.isOpen} onOpenChange={(open) => setSessionModal({ isOpen: open, partnerId: null })}>
+      <Dialog open={sessionModal.isOpen} onOpenChange={(open) => setSessionModal({ isOpen: open, partnerId: null, isEdit: false, sessionId: null })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Schedule Study Session</DialogTitle>
@@ -482,6 +589,25 @@ export function Dashboard({ user }) {
                 placeholder="What topics will you cover?"
                 rows={3}
               />
+            </div>
+            
+            <div>
+              <Label htmlFor="session-partner">Select Partner</Label>
+              <Select 
+                value={sessionForm.partnerId?.toString() || ''} 
+                onValueChange={(value) => setSessionForm(prev => ({ ...prev, partnerId: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a partner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suggestedConnections.map((connection) => (
+                    <SelectItem key={connection.id} value={connection.id.toString()}>
+                      {connection.name} ({connection.college})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -539,11 +665,11 @@ export function Dashboard({ user }) {
             
             <div className="flex gap-3 pt-4">
               <Button onClick={handleSubmitSession} className="flex-1">
-                Schedule Session
+                {sessionModal.isEdit ? 'Update Session' : 'Schedule Session'}
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setSessionModal({ isOpen: false, partnerId: null })}
+                onClick={() => setSessionModal({ isOpen: false, partnerId: null, isEdit: false, sessionId: null })}
                 className="flex-1"
               >
                 Cancel
