@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -25,6 +25,34 @@ import {
   BookOpen
 } from 'lucide-react';
 
+// Move levelLabels outside component to prevent recreation on every render
+const levelLabels = {
+  beginner: { 
+    label: 'Beginner', 
+    color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', 
+    icon: '🌱',
+    borderColor: 'border-green-200 dark:border-green-700'
+  },
+  intermediate: { 
+    label: 'Intermediate', 
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', 
+    icon: '📚',
+    borderColor: 'border-blue-200 dark:border-blue-700'
+  },
+  advanced: { 
+    label: 'Advanced', 
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300', 
+    icon: '🎯',
+    borderColor: 'border-purple-200 dark:border-purple-700'
+  },
+  expert: { 
+    label: 'Expert', 
+    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', 
+    icon: '⭐',
+    borderColor: 'border-yellow-200 dark:border-yellow-700'
+  }
+};
+
 export function SkillMatching({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSkill, setSelectedSkill] = useState('all');
@@ -40,33 +68,6 @@ export function SkillMatching({ user }) {
     duration: '60',
     preferredTimes: ''
   });
-
-  const levelLabels = {
-    beginner: { 
-      label: 'Beginner', 
-      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', 
-      icon: '🌱',
-      borderColor: 'border-green-200 dark:border-green-700'
-    },
-    intermediate: { 
-      label: 'Intermediate', 
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', 
-      icon: '📚',
-      borderColor: 'border-blue-200 dark:border-blue-700'
-    },
-    advanced: { 
-      label: 'Advanced', 
-      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300', 
-      icon: '🎯',
-      borderColor: 'border-purple-200 dark:border-purple-700'
-    },
-    expert: { 
-      label: 'Expert', 
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', 
-      icon: '⭐',
-      borderColor: 'border-yellow-200 dark:border-yellow-700'
-    }
-  };
 
   // Mock data for students
   const students = [
@@ -168,27 +169,29 @@ export function SkillMatching({ user }) {
   ];
 
   // Get unique skills for filter
-  const allSkills = [...new Set(students.flatMap(s => s.skillsCanTeach.map(skill => skill.name)))];
-  const universities = [...new Set(students.map(s => s.college))];
+  const allSkills = useMemo(() => [...new Set(students.flatMap(s => s.skillsCanTeach.map(skill => skill.name)))], []);
+  const universities = useMemo(() => [...new Set(students.map(s => s.college))], []);
 
-  // Filter students
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = searchTerm === '' || 
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.college.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.skillsCanTeach.some(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesSkill = selectedSkill === 'all' || 
-      student.skillsCanTeach.some(skill => skill.name === selectedSkill);
-    
-    const matchesUniversity = selectedUniversity === 'all' || 
-      student.college === selectedUniversity;
-    
-    const matchesLevel = selectedLevel === 'all' || 
-      student.skillsCanTeach.some(skill => skill.level === selectedLevel);
-    
-    return matchesSearch && matchesSkill && matchesUniversity && matchesLevel;
-  });
+  // Filter students with useMemo for better performance
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch = searchTerm === '' || 
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.college.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.skillsCanTeach.some(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesSkill = selectedSkill === 'all' || 
+        student.skillsCanTeach.some(skill => skill.name === selectedSkill);
+      
+      const matchesUniversity = selectedUniversity === 'all' || 
+        student.college === selectedUniversity;
+      
+      const matchesLevel = selectedLevel === 'all' || 
+        student.skillsCanTeach.some(skill => skill.level === selectedLevel);
+      
+      return matchesSearch && matchesSkill && matchesUniversity && matchesLevel;
+    });
+  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
 
   const handleConnect = (student) => {
     setConnectionModal({ isOpen: true, student });
@@ -331,7 +334,7 @@ export function SkillMatching({ user }) {
       {/* Student Cards */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStudents.map((student) => (
-          <Card key={student.id} className="hover:shadow-lg transition-all duration-300 bg-card border-border">
+          <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
             <CardContent className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
@@ -384,9 +387,9 @@ export function SkillMatching({ user }) {
                         </span>
                         <div className="flex items-center gap-1">
                           <span className="text-xs">{levelInfo.icon}</span>
-                          <Badge className={`text-xs ${levelInfo.color}  dark:bg-${levelInfo.color}-900`}>
+                          <span className={`text-xs px-2 py-1 rounded-full ${levelInfo.color}`}>
                             {levelInfo.label}
-                          </Badge>
+                          </span>
                         </div>
                       </div>
                     );
