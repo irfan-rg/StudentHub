@@ -155,3 +155,4 @@ export function Sidebar({ user, onLogout }) {
     </div>
   );
 }
+

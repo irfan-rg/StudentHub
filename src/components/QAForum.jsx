@@ -286,7 +286,7 @@ export function QAForum({ user }) {
   };
 
   const QuestionCard = ({ question }) => (
-    <Card className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 dark:border-gray-700">
+    <Card className="hover:shadow-md transition-shadow bg-card border-border">
       <CardContent className="p-6">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
@@ -298,7 +298,7 @@ export function QAForum({ user }) {
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
-            <span className="font-medium text-lg text-gray-900 dark:text-white">{question.upvotes}</span>
+            <span className="font-medium text-lg text-foreground">{question.upvotes}</span>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -312,27 +312,27 @@ export function QAForum({ user }) {
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <h3 
-                className="font-semibold text-lg hover:text-blue-600 cursor-pointer text-gray-900 dark:text-white"
+                className="font-semibold text-lg hover:text-blue-600 cursor-pointer text-foreground"
                 onClick={() => setSelectedQuestion(question)}
               >
                 {question.title}
               </h3>
               {question.isAnswered && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                   <Check className="h-3 w-3 mr-1" />
                   Answered
                 </Badge>
               )}
             </div>
 
-            <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{question.content}</p>
+            <p className="text-muted-foreground mb-3 line-clamp-2">{question.content}</p>
 
             <div className="flex flex-wrap gap-2 mb-3">
               {question.tags.map((tag) => (
                 <Badge 
                   key={tag} 
                   variant="outline" 
-                  className="text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900"
+                  className="text-xs cursor-pointer hover:bg-accent/50"
                   onClick={() => setFilterTag(tag)}
                 >
                   {tag}
@@ -341,7 +341,7 @@ export function QAForum({ user }) {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
                   {question.answerCount} answers
@@ -364,8 +364,8 @@ export function QAForum({ user }) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-sm">
-                  <span className="font-medium text-gray-900 dark:text-white">{question.author.name}</span>
-                  <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                  <span className="font-medium text-foreground">{question.author.name}</span>
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <Star className="h-3 w-3 text-yellow-500" />
                     {question.author.points}
                   </div>
@@ -417,7 +417,7 @@ export function QAForum({ user }) {
                     </Badge>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={question.author.avatar} alt={question.author.name} />
                     <AvatarFallback className="text-xs">
@@ -463,7 +463,7 @@ export function QAForum({ user }) {
                       
                       <div className="flex-1">
                         <p className="mb-3">{answer.content}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Avatar className="h-5 w-5">
                             <AvatarImage src={answer.author.avatar} alt={answer.author.name} />
                             <AvatarFallback className="text-xs">
@@ -502,8 +502,8 @@ export function QAForum({ user }) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">💬 Q&A Forum</h1>
-        <p className="text-gray-600 dark:text-gray-300">Ask questions, share knowledge, and learn from peers</p>
+        <h1 className="text-3xl font-bold mb-2 text-foreground">💬 Q&A Forum</h1>
+        <p className="text-muted-foreground">Ask questions, share knowledge, and learn from peers</p>
       </div>
 
       {/* Ask Question Button */}
@@ -588,11 +588,11 @@ export function QAForum({ user }) {
       </Dialog>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
+      <Card className="bg-card border-border">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search questions..."
                 value={searchTerm}
@@ -620,7 +620,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterTag}
                       onChange={(e) => setFilterTag(e.target.value)}
-                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      className="w-full p-2 border rounded bg-background border-border text-foreground"
                     >
                       <option value="">All Tags</option>
                       {popularTags.map(tag => (
@@ -633,7 +633,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterAnswered}
                       onChange={(e) => setFilterAnswered(e.target.value)}
-                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      className="w-full p-2 border rounded bg-background border-border text-foreground"
                     >
                       <option value="all">All</option>
                       <option value="answered">Answered</option>
@@ -645,7 +645,7 @@ export function QAForum({ user }) {
                     <select
                       value={filterTime}
                       onChange={(e) => setFilterTime(e.target.value)}
-                      className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      className="w-full p-2 border rounded bg-background border-border text-foreground"
                     >
                       <option value="all">All Time</option>
                       <option value="last24h">Last 24 Hours</option>
@@ -663,7 +663,7 @@ export function QAForum({ user }) {
       </Card>
 
       <Tabs defaultValue="recent" className="space-y-4">
-        <TabsList className="bg-white dark:bg-gray-800 dark:border-gray-700">
+        <TabsList className="bg-card border-border">
           <TabsTrigger value="recent" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Recent
@@ -712,9 +712,9 @@ export function QAForum({ user }) {
             ))}
           {filteredQuestions.filter(q => q.author.name === user.name).length === 0 && (
             <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No questions yet</h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">You haven't asked any questions yet.</p>
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No questions yet</h3>
+              <p className="text-muted-foreground mb-4">You haven't asked any questions yet.</p>
               <Button onClick={() => setIsAskingQuestion(true)}>
                 Ask Your First Question
               </Button>
@@ -723,10 +723,10 @@ export function QAForum({ user }) {
         </TabsContent>
       </Tabs>
 
-      <Card className="bg-white dark:bg-gray-800 dark:border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-white">Popular Tags</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-300">Browse questions by topic</CardDescription>
+          <CardTitle className="text-foreground">Popular Tags</CardTitle>
+          <CardDescription className="text-muted-foreground">Browse questions by topic</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -734,7 +734,7 @@ export function QAForum({ user }) {
               <Badge 
                 key={tag} 
                 variant={selectedTag === tag ? "default" : "outline"}
-                className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900"
+                className="cursor-pointer hover:bg-accent/50"
                 onClick={() => setFilterTag(selectedTag === tag ? '' : tag)}
               >
                 {tag}
@@ -748,3 +748,4 @@ export function QAForum({ user }) {
     </div>
   );
 }
+

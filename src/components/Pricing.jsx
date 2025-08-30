@@ -199,7 +199,7 @@ export function Pricing({ onNavigate }) {
                     plan.popular 
                       ? 'ring-2 ring-blue-600 scale-105 shadow-2xl dark:ring-blue-400' 
                       : 'hover:shadow-lg'
-                  } transition-all duration-300 dark:bg-gray-800 dark:border-gray-700`}
+                  } transition-all duration-300 dark:bg-card dark:border-border`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -212,23 +212,23 @@ export function Pricing({ onNavigate }) {
                   
                   <CardHeader className="text-center pb-4">
                     <div className={`p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${
-                      plan.color === 'gray' ? 'bg-gray-100 dark:bg-gray-700' :
+                      plan.color === 'gray' ? 'bg-gray-100 dark:bg-muted' :
                       plan.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900' :
                       'bg-purple-100 dark:bg-purple-900'
                     }`}>
                       <Icon className={`h-8 w-8 ${
-                        plan.color === 'gray' ? 'text-gray-600 dark:text-gray-300' :
+                        plan.color === 'gray' ? 'text-gray-600 dark:text-muted-foreground' :
                         plan.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
                         'text-purple-600 dark:text-purple-400'
                       }`} />
                     </div>
-                    <CardTitle className="text-2xl dark:text-white">{plan.name}</CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-300">{plan.description}</CardDescription>
+                    <CardTitle className="text-2xl dark:text-foreground">{plan.name}</CardTitle>
+                    <CardDescription className="text-gray-600 dark:text-muted-foreground">{plan.description}</CardDescription>
                     
                     <div className="mt-4">
                       <div className="flex items-baseline justify-center gap-1">
-                        <span className="text-4xl font-bold dark:text-white">${price}</span>
-                        <span className="text-gray-600 dark:text-gray-300">
+                        <span className="text-4xl font-bold dark:text-foreground">${price}</span>
+                        <span className="text-gray-600 dark:text-muted-foreground">
                           {price === 0 ? '' : `/${isAnnual ? 'year' : 'month'}`}
                         </span>
                       </div>
@@ -264,8 +264,8 @@ export function Pricing({ onNavigate }) {
                           )}
                           <span className={`text-sm ${
                             feature.included 
-                              ? 'text-gray-900 dark:text-gray-100' 
-                              : 'text-gray-400 dark:text-gray-500'
+                              ? 'text-gray-900 dark:text-foreground' 
+                              : 'text-gray-400 dark:text-muted-foreground'
                           }`}>
                             {feature.name}
                           </span>
@@ -281,11 +281,11 @@ export function Pricing({ onNavigate }) {
       </div>
 
       {/* Features Overview */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-gray-50 dark:bg-card">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">What You Get</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">What You Get</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               Core features available across all plans
             </p>
           </div>
@@ -298,8 +298,8 @@ export function Pricing({ onNavigate }) {
                   <div className="bg-blue-100 dark:bg-blue-900 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <Icon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2 dark:text-white">{feature.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">{feature.description}</p>
+                  <h3 className="text-lg font-semibold mb-2 dark:text-foreground">{feature.title}</h3>
+                  <p className="text-gray-600 dark:text-muted-foreground text-sm">{feature.description}</p>
                 </div>
               );
             })}
@@ -311,8 +311,8 @@ export function Pricing({ onNavigate }) {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Frequently Asked Questions</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Frequently Asked Questions</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               Everything you need to know about our pricing
             </p>
           </div>
@@ -320,10 +320,10 @@ export function Pricing({ onNavigate }) {
           <div className="max-w-3xl mx-auto">
             <div className="space-y-6">
               {faqs.map((faq, index) => (
-                <Card key={index} className="dark:bg-gray-800 dark:border-gray-700">
+                <Card key={index} className="dark:bg-card dark:border-border">
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-3 dark:text-white">{faq.question}</h3>
-                    <p className="text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                    <h3 className="text-lg font-semibold mb-3 dark:text-foreground">{faq.question}</h3>
+                    <p className="text-gray-600 dark:text-muted-foreground">{faq.answer}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -362,3 +362,4 @@ export function Pricing({ onNavigate }) {
     </div>
   );
 }
+

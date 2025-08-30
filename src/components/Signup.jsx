@@ -174,10 +174,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
                 Let's get started
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Create your account to join the knowledge sharing community
               </p>
             </div>
@@ -231,10 +231,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <GraduationCap className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
                 Tell us about your education
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Help us understand your academic background
               </p>
             </div>
@@ -294,10 +294,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
                 What can you teach?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Share your expertise and help other students learn
               </p>
             </div>
@@ -350,7 +350,7 @@ export function Signup({ onSignup, loading, error }) {
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
+                          className="bg-white dark:bg-card text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
                         >
                           {skill.name} ({levelInfo?.icon} {levelInfo?.label})
                         </Badge>
@@ -365,9 +365,9 @@ export function Signup({ onSignup, loading, error }) {
                 {filteredSkillsForTeaching.map((skill, index) => {
                   const isSelected = formData.skillsCanTeach.some(s => s.name === skill);
                   return (
-                    <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div key={index} className="border border-gray-200 dark:border-border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{skill}</span>
+                        <span className="font-medium text-gray-900 dark:text-foreground">{skill}</span>
                         {isSelected && <CheckCircle className="h-4 w-4 text-green-600" />}
                       </div>
                       
@@ -400,10 +400,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
                 What do you want to learn?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Set your learning goals to get matched with the right mentors
               </p>
             </div>
@@ -431,7 +431,7 @@ export function Signup({ onSignup, loading, error }) {
                       <Badge 
                         key={index} 
                         variant="outline" 
-                        className="bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
+                        className="bg-white dark:bg-card text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
                       >
                         {skill}
                       </Badge>
@@ -500,20 +500,20 @@ export function Signup({ onSignup, loading, error }) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-foreground">
                 Join Student Hub
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Step {currentStep} of {totalSteps}
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-gray-500 dark:text-muted-foreground">
               {Math.round(progress)}% complete
             </span>
-            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="w-32 h-2 bg-gray-200 dark:bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
@@ -533,12 +533,12 @@ export function Signup({ onSignup, loading, error }) {
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
-          <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur-sm">
             <CardContent className="p-8">
               {renderStep()}
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-border">
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
@@ -576,3 +576,4 @@ export function Signup({ onSignup, loading, error }) {
     </div>
   );
 }
+

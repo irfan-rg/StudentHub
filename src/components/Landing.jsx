@@ -102,7 +102,7 @@ export function Landing({ onLogin, loading, error }) {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-background">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-6 py-20">
@@ -139,7 +139,7 @@ export function Landing({ onLogin, loading, error }) {
               <div className="flex justify-center gap-4 flex-wrap">
                <Button 
                  size="lg"
-                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
+                 className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
                  onClick={handleGetStarted}
                  disabled={loading}
                >
@@ -148,11 +148,12 @@ export function Landing({ onLogin, loading, error }) {
                </Button>
                <Button 
                  size="lg" 
-                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
+                 variant="outline"
+                 className="bg-card text-foreground border-border hover:bg-accent hover:text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
                  onClick={handleSignIn}
                  disabled={loading}
                >
-                 Sign In
+                 Log In
                </Button>
               </div>
             
@@ -183,11 +184,11 @@ export function Landing({ onLogin, loading, error }) {
       </div>
 
       {/* Features Section */}
-      <div className="py-20 bg-white dark:bg-gray-900" data-section="features">
+      <div className="py-20 bg-background dark:bg-background" data-section="features">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Why Students Love Our Platform</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold mb-4 text-foreground">Why Students Love Our Platform</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Discover the features that make learning and teaching more engaging than ever
             </p>
           </div>
@@ -196,22 +197,22 @@ export function Landing({ onLogin, loading, error }) {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               const colorClasses = {
-                blue: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400",
-                purple: "bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400",
-                pink: "bg-pink-100 dark:bg-pink-900 text-pink-600 dark:text-pink-400",
-                green: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400",
-                yellow: "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400",
-                red: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400"
+                blue: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
+                purple: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400",
+                pink: "bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400",
+                green: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400",
+                yellow: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400",
+                red: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
               };
               
               return (
-                <Card key={index} className="hover:shadow-lg transition-all duration-300 transform hover:scale-105 dark:bg-gray-800 dark:border-gray-700">
+                <Card key={index} className="hover:shadow-lg transition-all duration-300 transform hover:scale-105 bg-card border-border">
                   <CardContent className="p-6 text-center">
                     <div className={`p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${colorClasses[feature.color]}`}>
                       <Icon className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 dark:text-white">{feature.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
               );
@@ -221,44 +222,44 @@ export function Landing({ onLogin, loading, error }) {
       </div>
 
       {/* How It Works Section */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-background dark:bg-background">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">How It Works</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">Get started in just 3 simple steps</p>
+            <h2 className="text-4xl font-bold mb-4 text-foreground">How It Works</h2>
+            <p className="text-xl text-muted-foreground">Get started in just 3 simple steps</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-4">1</div>
-              <h3 className="text-xl font-semibold mb-2 dark:text-white">Create Your Profile</h3>
-              <p className="text-gray-600 dark:text-gray-300">Sign up and tell us about your skills and learning goals with skill levels</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Create Your Profile</h3>
+              <p className="text-muted-foreground">Sign up and tell us about your skills and learning goals with skill levels</p>
             </div>
             <div className="text-center">
               <div className="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-4">2</div>
-              <h3 className="text-xl font-semibold mb-2 dark:text-white">Get Matched</h3>
-              <p className="text-gray-600 dark:text-gray-300">Our AI finds the perfect study partners based on your complementary skills</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Get Matched</h3>
+              <p className="text-muted-foreground">Our AI finds the perfect study partners based on your complementary skills</p>
             </div>
             <div className="text-center">
               <div className="bg-pink-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-4">3</div>
-              <h3 className="text-xl font-semibold mb-2 dark:text-white">Start Learning</h3>
-              <p className="text-gray-600 dark:text-gray-300">Connect, collaborate, and grow your knowledge together</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Start Learning</h3>
+              <p className="text-muted-foreground">Connect, collaborate, and grow your knowledge together</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Testimonials Section */}
-      <div className="py-20 bg-white dark:bg-gray-900">
+      <div className="py-20 bg-background dark:bg-background">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">What Students Say</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">Hear from our community of learners</p>
+            <h2 className="text-4xl font-bold mb-4 text-foreground">What Students Say</h2>
+            <p className="text-xl text-muted-foreground">Hear from our community of learners</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 bg-card border-border">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <img 
@@ -267,11 +268,11 @@ export function Landing({ onLogin, loading, error }) {
                       className="w-12 h-12 rounded-full mr-4"
                     />
                     <div>
-                      <h4 className="font-semibold dark:text-white">{testimonial.name}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.college}</p>
+                      <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
+                      <p className="text-sm text-muted-foreground">{testimonial.college}</p>
                     </div>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 italic">"{testimonial.quote}"</p>
+                  <p className="text-muted-foreground italic">"{testimonial.quote}"</p>
                   <div className="flex mt-4">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -294,7 +295,7 @@ export function Landing({ onLogin, loading, error }) {
           <div className="flex justify-center gap-4 flex-wrap">
                                                    <Button 
                 size="lg" 
-                className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
                 onClick={handleGetStarted}
                 disabled={loading}
               >
@@ -304,7 +305,8 @@ export function Landing({ onLogin, loading, error }) {
               <Link to="/about">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                  variant="outline"
+                  className="bg-card text-foreground border-border hover:bg-accent hover:text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
                 >
                   Learn About Us
                 </Button>
@@ -314,7 +316,7 @@ export function Landing({ onLogin, loading, error }) {
       </div>
 
       {/* Simplified Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-background dark:bg-background text-white py-12">
         <div className="container mx-auto px-6">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -355,8 +357,8 @@ export function Landing({ onLogin, loading, error }) {
           </div>
           
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 StudentHub. All rights reserved.</p>
-            <p className="text-sm mt-2">Built by students from SDM Institute of Technology, Ujire, Karnataka, India</p>
+            <p>&copy; 2025 StudentHub. All rights reserved.</p>
+            {/* <p className="text-sm mt-2">Built by students from SDM Institute of Technology, Ujire, Karnataka, India</p> */}
           </div>
         </div>
       </footer>
@@ -367,7 +369,7 @@ export function Landing({ onLogin, loading, error }) {
           <DialogHeader>
             <DialogTitle>Welcome Back</DialogTitle>
             <DialogDescription>
-              Sign in to your Student Hub account
+              Log in to your Student Hub account
             </DialogDescription>
           </DialogHeader>
           
@@ -407,15 +409,15 @@ export function Landing({ onLogin, loading, error }) {
             <div className="flex gap-3 pt-4">
               <Button 
                 onClick={handleSignInSubmit} 
-                className="flex-1"
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={loading}
               >
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? 'Signing In...' : 'Log In'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setSignInModal(false)}
-                className="flex-1"
+                className="flex-1 bg-card text-foreground border-border hover:bg-accent hover:text-accent-foreground"
                 disabled={loading}
               >
                 Cancel
@@ -423,7 +425,7 @@ export function Landing({ onLogin, loading, error }) {
             </div>
             
             <div className="text-center pt-4 border-t">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <button 
                   onClick={() => {
@@ -443,3 +445,4 @@ export function Landing({ onLogin, loading, error }) {
     </div>
   );
 }
+

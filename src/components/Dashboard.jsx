@@ -303,8 +303,8 @@ export function Dashboard({ user }) {
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold dark:text-white">Welcome back, {user.name}! 👋</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-4">Ready to learn and share knowledge today?</p>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}! 👋</h1>
+          <p className="text-muted-foreground mt-4">Ready to learn and share knowledge today?</p>
         </div>
       </div>
 
@@ -313,12 +313,12 @@ export function Dashboard({ user }) {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="dark:bg-gray-800 dark:border-gray-700">
+            <Card key={index} className="bg-card border-border">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{stat.label}</p>
-                    <p className="text-2xl font-bold dark:text-white">{stat.value}</p>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                   </div>
                   <Icon className={`h-8 w-8 ${stat.color}`} />
                 </div>
@@ -332,15 +332,15 @@ export function Dashboard({ user }) {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Suggested Connections with Cleaner Skills Display */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
                     <Users className="h-5 w-5 text-blue-600" />
                     Suggested Study Partners
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300 mt-4">
+                  <CardDescription className="text-muted-foreground mt-4">
                     AI-matched partners based on your learning goals
                   </CardDescription>
                 </div>
@@ -352,7 +352,7 @@ export function Dashboard({ user }) {
             <CardContent>
               <div className="space-y-4">
                 {suggestedConnections.map((connection) => (
-                  <div key={connection.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div key={connection.id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <img
@@ -362,12 +362,12 @@ export function Dashboard({ user }) {
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold dark:text-white">{connection.name}</h4>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 text-xs">
+                            <h4 className="font-semibold text-foreground">{connection.name}</h4>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 text-xs">
                               {connection.matchPercentage}% match
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{connection.college}</p>
+                          <p className="text-sm text-muted-foreground">{connection.college}</p>
                         </div>
                       </div>
                     </div>
@@ -376,14 +376,14 @@ export function Dashboard({ user }) {
                     <div className="mb-3">
                       <div className="flex items-center gap-1 mb-2">
                         <Target className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Can teach:</span>
+                        <span className="text-xs font-medium text-muted-foreground">Can teach:</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {connection.skillsCanTeach.map((skill, index) => {
                           const config = levelConfig[skill.level];
                           return (
                             <div key={index} className="flex items-center gap-1 text-xs">
-                              <span className="font-medium dark:text-white">{skill.name}</span>
+                              <span className="font-medium text-foreground">{skill.name}</span>
                               <span className={`${config.color}`}>({config.icon} {config.label})</span>
                             </div>
                           );
@@ -392,7 +392,7 @@ export function Dashboard({ user }) {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>{connection.points} points</span>
                         <span>{connection.sessions} sessions</span>
                       </div>
@@ -427,15 +427,15 @@ export function Dashboard({ user }) {
           </Card>
 
           {/* Clean Skills Overview */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
                     <Target className="h-5 w-5 text-green-600" />
                     Your Teaching Skills
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300 mt-4">
+                    <CardDescription className="text-muted-foreground mt-4">
                     Skills ready to share with the community
                   </CardDescription>
                 </div>
@@ -448,16 +448,16 @@ export function Dashboard({ user }) {
               {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
                 <div className="space-y-4">
                   {/* Quick Overview */}
-                  <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
                     <div className="text-center">
                       <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{user.skillsCanTeach.length}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
+                      <div className="text-xs text-muted-foreground">Total Skills</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
                         {user.skillsCanTeach.filter(s => s.level === 'expert' || s.level === 'advanced').length}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced+</div>
+                      <div className="text-xs text-muted-foreground">Advanced+</div>
                     </div>
                   </div>
                   
@@ -468,11 +468,11 @@ export function Dashboard({ user }) {
                       return (
                         <div 
                           key={index}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent/50 transition-colors"
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{config.icon}</span>
-                            <span className="font-medium text-sm dark:text-white">{skill.name}</span>
+                            <span className="font-medium text-sm text-foreground">{skill.name}</span>
                           </div>
                           <span className={`text-xs font-medium ${config.color}`}>
                             {config.label}
@@ -483,7 +483,7 @@ export function Dashboard({ user }) {
                   </div>
                   
                   {user.skillsCanTeach.length > 4 && (
-                    <div className="text-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="text-center pt-2 border-t border-border">
                       <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
                         View {user.skillsCanTeach.length - 4} more skills
                         <ArrowRight className="h-3 w-3 ml-1" />
@@ -493,8 +493,8 @@ export function Dashboard({ user }) {
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Add your skills to start teaching</p>
+                  <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm mb-2">Add your skills to start teaching</p>
                   <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add Skills
@@ -508,9 +508,9 @@ export function Dashboard({ user }) {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Upcoming Sessions */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Calendar className="h-5 w-5 text-green-600" />
                 Upcoming Sessions
               </CardTitle>
@@ -518,9 +518,9 @@ export function Dashboard({ user }) {
             <CardContent>
               <div className="space-y-3">
                 {upcomingSessions.map((session) => (
-                  <div key={session.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div key={session.id} className="p-3 border border-border rounded-lg">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm dark:text-white">{session.title}</h4>
+                      <h4 className="font-medium text-sm text-foreground">{session.title}</h4>
                       <Badge 
                         variant={session.status === 'confirmed' ? 'default' : 'outline'}
                         className="text-xs"
@@ -528,8 +528,8 @@ export function Dashboard({ user }) {
                         {session.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">with {session.partner}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">with {session.partner}</p>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       <span>{session.date} at {session.time}</span>
                     </div>
@@ -564,37 +564,14 @@ export function Dashboard({ user }) {
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
-          {/* <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
-                <Clock className="h-5 w-5 text-purple-600" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm dark:text-white">{activity.message}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card> */}
-
           {/* Connections */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Users className="h-5 w-5 text-purple-600" />
                 Connections
               </CardTitle>
-              <CardDescription className="dark:text-gray-300 mt-4">
+              <CardDescription className="text-muted-foreground mt-4">
                 Your existing study partners
               </CardDescription>
             </CardHeader>
@@ -602,7 +579,7 @@ export function Dashboard({ user }) {
               <div className="space-y-4">
                 {connectedUsers.length > 0 ? (
                   connectedUsers.map((connection) => (
-                    <div key={connection.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between">
+                    <div key={connection.id} className="p-3 border border-border rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
                           src={connection.avatar}
@@ -610,8 +587,8 @@ export function Dashboard({ user }) {
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div>
-                          <h4 className="font-semibold dark:text-white">{connection.name}</h4>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{connection.college}</p>
+                          <h4 className="font-semibold text-foreground">{connection.name}</h4>
+                          <p className="text-xs text-muted-foreground">{connection.college}</p>
                         </div>
                       </div>
                       <Button size="sm" variant="destructive" onClick={() => handleDeleteConnection(connection.id)}>
@@ -621,8 +598,8 @@ export function Dashboard({ user }) {
                   ))
                 ) : (
                   <div className="text-center py-6">
-                    <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">No connections yet</p>
+                    <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm mb-2">No connections yet</p>
                     <Button variant="outline" size="sm" onClick={() => navigate('/matching')}>
                       <Plus className="h-4 w-4 mr-1" />
                       Find Connections

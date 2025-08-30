@@ -141,7 +141,7 @@ export function Blog({ onNavigate }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background dark:bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-6 py-20">
@@ -161,7 +161,7 @@ export function Blog({ onNavigate }) {
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
               <div className="relative">
-                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-4 top-4 h-5 w-5 text-white/70" />
                 <Input
                   placeholder="Search articles..."
                   value={searchTerm}
@@ -175,7 +175,7 @@ export function Blog({ onNavigate }) {
       </div>
 
       {/* Categories */}
-      <div className="py-8 bg-white dark:bg-gray-900 border-b dark:border-gray-800">
+      <div className="py-8 bg-card border-b border-border">
         <div className="container mx-auto px-6">
           <div className="flex flex-wrap gap-2 justify-center">
             {categories.map((category) => (
@@ -185,7 +185,7 @@ export function Blog({ onNavigate }) {
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
                   selectedCategory === category.id
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground hover:bg-gray-200 dark:hover:bg-muted'
                 }`}
               >
                 {category.name} ({category.count})
@@ -200,15 +200,15 @@ export function Blog({ onNavigate }) {
         <div className="py-20">
           <div className="container mx-auto px-6">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4 dark:text-white">Featured Articles</h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
+              <h2 className="text-4xl font-bold mb-4 text-foreground">Featured Articles</h2>
+              <p className="text-xl text-muted-foreground">
                 Our most popular and impactful content
               </p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
               {featuredPosts.map((post) => (
-                <Card key={post.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <Card key={post.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden bg-card border-border">
                   <div className="relative overflow-hidden">
                     <img 
                       src={post.image} 
@@ -226,16 +226,16 @@ export function Blog({ onNavigate }) {
                       <Badge variant="outline" className="text-xs">
                         {getCategoryName(post.category)}
                       </Badge>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {post.readTime}
                       </span>
                     </div>
                     
-                    <h3 className="text-xl font-bold mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors dark:text-white">
+                    <h3 className="text-xl font-bold mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-foreground">
                       {post.title}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                    <p className="text-muted-foreground mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
                     
@@ -247,12 +247,12 @@ export function Blog({ onNavigate }) {
                           className="w-8 h-8 rounded-full"
                         />
                         <div>
-                          <p className="font-medium text-sm dark:text-white">{post.author}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(post.date)}</p>
+                          <p className="font-medium text-sm text-foreground">{post.author}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(post.date)}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Heart className="h-4 w-4" />
                           {post.likes}
@@ -272,23 +272,23 @@ export function Blog({ onNavigate }) {
       )}
 
       {/* All Posts */}
-      <div className={`py-20 ${selectedCategory === 'all' ? 'bg-gray-50 dark:bg-gray-800' : ''}`}>
+      <div className={`py-20 ${selectedCategory === 'all' ? 'bg-background dark:bg-background' : ''}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">
+            <h2 className="text-4xl font-bold mb-4 text-foreground">
               {selectedCategory === 'all' ? 'Recent Articles' : `${getCategoryName(selectedCategory)} Articles`}
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-muted-foreground">
               {filteredPosts.length} articles found
             </p>
           </div>
           
           {filteredPosts.length === 0 ? (
-            <Card className="text-center py-12 dark:bg-gray-800 dark:border-gray-700">
+            <Card className="text-center py-12 bg-card border-border">
               <CardContent>
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No articles found</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No articles found</h3>
+                <p className="text-muted-foreground mb-4">
                   Try adjusting your search terms or browse a different category.
                 </p>
                 <Button variant="outline" onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}>
@@ -299,7 +299,7 @@ export function Blog({ onNavigate }) {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredPosts.map((post) => (
-                <Card key={post.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <Card key={post.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-card border-border">
                   <div className="relative overflow-hidden">
                     <img 
                       src={post.image} 
@@ -319,16 +319,16 @@ export function Blog({ onNavigate }) {
                       <Badge variant="outline" className="text-xs">
                         {getCategoryName(post.category)}
                       </Badge>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {post.readTime}
                       </span>
                     </div>
                     
-                    <h3 className="text-lg font-bold mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors dark:text-white line-clamp-2">
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-foreground line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm line-clamp-3">
+                    <p className="text-muted-foreground mb-4 text-sm line-clamp-3">
                       {post.excerpt}
                     </p>
                     
@@ -340,12 +340,12 @@ export function Blog({ onNavigate }) {
                           className="w-6 h-6 rounded-full"
                         />
                         <div>
-                          <p className="font-medium text-xs dark:text-white">{post.author}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(post.date)}</p>
+                          <p className="font-medium text-xs text-foreground">{post.author}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(post.date)}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Heart className="h-3 w-3" />
                           {post.likes}
@@ -386,8 +386,8 @@ export function Blog({ onNavigate }) {
       {/* Call to Action */}
       <div className="py-20">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4 dark:text-white">Ready to Start Learning?</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Ready to Start Learning?</h2>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join thousands of students who are already connecting and growing together
           </p>
           <Button 
@@ -402,3 +402,4 @@ export function Blog({ onNavigate }) {
     </div>
   );
 }
+

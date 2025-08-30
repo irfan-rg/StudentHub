@@ -44,25 +44,25 @@ export function SkillMatching({ user }) {
   const levelLabels = {
     beginner: { 
       label: 'Beginner', 
-      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', 
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', 
       icon: '🌱',
       borderColor: 'border-green-200 dark:border-green-700'
     },
     intermediate: { 
       label: 'Intermediate', 
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', 
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', 
       icon: '📚',
       borderColor: 'border-blue-200 dark:border-blue-700'
     },
     advanced: { 
       label: 'Advanced', 
-      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', 
+      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300', 
       icon: '🎯',
       borderColor: 'border-purple-200 dark:border-purple-700'
     },
     expert: { 
       label: 'Expert', 
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', 
+      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', 
       icon: '⭐',
       borderColor: 'border-yellow-200 dark:border-yellow-700'
     }
@@ -230,17 +230,17 @@ export function SkillMatching({ user }) {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold dark:text-white mb-4">Find Your Perfect Study Partner</h1>
-        <p className="text-gray-600 dark:text-gray-300">Connect with students who can teach you new skills and learn from your expertise</p>
+        <h1 className="text-3xl font-bold text-foreground mb-4">Find Your Perfect Study Partner</h1>
+        <p className="text-muted-foreground">Connect with students who can teach you new skills and learn from your expertise</p>
       </div>
 
       {/* Search and Filters */}
-      <Card className="dark:bg-gray-800 dark:border-gray-700 ">
-        <CardContent className="p-6 ">
+      <Card className="bg-card border-border">
+        <CardContent className="p-6">
           <div className="space-y-4 mb-4 mt-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Search by name, university, or skill..."
                 value={searchTerm}
@@ -319,10 +319,10 @@ export function SkillMatching({ user }) {
 
       {/* Results */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold dark:text-white">
+        <h2 className="text-xl font-semibold text-foreground">
           {filteredStudents.length} Study Partners Found
         </h2>
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <TrendingUp className="h-4 w-4" />
           Sorted by match percentage
         </div>
@@ -331,7 +331,7 @@ export function SkillMatching({ user }) {
       {/* Student Cards */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStudents.map((student) => (
-          <Card key={student.id} className="hover:shadow-lg transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
+          <Card key={student.id} className="hover:shadow-lg transition-all duration-300 bg-card border-border">
             <CardContent className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
@@ -347,20 +347,20 @@ export function SkillMatching({ user }) {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold dark:text-white">{student.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
+                    <h3 className="font-semibold text-foreground">{student.name}</h3>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <MapPin className="h-3 w-3" />
                       {student.college}
                     </div>
                   </div>
                 </div>
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                   {student.matchPercentage}% match
                 </Badge>
               </div>
 
               {/* Bio */}
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                 {student.bio}
               </p>
 
@@ -368,7 +368,7 @@ export function SkillMatching({ user }) {
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Target className="h-4 w-4 text-green-600" />
-                  <span className="font-medium text-sm dark:text-white">Can Teach</span>
+                  <span className="font-medium text-sm text-foreground">Can Teach</span>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-2">
@@ -377,14 +377,14 @@ export function SkillMatching({ user }) {
                     return (
                       <div 
                         key={index}
-                        className={`flex items-center justify-between p-2 rounded-lg border ${levelInfo.borderColor} bg-gray-50 dark:bg-gray-700`}
+                        className={`flex items-center justify-between p-2 rounded-lg border ${levelInfo.borderColor} bg-muted/50`}
                       >
-                        <span className="font-medium text-sm dark:text-white">
+                        <span className="font-medium text-sm text-foreground">
                           {skill.name}
                         </span>
                         <div className="flex items-center gap-1">
                           <span className="text-xs">{levelInfo.icon}</span>
-                          <Badge className={`text-xs ${levelInfo.color}`}>
+                          <Badge className={`text-xs ${levelInfo.color}  dark:bg-${levelInfo.color}-900`}>
                             {levelInfo.label}
                           </Badge>
                         </div>
@@ -393,7 +393,7 @@ export function SkillMatching({ user }) {
                   })}
                   
                   {student.skillsCanTeach.length > 3 && (
-                    <div className="text-center text-xs text-gray-500 dark:text-gray-400 py-1">
+                    <div className="text-center text-xs text-muted-foreground py-1">
                       +{student.skillsCanTeach.length - 3} more skills
                     </div>
                   )}
@@ -401,28 +401,28 @@ export function SkillMatching({ user }) {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="grid grid-cols-3 gap-3 mb-4 py-3 bg-muted/50 rounded-lg">
                 <div className="text-center">
                   <div className="font-semibold text-sm text-blue-600 dark:text-blue-400">{student.points}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Points</div>
+                  <div className="text-xs text-muted-foreground">Points</div>
                 </div>
                 <div className="text-center">
                   <div className="font-semibold text-sm text-green-600 dark:text-green-400">{student.sessions}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Sessions</div>
+                  <div className="text-xs text-muted-foreground">Sessions</div>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1">
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                     <span className="font-semibold text-sm text-yellow-600 dark:text-yellow-400">{student.rating}</span>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Rating</div>
+                  <div className="text-xs text-muted-foreground">Rating</div>
                 </div>
               </div>
 
               {/* Availability */}
               <div className="flex items-center gap-2 mb-4 text-sm">
-                <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-300">{student.availability}</span>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{student.availability}</span>
               </div>
 
               {/* Actions */}
@@ -451,11 +451,11 @@ export function SkillMatching({ user }) {
       </div>
 
       {filteredStudents.length === 0 && (
-        <Card className="text-center py-12 dark:bg-gray-800 dark:border-gray-700">
+        <Card className="text-center py-12 bg-card border-border">
           <CardContent>
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No students found</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No students found</h3>
+            <p className="text-muted-foreground mb-4">
               Try adjusting your search terms or filters to find more study partners.
             </p>
             <Button variant="outline" onClick={() => {
@@ -601,3 +601,4 @@ export function SkillMatching({ user }) {
     </div>
   );
 }
+

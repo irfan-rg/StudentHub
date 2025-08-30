@@ -127,7 +127,7 @@ export function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background dark:bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-6 py-20">
@@ -151,8 +151,8 @@ export function Contact() {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">How Can We Help?</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 text-foreground">How Can We Help?</h2>
+            <p className="text-xl text-muted-foreground">
               Choose the best way to reach us based on your needs
             </p>
           </div>
@@ -165,13 +165,13 @@ export function Contact() {
               
               return (
                 <CardComponent key={index} {...cardProps}>
-                  <Card className="text-center hover:shadow-lg transition-all duration-300 cursor-pointer dark:bg-gray-800 dark:border-gray-700 h-full">
+                  <Card className="text-center hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border h-full">
                     <CardContent className="p-6">
                       <div className={`p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${colorClasses[method.color]}`}>
                         <Icon className="h-8 w-8" />
                       </div>
-                      <h3 className="text-xl font-semibold mb-2 dark:text-white">{method.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-300 mb-3">{method.description}</p>
+                      <h3 className="text-xl font-semibold mb-2 text-foreground">{method.title}</h3>
+                      <p className="text-muted-foreground mb-3">{method.description}</p>
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{method.details}</p>
                     </CardContent>
                   </Card>
@@ -183,15 +183,15 @@ export function Contact() {
       </div>
 
       {/* Contact Form */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-background dark:bg-background">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Form */}
-              <Card className="dark:bg-gray-900 dark:border-gray-700">
+              <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-2xl dark:text-white">Send us a Message</CardTitle>
-                  <CardDescription className="dark:text-gray-300">
+                  <CardTitle className="text-2xl text-foreground">Send us a Message</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     Fill out the form below and we'll get back to you as soon as possible
                   </CardDescription>
                 </CardHeader>
@@ -280,9 +280,9 @@ export function Contact() {
 
               {/* Contact Info */}
               <div className="space-y-8">
-                <Card className="dark:bg-gray-900 dark:border-gray-700">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 dark:text-white">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Clock className="h-5 w-5" />
                       Response Times
                     </CardTitle>
@@ -291,30 +291,30 @@ export function Contact() {
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="font-medium dark:text-white">Email Support</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Within 24 hours</p>
+                        <p className="font-medium text-foreground">Email Support</p>
+                        <p className="text-sm text-muted-foreground">Within 24 hours</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="font-medium dark:text-white">Live Chat</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Real-time during business hours</p>
+                        <p className="font-medium text-foreground">Live Chat</p>
+                        <p className="text-sm text-muted-foreground">Real-time during business hours</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="font-medium dark:text-white">Critical Issues</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Within 4 hours</p>
+                        <p className="font-medium text-foreground">Critical Issues</p>
+                        <p className="text-sm text-muted-foreground">Within 4 hours</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="dark:bg-gray-900 dark:border-gray-700">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 dark:text-white">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <MapPin className="h-5 w-5" />
                       Office Locations
                     </CardTitle>
@@ -322,10 +322,10 @@ export function Contact() {
                   <CardContent className="space-y-6">
                     {officeLocations.map((location, index) => (
                       <div key={index} className="space-y-2">
-                        <h4 className="font-semibold dark:text-white">{location.city}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">{location.address}</p>
+                        <h4 className="font-semibold text-foreground">{location.city}</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{location.address}</p>
                         <div className="flex flex-col gap-1 text-sm">
-                          <span className="text-gray-600 dark:text-gray-300">{location.phone}</span>
+                          <span className="text-muted-foreground">{location.phone}</span>
                           <span className="text-blue-600 dark:text-blue-400">{location.email}</span>
                         </div>
                       </div>
@@ -342,39 +342,39 @@ export function Contact() {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 dark:text-white">Quick Actions</h2>
-            <p className="text-gray-600 dark:text-gray-300">
+            <h2 className="text-3xl font-bold mb-4 text-foreground">Quick Actions</h2>
+            <p className="text-muted-foreground">
               Common tasks you might want to do
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <Link to="/faq">
-              <Card className="text-center cursor-pointer hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700 h-full">
+              <Card className="text-center cursor-pointer hover:shadow-lg transition-all bg-card border-border h-full">
                 <CardContent className="p-6">
                   <HelpCircle className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2 dark:text-white">Browse FAQ</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Find answers to common questions</p>
+                  <h3 className="font-semibold mb-2 text-foreground">Browse FAQ</h3>
+                  <p className="text-sm text-muted-foreground">Find answers to common questions</p>
                 </CardContent>
               </Card>
             </Link>
             
             <Link to="/">
-              <Card className="text-center cursor-pointer hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700 h-full">
+              <Card className="text-center cursor-pointer hover:shadow-lg transition-all bg-card border-border h-full">
                 <CardContent className="p-6">
                   <Shield className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2 dark:text-white">Safety Center</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Learn about safety and privacy</p>
+                  <h3 className="font-semibold mb-2 text-foreground">Safety Center</h3>
+                  <p className="text-sm text-muted-foreground">Learn about safety and privacy</p>
                 </CardContent>
               </Card>
             </Link>
             
             <Link to="/">
-              <Card className="text-center cursor-pointer hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700 h-full">
+              <Card className="text-center cursor-pointer hover:shadow-lg transition-all bg-card border-border h-full">
                 <CardContent className="p-6">
                   <Zap className="h-12 w-12 text-purple-600 dark:text-purple-400 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2 dark:text-white">Get Started</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Start your learning journey</p>
+                  <h3 className="font-semibold mb-2 text-foreground">Get Started</h3>
+                  <p className="text-sm text-muted-foreground">Start your learning journey</p>
                 </CardContent>
               </Card>
             </Link>
@@ -384,3 +384,4 @@ export function Contact() {
     </div>
   );
 }
+

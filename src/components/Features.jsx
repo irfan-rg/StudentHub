@@ -167,8 +167,8 @@ export function Features({ onNavigate }) {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Core Features</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Core Features</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground max-w-2xl mx-auto">
               Everything you need to enhance your learning journey and connect with fellow students
             </p>
           </div>
@@ -177,18 +177,18 @@ export function Features({ onNavigate }) {
             {coreFeatures.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="hover:shadow-lg transition-all duration-300 transform hover:scale-105 dark:bg-gray-800 dark:border-gray-700">
+                <Card key={index} className="hover:shadow-lg transition-all duration-300 transform hover:scale-105 dark:bg-card dark:border-border">
                   <CardContent className="p-6">
                     <div className={`p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${colorClasses[feature.color]}`}>
                       <Icon className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 text-center dark:text-white">{feature.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">{feature.description}</p>
+                    <h3 className="text-xl font-semibold mb-3 text-center dark:text-foreground">{feature.title}</h3>
+                    <p className="text-gray-600 dark:text-muted-foreground mb-4 text-center">{feature.description}</p>
                     <div className="space-y-2">
                       {feature.benefits.map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="text-sm text-gray-600 dark:text-gray-300">{benefit}</span>
+                          <span className="text-sm text-gray-600 dark:text-muted-foreground">{benefit}</span>
                         </div>
                       ))}
                     </div>
@@ -201,27 +201,27 @@ export function Features({ onNavigate }) {
       </div>
 
       {/* Additional Features */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-gray-50 dark:bg-card">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Complete Feature Set</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Complete Feature Set</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               Comprehensive tools for every aspect of collaborative learning
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {additionalFeatures.map((category, index) => (
-              <Card key={index} className="dark:bg-gray-900 dark:border-gray-700">
+              <Card key={index} className="dark:bg-card dark:border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg dark:text-white">{category.category}</CardTitle>
+                  <CardTitle className="text-lg dark:text-foreground">{category.category}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
                     {category.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">{feature}</span>
+                        <span className="text-sm text-gray-600 dark:text-muted-foreground">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -236,8 +236,8 @@ export function Features({ onNavigate }) {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Popular Integrations</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Popular Integrations</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               Connect with tools you already use and love
             </p>
           </div>
@@ -246,11 +246,11 @@ export function Features({ onNavigate }) {
             {integrations.map((integration, index) => {
               const Icon = integration.icon;
               return (
-                <Card key={index} className="text-center hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+                <Card key={index} className="text-center hover:shadow-md transition-shadow dark:bg-card dark:border-border">
                   <CardContent className="p-6">
                     <Icon className="h-12 w-12 mx-auto mb-4 text-blue-600 dark:text-blue-400" />
-                    <h4 className="font-semibold mb-2 dark:text-white">{integration.name}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{integration.description}</p>
+                    <h4 className="font-semibold mb-2 dark:text-foreground">{integration.name}</h4>
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground">{integration.description}</p>
                   </CardContent>
                 </Card>
               );
@@ -291,8 +291,8 @@ export function Features({ onNavigate }) {
       {/* CTA Section */}
       <div className="py-20">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4 dark:text-white">Ready to Experience All Features?</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Ready to Experience All Features?</h2>
+          <p className="text-xl text-gray-600 dark:text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join thousands of students who are already using StudentHub to enhance their learning
           </p>
           <div className="flex justify-center gap-4">
@@ -317,3 +317,4 @@ export function Features({ onNavigate }) {
     </div>
   );
 }
+

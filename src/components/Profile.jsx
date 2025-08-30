@@ -61,10 +61,10 @@ export function Profile({ user, onUpdateUser }) {
   ];
 
   const levelLabels = {
-    beginner: { label: 'Beginner', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: '🌱' },
-    intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', icon: '📚' },
-    advanced: { label: 'Advanced', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', icon: '🎯' },
-    expert: { label: 'Expert', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', icon: '⭐' }
+    beginner: { label: 'Beginner', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', icon: '🌱' },
+    intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', icon: '📚' },
+    advanced: { label: 'Advanced', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300', icon: '🎯' },
+    expert: { label: 'Expert', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', icon: '⭐' }
   };
 
   const addTeachSkill = (name, level) => {
@@ -121,8 +121,8 @@ export function Profile({ user, onUpdateUser }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold dark:text-white mb-2">My Profile</h1>
-          <p className="text-gray-600 dark:text-gray-300">Manage your information and skills</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">My Profile</h1>
+          <p className="text-muted-foreground">Manage your information and skills</p>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -147,7 +147,7 @@ export function Profile({ user, onUpdateUser }) {
         {/* Left Column - Profile Info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Profile Card */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="text-center">
                 <img
@@ -193,16 +193,16 @@ export function Profile({ user, onUpdateUser }) {
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-xl font-semibold dark:text-white">{user.name}</h2>
-                    <div className="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-300 mt-1">
+                    <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
+                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
                       <Mail className="h-4 w-4" />
                       <span className="text-sm">{user.email}</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-300 mt-1">
+                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
                       <MapPin className="h-4 w-4" />
                       <span className="text-sm">{user.college}</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-300 mt-1">
+                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
                       <GraduationCap className="h-4 w-4" />
                       <span className="text-sm capitalize">{user.educationLevel?.replace('-', ' ')}</span>
                     </div>
@@ -213,43 +213,43 @@ export function Profile({ user, onUpdateUser }) {
           </Card>
 
           {/* Stats Card */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Trophy className="h-5 w-5 text-yellow-600" />
                 Statistics
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Points</span>
+                <span className="text-muted-foreground">Points</span>
                 <span className="font-semibold text-blue-600 dark:text-blue-400">{user.points}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Level</span>
-                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                <span className="text-muted-foreground">Level</span>
+                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
                   {user.level}
                 </Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Sessions</span>
-                <span className="font-semibold dark:text-white">{user.sessionsCompleted}</span>
+                <span className="text-muted-foreground">Sessions</span>
+                <span className="font-semibold text-foreground">{user.sessionsCompleted}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Questions Answered</span>
-                <span className="font-semibold dark:text-white">{user.questionsAnswered}</span>
+                <span className="text-muted-foreground">Questions Answered</span>
+                <span className="font-semibold text-foreground">{user.questionsAnswered}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Questions Asked</span>
-                <span className="font-semibold dark:text-white">{user.questionsAsked}</span>
+                <span className="text-muted-foreground">Questions Asked</span>
+                <span className="font-semibold text-foreground">{user.questionsAsked}</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Badges */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Award className="h-5 w-5 text-yellow-600" />
                 Achievements
               </CardTitle>
@@ -261,7 +261,7 @@ export function Profile({ user, onUpdateUser }) {
                     <Star className="h-3 w-3 mr-1" />
                     {badge}
                   </Badge>
-                )) || <p className="text-gray-500 dark:text-gray-400 text-sm">No badges yet</p>}
+                )) || <p className="text-muted-foreground text-sm">No badges yet</p>}
               </div>
             </CardContent>
           </Card>
@@ -270,9 +270,9 @@ export function Profile({ user, onUpdateUser }) {
         {/* Right Column - Skills and Bio */}
         <div className="lg:col-span-2 space-y-6">
           {/* Bio Section */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <User className="h-5 w-5" />
                 About Me
               </CardTitle>
@@ -290,7 +290,7 @@ export function Profile({ user, onUpdateUser }) {
                   />
                 </div>
               ) : (
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed">
                   {formData.bio}
                 </p>
               )}
@@ -298,13 +298,13 @@ export function Profile({ user, onUpdateUser }) {
           </Card>
 
           {/* Learning Goals */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <BookOpen className="h-5 w-5 text-blue-600" />
                 Learning Goals
               </CardTitle>
-              <CardDescription className="dark:text-gray-300 mt-4">
+              <CardDescription className="text-muted-foreground mt-4">
                 {user.skillsWantToLearn?.length || 0} skills you want to master
               </CardDescription>
             </CardHeader>
@@ -315,24 +315,24 @@ export function Profile({ user, onUpdateUser }) {
                     {user.skillsWantToLearn.map((skill, index) => (
                       <div 
                         key={index}
-                        className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
-                      >
-                        <span className="font-medium text-sm text-blue-800 dark:text-blue-200">{skill}</span>
+                        className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
+                        >
+                        <span className="font-medium text-sm text-foreground">{skill}</span>
                       </div>
                     ))}
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground">
                       We'll help you find mentors for these skills through our AI matching system.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No learning goals set</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No learning goals set</h3>
+                  <p className="text-muted-foreground mb-4">
                     Add skills you want to learn to get matched with the right mentors
                   </p>
                   <Button variant="outline" onClick={() => setManageSkillsOpen(true)}>
@@ -345,15 +345,15 @@ export function Profile({ user, onUpdateUser }) {
           </Card>
 
           {/* Minimal Skills Overview */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
                     <Target className="h-5 w-5 text-green-600" />
                     Teaching Skills
                   </CardTitle>
-                  <CardDescription className="dark:text-gray-300 mt-4">
+                  <CardDescription className="text-muted-foreground mt-4">
                     {user.skillsCanTeach?.length || 0} skills available for sharing
                   </CardDescription>
                 </div>
@@ -363,37 +363,37 @@ export function Profile({ user, onUpdateUser }) {
               {user.skillsCanTeach && user.skillsCanTeach.length > 0 ? (
                 <div className="space-y-6">
                   {/* Skills Summary */}
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                     <div className="text-center">
-                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="text-lg font-semibold text-foreground">
                         {user.skillsCanTeach.length}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Total Skills</div>
+                      <div className="text-xs text-muted-foreground">Total Skills</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                         {expertSkills}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Expert Level</div>
+                      <div className="text-xs text-muted-foreground">Expert Level</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
                         {advancedSkills}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Advanced Level</div>
+                      <div className="text-xs text-muted-foreground">Advanced Level</div>
                     </div>
                   </div>
                   
                   {/* Top Skills Preview */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Skills</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Skills</h4>
                     <div className="grid grid-cols-2 gap-3">
                       {topSkills.map((skill, index) => (
                         <div 
                           key={index}
-                          className="flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
                         >
-                          <span className="font-medium text-sm dark:text-white">{skill.name}</span>
+                          <span className="font-medium text-sm text-foreground">{skill.name}</span>
                           <Badge variant="outline" className="text-xs capitalize">
                             {skill.level}
                           </Badge>
@@ -403,7 +403,7 @@ export function Profile({ user, onUpdateUser }) {
                   </div>
                   
                   {/* Call to Action */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="pt-4 border-t border-border">
                     <Button 
                       onClick={() => setManageSkillsOpen(true)}
                       variant="ghost" 
@@ -416,9 +416,9 @@ export function Profile({ user, onUpdateUser }) {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No teaching skills added</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No teaching skills added</h3>
+                  <p className="text-muted-foreground mb-4">
                     Add your skills to start teaching and helping other students
                   </p>
                   <Button onClick={() => setManageSkillsOpen(true)}>
@@ -481,7 +481,7 @@ export function Profile({ user, onUpdateUser }) {
                   .filter((n) => !teachSkills.find((s) => s.name === n))
                   .map((name) => (
                     <div key={name} className="space-y-1">
-                      <div className="text-sm font-medium dark:text-white text-center mt-2">{name}</div>
+                      <div className="text-sm font-medium dark:text-foreground text-center mt-2">{name}</div>
                       <div className="flex gap-1 justify-center">
                         {['beginner','intermediate','advanced','expert'].map((lvl) => {
                           const info = levelLabels[lvl];
@@ -549,3 +549,4 @@ export function Profile({ user, onUpdateUser }) {
     </div>
   );
 }
+

@@ -159,7 +159,7 @@ export function FAQ() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background dark:bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-6 py-20">
@@ -179,7 +179,7 @@ export function FAQ() {
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto mb-8">
               <div className="relative">
-                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-4 top-4 h-5 w-5 text-white/70" />
                 <Input
                   placeholder="Search frequently asked questions..."
                   value={searchTerm}
@@ -198,10 +198,10 @@ export function FAQ() {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Categories Sidebar */}
             <div className="lg:w-1/4">
-              <Card className="sticky top-6 dark:bg-gray-800 dark:border-gray-700">
+              <Card className="sticky top-6 bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="dark:text-white">Categories</CardTitle>
-                  <CardDescription className="dark:text-gray-300">Browse by topic</CardDescription>
+                  <CardTitle className="text-foreground">Categories</CardTitle>
+                  <CardDescription className="text-muted-foreground">Browse by topic</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {categories.map((category) => {
@@ -217,8 +217,8 @@ export function FAQ() {
                         onClick={() => setSelectedCategory(category.id)}
                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
                           isActive 
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' 
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
+                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+                            : 'hover:bg-accent/50 text-muted-foreground'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -238,11 +238,11 @@ export function FAQ() {
             {/* FAQ Content */}
             <div className="lg:w-3/4">
               {filteredFAQs.length === 0 ? (
-                <Card className="text-center py-12 dark:bg-gray-800 dark:border-gray-700">
+                <Card className="text-center py-12 bg-card border-border">
                   <CardContent>
-                    <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No results found</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No results found</h3>
+                    <p className="text-muted-foreground mb-4">
                       Try adjusting your search terms or browse a different category.
                     </p>
                     <Button variant="outline" onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}>
@@ -256,20 +256,20 @@ export function FAQ() {
                     const isExpanded = expandedItems.has(index);
                     
                     return (
-                      <Card key={index} className="dark:bg-gray-800 dark:border-gray-700">
+                      <Card key={index} className="bg-card border-border">
                         <CardContent className="p-0">
                           <button
                             onClick={() => toggleExpanded(index)}
-                            className="w-full text-left p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            className="w-full text-left p-6 hover:bg-accent/50 transition-colors"
                           >
                             <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 pr-4">
+                              <h3 className="text-lg font-semibold text-foreground pr-4">
                                 {faq.question}
                               </h3>
                               {isExpanded ? (
-                                <ChevronUp className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                                <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                               ) : (
-                                <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                                <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                               )}
                             </div>
                             
@@ -285,8 +285,8 @@ export function FAQ() {
                           
                           {isExpanded && (
                             <div className="px-6 pb-6">
-                              <div className="border-t pt-4">
-                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                              <div className="border-t border-border pt-4">
+                                <p className="text-muted-foreground leading-relaxed">
                                   {faq.answer}
                                 </p>
                               </div>
@@ -304,11 +304,11 @@ export function FAQ() {
       </div>
 
       {/* Contact Support Section */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-background dark:bg-background">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4 dark:text-white">Still Need Help?</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-8">
+            <h2 className="text-3xl font-bold mb-4 dark:text-foreground">Still Need Help?</h2>
+            <p className="text-gray-600 dark:text-muted-foreground mb-8">
               Can't find the answer you're looking for? Our support team is here to help you get the most out of StudentHub.
             </p>
             <div className="flex justify-center gap-4">
@@ -330,3 +330,4 @@ export function FAQ() {
     </div>
   );
 }
+

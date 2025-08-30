@@ -166,8 +166,8 @@ export function HowItWorks({ onNavigate }) {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">6 Simple Steps to Success</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">6 Simple Steps to Success</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground max-w-2xl mx-auto">
               Follow this proven process to maximize your learning experience
             </p>
           </div>
@@ -190,14 +190,14 @@ export function HowItWorks({ onNavigate }) {
                       </div>
                     </div>
                     
-                    <h3 className="text-3xl font-bold mb-4 dark:text-white">{step.title}</h3>
-                    <p className="text-xl text-gray-600 dark:text-gray-300 mb-6">{step.description}</p>
+                    <h3 className="text-3xl font-bold mb-4 dark:text-foreground">{step.title}</h3>
+                    <p className="text-xl text-gray-600 dark:text-muted-foreground mb-6">{step.description}</p>
                     
                     <ul className="space-y-3">
                       {step.details.map((detail, idx) => (
                         <li key={idx} className="flex items-start gap-3">
                           <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-600 dark:text-gray-300">{detail}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground">{detail}</span>
                         </li>
                       ))}
                     </ul>
@@ -222,11 +222,11 @@ export function HowItWorks({ onNavigate }) {
       </div>
 
       {/* Benefits Section */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-20 bg-gray-50 dark:bg-card">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Why This Process Works</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Why This Process Works</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               Built on proven learning principles and student feedback
             </p>
           </div>
@@ -235,13 +235,13 @@ export function HowItWorks({ onNavigate }) {
             {benefits.map((benefit, index) => {
               const Icon = benefit.icon;
               return (
-                <Card key={index} className="text-center hover:shadow-lg transition-all duration-300 dark:bg-gray-900 dark:border-gray-700">
+                <Card key={index} className="text-center hover:shadow-lg transition-all duration-300 dark:bg-card dark:border-border">
                   <CardContent className="p-6">
                     <div className={`p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${colorClasses[benefit.color]}`}>
                       <Icon className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 dark:text-white">{benefit.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-300">{benefit.description}</p>
+                    <h3 className="text-xl font-semibold mb-3 dark:text-foreground">{benefit.title}</h3>
+                    <p className="text-gray-600 dark:text-muted-foreground">{benefit.description}</p>
                   </CardContent>
                 </Card>
               );
@@ -254,8 +254,8 @@ export function HowItWorks({ onNavigate }) {
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 dark:text-white">Success Timeline</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <h2 className="text-4xl font-bold mb-4 dark:text-foreground">Success Timeline</h2>
+            <p className="text-xl text-gray-600 dark:text-muted-foreground">
               See what you can achieve at each milestone
             </p>
           </div>
@@ -271,8 +271,8 @@ export function HowItWorks({ onNavigate }) {
                     Day 1
                   </div>
                   <div>
-                    <h4 className="text-xl font-semibold mb-2 dark:text-white">Profile Complete & First Matches</h4>
-                    <p className="text-gray-600 dark:text-gray-300">Set up your profile and get your first AI-powered study partner recommendations</p>
+                    <h4 className="text-xl font-semibold mb-2 dark:text-foreground">Profile Complete & First Matches</h4>
+                    <p className="text-gray-600 dark:text-muted-foreground">Set up your profile and get your first AI-powered study partner recommendations</p>
                   </div>
                 </div>
                 
@@ -281,8 +281,8 @@ export function HowItWorks({ onNavigate }) {
                     Week 1
                   </div>
                   <div>
-                    <h4 className="text-xl font-semibold mb-2 dark:text-white">First Study Sessions</h4>
-                    <p className="text-gray-600 dark:text-gray-300">Complete your first learning sessions and start building your reputation</p>
+                    <h4 className="text-xl font-semibold mb-2 dark:text-foreground">First Study Sessions</h4>
+                    <p className="text-gray-600 dark:text-muted-foreground">Complete your first learning sessions and start building your reputation</p>
                   </div>
                 </div>
                 
@@ -291,8 +291,8 @@ export function HowItWorks({ onNavigate }) {
                     Month 1
                   </div>
                   <div>
-                    <h4 className="text-xl font-semibold mb-2 dark:text-white">Steady Learning Rhythm</h4>
-                    <p className="text-gray-600 dark:text-gray-300">Establish regular study sessions and earn your first badges</p>
+                    <h4 className="text-xl font-semibold mb-2 dark:text-foreground">Steady Learning Rhythm</h4>
+                    <p className="text-gray-600 dark:text-muted-foreground">Establish regular study sessions and earn your first badges</p>
                   </div>
                 </div>
                 
@@ -301,8 +301,8 @@ export function HowItWorks({ onNavigate }) {
                     3 Months
                   </div>
                   <div>
-                    <h4 className="text-xl font-semibold mb-2 dark:text-white">Skill Mastery</h4>
-                    <p className="text-gray-600 dark:text-gray-300">Achieve significant progress in your target skills and become a mentor to others</p>
+                    <h4 className="text-xl font-semibold mb-2 dark:text-foreground">Skill Mastery</h4>
+                    <p className="text-gray-600 dark:text-muted-foreground">Achieve significant progress in your target skills and become a mentor to others</p>
                   </div>
                 </div>
               </div>
@@ -341,3 +341,4 @@ export function HowItWorks({ onNavigate }) {
     </div>
   );
 }
+
