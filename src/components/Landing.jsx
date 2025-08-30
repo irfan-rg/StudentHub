@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner@2.0.3';
-import { BookOpen, Users, Trophy, MessageSquare, Star, Zap, CheckCircle, ArrowRight, Play, Mail, Lock } from 'lucide-react';
+import { BookOpen, Users, Trophy, MessageSquare, Star, Zap, CheckCircle, ArrowRight, Play, Mail, Lock, GraduationCap } from 'lucide-react';
 
 export function Landing({ onLogin, loading, error }) {
   const navigate = useNavigate();
@@ -104,24 +104,42 @@ export function Landing({ onLogin, loading, error }) {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
+      <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-6 py-20">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8">
               <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
                 <BookOpen className="h-12 w-12" />
               </div>
+              
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              AI-Powered Student Hub
+            <h1 className="text-5xl md:text-6xl font-bold mb-16 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+              Student Hub
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-2xl mx-auto">
+
+            <p className="text-xl md:text-3xl mb-8 font-semibold mt-8 text-blue-100 max-w-2xl mx-auto">
+            AI-Powered Student Hub
+            </p>
+
+            <p className="text-xl md:text-2xl mb-8  text-blue-100 max-w-2xl mx-auto">
               Connect, Learn, and Share Knowledge with Students Worldwide
             </p>
-                         <div className="flex justify-center gap-4 mb-12 flex-wrap">
+
+
+            {/* Stats
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto mb-12">
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold">{stat.number}</div>
+                  <div className="text-blue-100 text-sm">{stat.label}</div>
+                </div>
+              ))}
+            </div> */}
+            
+              <div className="flex justify-center gap-4 flex-wrap">
                <Button 
                  size="lg"
-                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
                  onClick={handleGetStarted}
                  disabled={loading}
                >
@@ -130,13 +148,13 @@ export function Landing({ onLogin, loading, error }) {
                </Button>
                <Button 
                  size="lg" 
-                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                 className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mt-8"
                  onClick={handleSignIn}
                  disabled={loading}
                >
                  Sign In
                </Button>
-               </div>
+              </div>
             
             {/* Display error if any */}
             {error && (
@@ -145,27 +163,22 @@ export function Landing({ onLogin, loading, error }) {
               </div>
             )}
             
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold">{stat.number}</div>
-                  <div className="text-blue-100 text-sm">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+
           </div>
         </div>
         
         {/* Floating Elements */}
-        <div className="absolute top-20 left-10 opacity-20 animate-pulse">
+        <div className="absolute top-20 left-10 opacity-20 animate-pulse text-white">
           <Users className="h-16 w-16" />
         </div>
-        <div className="absolute top-32 right-20 opacity-20 animate-pulse delay-1000">
-          <Trophy className="h-12 w-12" />
+        <div className="absolute top-32 right-20 opacity-20 animate-pulse delay-1000 text-white">
+          <Trophy className="h-16 w-16" />
         </div>
-        <div className="absolute bottom-20 left-20 opacity-20 animate-pulse delay-2000">
-          <MessageSquare className="h-14 w-14" />
+        <div className="absolute bottom-20 left-20 opacity-20 animate-pulse delay-2000 text-white">
+          <MessageSquare className="h-16 w-16" />
+        </div>
+        <div className="absolute bottom-20 right-20 opacity-20 animate-pulse delay-3000 text-white">
+          <GraduationCap className="h-16 w-16" />
         </div>
       </div>
 

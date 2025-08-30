@@ -565,7 +565,7 @@ export function Dashboard({ user }) {
           </Card>
 
           {/* Recent Activity */}
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          {/* <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 dark:text-white">
                 <Clock className="h-5 w-5 text-purple-600" />
@@ -585,7 +585,7 @@ export function Dashboard({ user }) {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Connections */}
           <Card className="dark:bg-gray-800 dark:border-gray-700">

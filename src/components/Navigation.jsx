@@ -13,7 +13,11 @@ import {
   Settings as SettingsIcon, 
   LogOut,
   Star,
-  Zap
+  Zap,
+  HelpCircle,
+  Mail,
+  Info,
+  FileText
 } from 'lucide-react';
 
 export function Sidebar({ user, onLogout }) {
@@ -94,19 +98,46 @@ export function Sidebar({ user, onLogout }) {
         ))}
       </nav>
 
-      {/* Badges Section */}
+      {/* Footer Links */}
       <div className="p-4 border-t border-sidebar-border mt-auto">
-        <h4 className="font-medium mb-3 text-sidebar-foreground">Recent Badges</h4>
-        <div className="flex flex-wrap gap-2">
-          {user?.badges?.slice(0, 3).map((badge, index) => (
-            <Badge 
-              key={index} 
-              variant="outline" 
-              className="text-xs border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+        <h4 className="font-medium mb-3 text-sidebar-foreground">Support & Info</h4>
+        <div className="space-y-2">
+          <Link to="/faq" className="block w-full">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
-              {badge}
-            </Badge>
-          ))}
+              <HelpCircle className="h-4 w-4" />
+              FAQ
+            </Button>
+          </Link>
+          <Link to="/contact" className="block w-full">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <Mail className="h-4 w-4" />
+              Contact Us
+            </Button>
+          </Link>
+          <Link to="/about" className="block w-full">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <Info className="h-4 w-4" />
+              About
+            </Button>
+          </Link>
+          <Link to="/blog" className="block w-full">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <FileText className="h-4 w-4" />
+              Blog
+            </Button>
+          </Link>
         </div>
       </div>
 
