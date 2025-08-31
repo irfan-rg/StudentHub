@@ -39,7 +39,8 @@ export function Dashboard({ user }) {
     duration: '60',
     date: '',
     time: '',
-    partnerId: null
+    partnerId: null,
+    sessionLink: '' // Added sessionLink field
   });
   const [upcomingSessions, setUpcomingSessions] = useState([
     {
@@ -65,8 +66,8 @@ export function Dashboard({ user }) {
     { id: 1, name: "Emma Watson", college: "Harvard University", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face", status: "connected" },
     { id: 2, name: "David Kim", college: "Stanford University", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face", status: "connected" },
     { id: 3, name: "Sarah Chen", college: "MIT", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 4, name: "John Doe", college: "Oxford University", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 5, name: "Maria Garcia", college: "University of Tokyo", avatar: "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=150&h=150&fit=crop&crop=face", status: "connected" }
+    { id: 4, name: "John Doe", college: "Oxford University", avatar: "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=150&h=150&fit=crop&crop=face", status: "connected" },
+    { id: 5, name: "Maria Garcia", college: "University of Tokyo", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face", status: "connected" }
   ]);
   const [connectionRequests, setConnectionRequests] = useState({}); // Track pending connection requests
   const [connectModal, setConnectModal] = useState({ isOpen: false, partnerId: null, message: '' });
@@ -178,7 +179,8 @@ export function Dashboard({ user }) {
         duration: '60',
         date: sessionToEdit.date,
         time: sessionToEdit.time,
-        partnerId: suggestedConnections.find(conn => conn.name === sessionToEdit.partner)?.id || null
+        partnerId: suggestedConnections.find(conn => conn.name === sessionToEdit.partner)?.id || null,
+        sessionLink: sessionToEdit.sessionLink || '' // Include sessionLink in edit
       });
     } else {
       setSessionForm({
@@ -188,7 +190,8 @@ export function Dashboard({ user }) {
         duration: '60',
         date: '',
         time: '',
-        partnerId: partnerId
+        partnerId: partnerId,
+        sessionLink: '' // Initialize sessionLink
       });
     }
     setSessionModal({ isOpen: true, partnerId, isEdit, sessionId });
@@ -205,7 +208,7 @@ export function Dashboard({ user }) {
       setUpcomingSessions(prevSessions =>
         prevSessions.map(session =>
           session.id === sessionModal.sessionId
-            ? { ...session, title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: "pending" }
+            ? { ...session, title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: "pending", sessionLink: sessionForm.sessionLink }
             : session
         )
       );
@@ -218,7 +221,8 @@ export function Dashboard({ user }) {
         date: sessionForm.date,
         time: sessionForm.time,
         type: sessionForm.type,
-        status: "pending"
+        status: "pending",
+        sessionLink: sessionForm.sessionLink
       };
       setUpcomingSessions(prevSessions => [...prevSessions, newSession]);
       toast.success('Session scheduled successfully!');
@@ -231,7 +235,8 @@ export function Dashboard({ user }) {
       duration: '60',
       date: '',
       time: '',
-      partnerId: null
+      partnerId: null,
+      sessionLink: ''
     });
   };
 
@@ -533,6 +538,11 @@ export function Dashboard({ user }) {
                       <Calendar className="h-3 w-3" />
                       <span>{session.date} at {session.time}</span>
                     </div>
+                    {session.sessionLink && (
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <span>Link: {session.sessionLink}</span>
+                      </div>
+                    )}
                     <div className="flex gap-2 mt-2">
                       <Button 
                         size="sm" 
@@ -714,6 +724,16 @@ export function Dashboard({ user }) {
                   onChange={(e) => setSessionForm(prev => ({ ...prev, time: e.target.value }))}
                 />
               </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="session-link">Attach Session Link</Label>
+              <Input
+                id="session-link"
+                value={sessionForm.sessionLink}
+                onChange={(e) => setSessionForm(prev => ({ ...prev, sessionLink: e.target.value }))}
+                placeholder="e.g., https://meet.google.com/abc-defg-hij"
+              />
             </div>
             
             <div className="flex gap-3 pt-4">
