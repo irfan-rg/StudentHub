@@ -249,7 +249,7 @@ export function Contact() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="message">Message *</Label>
+                      <Label htmlFor="message">Description</Label>
                       <Textarea
                         id="message"
                         value={formData.message}

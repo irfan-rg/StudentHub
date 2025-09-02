@@ -1,0 +1,629 @@
+openapi: 3.0.3
+info:
+  title: AI-Powered Student Hub API
+  version: 1.0.0
+  description: OpenAPI spec generated from docs/backend-contract.md
+servers:
+  - url: http://localhost:5000/api
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: { }
+        error: { type: string, nullable: true }
+        pagination:
+          type: object
+          nullable: true
+          properties:
+            page: { type: integer }
+            limit: { type: integer }
+            total: { type: integer }
+            totalPages: { type: integer }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        college: { type: string }
+        educationLevel: { type: string, enum: [high-school, undergraduate, graduate, phd] }
+        bio: { type: string, nullable: true }
+        avatar: { type: string, nullable: true }
+        skillsCanTeach:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              level: { type: string, enum: [beginner, intermediate, advanced, expert] }
+              category: { type: string }
+              verified: { type: boolean }
+        skillsWantToLearn:
+          type: array
+          items: { type: string }
+        points: { type: integer }
+        badges:
+          type: array
+          items: { type: string }
+        level: { type: string }
+        sessionsCompleted: { type: integer }
+        questionsAnswered: { type: integer }
+        questionsAsked: { type: integer }
+        rating: { type: number }
+        joinedAt: { type: string, format: date-time }
+        lastActive: { type: string, format: date-time }
+    Session:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        mentorId: { type: integer }
+        studentId: { type: integer }
+        skillName: { type: string }
+        type: { type: string, enum: [video, in-person, group] }
+        duration: { type: integer }
+        scheduledAt: { type: string, format: date-time }
+        status: { type: string, enum: [pending, confirmed, completed, cancelled] }
+        meetingLink: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        rating: { type: number, nullable: true }
+        feedback: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Question:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        content: { type: string }
+        authorId: { type: integer }
+        tags:
+          type: array
+          items: { type: string }
+        votes: { type: integer }
+        viewCount: { type: integer }
+        answerCount: { type: integer }
+        isAnswered: { type: boolean }
+        acceptedAnswerId: { type: integer, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Answer:
+      type: object
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        content: { type: string }
+        authorId: { type: integer }
+        votes: { type: integer }
+        isAccepted: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+paths:
+  /auth/signup:
+    post:
+      summary: Signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, college, educationLevel]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string, minLength: 6 }
+                college: { type: string }
+                educationLevel: { type: string, enum: [high-school, undergraduate, graduate, phd] }
+                bio: { type: string }
+                skillsCanTeach:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      level: { type: string, enum: [beginner, intermediate, advanced, expert] }
+                skillsWantToLearn:
+                  type: array
+                  items: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /auth/logout:
+    post:
+      summary: Logout
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: No Content }
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /auth/verify:
+    get:
+      summary: Verify token
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/profile:
+    get:
+      summary: Get my profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    put:
+      summary: Update my profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/{id}:
+    get:
+      summary: Get user by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/settings:
+    put:
+      summary: Update settings
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/avatar:
+    post:
+      summary: Upload avatar
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /skills:
+    get:
+      summary: List skills
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /skills/category/{category}:
+    get:
+      summary: Skills by category
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /skills/search:
+    get:
+      summary: Search skills
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /matching/find:
+    get:
+      summary: Find matches
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: skill
+          schema: { type: string }
+        - in: query
+          name: level
+          schema: { type: string }
+        - in: query
+          name: college
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /matching/suggestions:
+    get:
+      summary: Suggestions
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /matching/connect:
+    post:
+      summary: Send connection request
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUserId]
+              properties:
+                targetUserId: { type: integer }
+                message: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/connections:
+    get:
+      summary: List connections
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /sessions:
+    post:
+      summary: Create session
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /sessions/user/{userId}:
+    get:
+      summary: List user sessions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /sessions/{sessionId}:
+    put:
+      summary: Update session
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /sessions/{sessionId}/cancel:
+    post:
+      summary: Cancel session
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /sessions/{sessionId}/complete:
+    post:
+      summary: Complete session
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                feedback: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /questions:
+    get:
+      summary: List questions
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: tag
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      summary: Create question
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title: { type: string }
+                content: { type: string }
+                tags:
+                  type: array
+                  items: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /questions/{id}:
+    get:
+      summary: Get question detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /questions/{id}/answers:
+    post:
+      summary: Answer question
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /questions/{id}/vote:
+    post:
+      summary: Vote question
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vote]
+              properties:
+                vote: { type: string, enum: [up, down] }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /answers/{id}/vote:
+    post:
+      summary: Vote answer
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vote]
+              properties:
+                vote: { type: string, enum: [up, down] }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+

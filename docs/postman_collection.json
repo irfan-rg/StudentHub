@@ -1,0 +1,105 @@
+{
+  "info": {
+    "name": "AI-Powered Student Hub API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth","signup"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alice\",\n  \"email\": \"a@b.com\",\n  \"password\": \"secret123\",\n  \"college\": \"ABC\",\n  \"educationLevel\": \"undergraduate\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"a@b.com\",\n  \"password\": \"secret123\"\n}" }
+          }
+        },
+        {
+          "name": "Verify",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/auth/verify", "host": ["{{baseUrl}}"], "path": ["auth","verify"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/users/profile", "host": ["{{baseUrl}}"], "path": ["users","profile"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/users/profile", "host": ["{{baseUrl}}"], "path": ["users","profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"bio\": \"Hello!\"\n}" }
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/users/avatar", "host": ["{{baseUrl}}"], "path": ["users","avatar"] },
+            "body": { "mode": "formdata", "formdata": [ { "key": "file", "type": "file", "src": [] } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "item": [
+        { "name": "List Skills", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/skills", "host": ["{{baseUrl}}"], "path": ["skills"] } } },
+        { "name": "Search Skills", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/skills/search?q=react", "host": ["{{baseUrl}}"], "path": ["skills","search"], "query": [ {"key":"q","value":"react"} ] } } },
+        { "name": "Add User Skill", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "{{baseUrl}}/users/skills", "host": ["{{baseUrl}}"], "path": ["users","skills"] }, "body": {"mode":"raw","raw":"{\n  \"name\": \"React\",\n  \"level\": \"advanced\"\n}"} } }
+      ]
+    },
+    {
+      "name": "Matching",
+      "item": [
+        { "name": "Find Matches", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{baseUrl}}/matching/find?skill=React&level=advanced", "host": ["{{baseUrl}}"], "path": ["matching","find"], "query": [ {"key":"skill","value":"React"}, {"key":"level","value":"advanced"} ] } } },
+        { "name": "Send Connection", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "{{baseUrl}}/matching/connect", "host": ["{{baseUrl}}"], "path": ["matching","connect"] }, "body": {"mode":"raw","raw":"{\n  \"targetUserId\": 2,\n  \"message\": \"Hi!\"\n}"} } }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        { "name": "Create Session", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "{{baseUrl}}/sessions", "host": ["{{baseUrl}}"], "path": ["sessions"] }, "body": {"mode":"raw","raw":"{\n  \"title\": \"Intro\",\n  \"mentorId\": 1,\n  \"studentId\": 2,\n  \"skillName\": \"React\",\n  \"type\": \"video\",\n  \"duration\": 60,\n  \"scheduledAt\": \"2024-06-01T10:00:00Z\"\n}"} } },
+        { "name": "List User Sessions", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{baseUrl}}/sessions/user/1", "host": ["{{baseUrl}}"], "path": ["sessions","user","1"] } } }
+      ]
+    },
+    {
+      "name": "Q&A",
+      "item": [
+        { "name": "List Questions", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/questions?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["questions"], "query": [ {"key":"page","value":"1"}, {"key":"limit","value":"10"} ] } } },
+        { "name": "Create Question", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "{{baseUrl}}/questions", "host": ["{{baseUrl}}"], "path": ["questions"] }, "body": {"mode":"raw","raw":"{\n  \"title\": \"How to learn React?\",\n  \"content\": \"...\",\n  \"tags\": [\"react\"]\n}"} } }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ]
+}
+
+
