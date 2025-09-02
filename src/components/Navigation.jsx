@@ -17,7 +17,8 @@ import {
   HelpCircle,
   Mail,
   Info,
-  FileText
+  FileText,
+  Calendar
 } from 'lucide-react';
 
 export function Sidebar({ user, onLogout }) {
@@ -28,6 +29,7 @@ export function Sidebar({ user, onLogout }) {
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/profile', label: 'Profile', icon: User },
     { path: '/matching', label: 'Skill Matching', icon: Users },
+    { path: '/sessions', label: 'Sessions', icon: Calendar },
     { path: '/qa', label: 'Q&A Forum', icon: MessageSquare },
     { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
     { path: '/settings', label: 'Settings', icon: SettingsIcon },

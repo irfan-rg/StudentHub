@@ -49,8 +49,8 @@ export function Contact() {
     {
       icon: Phone,
       title: 'Phone Support',
-      description: 'Speak directly with our team (Pro users)',
-      details: '+1 (555) 123-4567',
+      description: 'Speak directly with our team',
+      details: '+91 8256 123456',
       color: 'purple'
     },
     {
@@ -76,22 +76,10 @@ export function Contact() {
 
   const officeLocations = [
     {
-      city: 'San Francisco',
-      address: '123 University Ave, Suite 100\nSan Francisco, CA 94102',
-      phone: '+1 (555) 123-4567',
-      email: 'sf@studenthub.com'
-    },
-    {
-      city: 'New York',
-      address: '456 Academic Blvd, Floor 20\nNew York, NY 10001',
-      phone: '+1 (555) 234-5678',
-      email: 'ny@studenthub.com'
-    },
-    {
-      city: 'London',
-      address: '789 Education Street\nLondon, UK EC1A 1BB',
-      phone: '+44 20 1234 5678',
-      email: 'london@studenthub.com'
+      city: 'Ujire',
+      address: '321 Knowledge Park, Tech Hub\nUjire, Karnataka 574240',
+      phone: '+91 8256 123456',
+      email: 'ujire@studenthub.com'
     }
   ];
 
@@ -190,15 +178,15 @@ export function Contact() {
               {/* Form */}
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-foreground">Send us a Message</CardTitle>
+                  <CardTitle className="text-2xl text-foreground mb-4">Send us a Message</CardTitle>
                   <CardDescription className="text-muted-foreground">
                     Fill out the form below and we'll get back to you as soon as possible
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid md:grid-cols-2 gap-4 ">
+                      <div className="space-y-3">
                         <Label htmlFor="name">Full Name *</Label>
                         <Input
                           id="name"
@@ -208,7 +196,7 @@ export function Contact() {
                           required
                         />
                       </div>
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="email">Email Address *</Label>
                         <Input
                           id="email"
@@ -221,7 +209,7 @@ export function Contact() {
                       </div>
                     </div>
                     
-                    <div>
+                    <div className="space-y-3">
                       <Label htmlFor="category">Category</Label>
                       <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
                         <SelectTrigger>
@@ -237,7 +225,7 @@ export function Contact() {
                       </Select>
                     </div>
                     
-                    <div>
+                    <div className="space-y-3">
                       <Label htmlFor="subject">Subject *</Label>
                       <Input
                         id="subject"
@@ -248,7 +236,7 @@ export function Contact() {
                       />
                     </div>
                     
-                    <div>
+                    <div className="space-y-3">
                       <Label htmlFor="message">Description</Label>
                       <Textarea
                         id="message"
@@ -316,7 +304,7 @@ export function Contact() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
                       <MapPin className="h-5 w-5" />
-                      Office Locations
+                      Office Location
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -338,7 +326,7 @@ export function Contact() {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions
       <div className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
@@ -380,7 +368,7 @@ export function Contact() {
             </Link>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

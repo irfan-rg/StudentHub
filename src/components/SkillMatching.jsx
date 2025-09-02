@@ -66,7 +66,9 @@ export function SkillMatching({ user }) {
     description: '',
     type: 'video',
     duration: '60',
-    preferredTimes: ''
+    preferredTimes: '',
+    meetingLink: '',
+    meetingAddress: ''
   });
 
   // Mock data for students
@@ -225,7 +227,9 @@ export function SkillMatching({ user }) {
       description: '',
       type: 'video',
       duration: '60',
-      preferredTimes: ''
+      preferredTimes: '',
+      meetingLink: '',
+      meetingAddress: ''
     });
   };
 
@@ -484,7 +488,7 @@ export function SkillMatching({ user }) {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="connection-message">Personal Message</Label>
               <Textarea
                 id="connection-message"
@@ -523,7 +527,7 @@ export function SkillMatching({ user }) {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-title">Session Topic</Label>
               <Input
                 id="session-title"
@@ -533,7 +537,7 @@ export function SkillMatching({ user }) {
               />
             </div>
             
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-description">Additional Details</Label>
               <Textarea
                 id="session-description"
@@ -545,21 +549,20 @@ export function SkillMatching({ user }) {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-type">Session Type</Label>
                 <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="video">Video Call</SelectItem>
+                    <SelectItem value="video">Video Session</SelectItem>
                     <SelectItem value="inperson">In Person</SelectItem>
-                    <SelectItem value="group">Group Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-duration">Duration</Label>
                 <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
                   <SelectTrigger>
@@ -574,8 +577,30 @@ export function SkillMatching({ user }) {
                 </Select>
               </div>
             </div>
+            {sessionForm.type === 'video' && (
+              <div className="space-y-3">
+                <Label htmlFor="meeting-link">Meeting Link</Label>
+                <Input
+                  id="meeting-link"
+                  value={sessionForm.meetingLink}
+                  onChange={(e) => setSessionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
+                  placeholder="Paste Google Meet/Zoom/Teams link"
+                />
+              </div>
+            )}
+            {sessionForm.type === 'inperson' && (
+              <div className="space-y-3">
+                <Label htmlFor="meeting-address">Location</Label>
+                <Input
+                  id="meeting-address"
+                  value={sessionForm.meetingAddress}
+                  onChange={(e) => setSessionForm(prev => ({ ...prev, meetingAddress: e.target.value }))}
+                  placeholder="Enter address or location to meet"
+                />
+              </div>
+            )}
             
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="preferred-times">Preferred Times</Label>
               <Input
                 id="preferred-times"

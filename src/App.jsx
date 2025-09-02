@@ -13,6 +13,7 @@ import { Contact } from './components/Contact';
 import { About } from './components/About';
 import { Blog } from './components/Blog';
 import { Sidebar } from './components/Navigation';
+import { Sessions } from './components/Sessions';
 import { Toaster } from './components/ui/sonner';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -376,6 +377,12 @@ function AppLayout({
           <Route path="/settings" element={
             <ProtectedRoute user={user} loading={loading}>
               <SettingsPage user={user} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/sessions" element={
+            <ProtectedRoute user={user} loading={loading}>
+              <Sessions user={user} />
             </ProtectedRoute>
           } />
 
