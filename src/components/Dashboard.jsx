@@ -543,32 +543,15 @@ export function Dashboard({ user }) {
                         <span>Link: {session.sessionLink}</span>
                       </div>
                     )}
-                    <div className="flex gap-2 mt-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleScheduleSession(null, session.id, true)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive" 
-                        onClick={() => handleDeleteSession(session.id)}
-                      >
-                        <Trash className="h-3 w-3" />
-                      </Button>
-                    </div>
                   </div>
                 ))}
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => handleScheduleSession(null)}
+                  onClick={() => navigate('/sessions')}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Schedule New Session
+                  View All Sessions
                 </Button>
               </div>
             </CardContent>
