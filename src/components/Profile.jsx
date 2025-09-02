@@ -42,6 +42,7 @@ export function Profile({ user, onUpdateUser }) {
   const [manageSkillsOpen, setManageSkillsOpen] = useState(false);
   const [teachSkills, setTeachSkills] = useState(user.skillsCanTeach || []);
   const [learnSkills, setLearnSkills] = useState(user.skillsWantToLearn || []);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const availableSkills = [
     'JavaScript', 'Python', 'Java', 'C++', 'React', 'Node.js', 'HTML/CSS', 'TypeScript',
@@ -115,6 +116,11 @@ export function Profile({ user, onUpdateUser }) {
   const topSkills = (user.skillsCanTeach || []).slice(0, 6);
   const expertSkills = (user.skillsCanTeach || []).filter(s => s.level === 'expert').length;
   const advancedSkills = (user.skillsCanTeach || []).filter(s => s.level === 'advanced').length;
+
+  // Filter available skills based on search term
+  const filteredSkills = availableSkills.filter(skill =>
+    skill.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -454,6 +460,17 @@ export function Profile({ user, onUpdateUser }) {
             <DialogDescription>Update your teaching skills and learning goals</DialogDescription>
           </DialogHeader>
 
+          <div className="mb-4">
+            <Label htmlFor="skill-search">Search Skills</Label>
+            <Input
+              id="skill-search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search for skills..."
+              className="w-full"
+            />
+          </div>
+
           <Tabs defaultValue="learn" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="learn">Skills I Want to Learn</TabsTrigger>
@@ -477,7 +494,7 @@ export function Profile({ user, onUpdateUser }) {
                 </div>
               )}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto">
-                {availableSkills
+                {filteredSkills
                   .filter((n) => !teachSkills.find((s) => s.name === n))
                   .map((name) => (
                     <div key={name} className="space-y-1">
@@ -517,7 +534,7 @@ export function Profile({ user, onUpdateUser }) {
                 </div>
               )}
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto">
-                {availableSkills
+                {filteredSkills
                   .filter((name) => !learnSkills.includes(name))
                   .map((name) => (
                     <button
@@ -549,4 +566,3 @@ export function Profile({ user, onUpdateUser }) {
     </div>
   );
 }
-
