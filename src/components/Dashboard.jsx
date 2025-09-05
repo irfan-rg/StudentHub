@@ -549,7 +549,7 @@ export function Dashboard({ user }) {
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => navigate('/sessions')}
+                  onClick={() => navigate('/sessions?tab=manage')}
                 >
                   View All Sessions
                 </Button>

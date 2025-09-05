@@ -316,14 +316,14 @@ export function Landing({ onLogin, loading, error }) {
       </div>
 
       {/* Simplified Footer */}
-      <footer className="bg-background dark:bg-background text-white py-12">
+      <footer className="bg-background border-t border-border py-12">
         <div className="container mx-auto px-6">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <BookOpen className="h-8 w-8 mr-2" />
-              <span className="text-xl font-bold">StudentHub</span>
+              <BookOpen className="h-8 w-8 mr-2 text-foreground" />
+              <span className="text-xl font-bold text-foreground">StudentHub</span>
             </div>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               Connecting students worldwide for collaborative learning and knowledge sharing.
             </p>
           </div>
@@ -332,31 +332,31 @@ export function Landing({ onLogin, loading, error }) {
           <div className="flex justify-center gap-8 mb-8 flex-wrap">
             <Link 
               to="/faq"
-              className="text-gray-400 hover:text-white transition-colors font-medium"
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               FAQ
             </Link>
             <Link 
               to="/contact"
-              className="text-gray-400 hover:text-white transition-colors font-medium"
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               Contact Us
             </Link>
             <Link 
               to="/about"
-              className="text-gray-400 hover:text-white transition-colors font-medium"
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               About
             </Link>
             <Link 
               to="/blog"
-              className="text-gray-400 hover:text-white transition-colors font-medium"
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               Blog
             </Link>
           </div>
           
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+          <div className="border-t border-border pt-8 text-center text-muted-foreground">
             <p>&copy; 2025 StudentHub. All rights reserved.</p>
             {/* <p className="text-sm mt-2">Built by students from SDM Institute of Technology, Ujire, Karnataka, India</p> */}
           </div>

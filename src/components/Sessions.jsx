@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -12,6 +13,17 @@ import { Calendar, Video, MapPin, Plus, List, User, Clock, CheckCircle, PlayCirc
 import { toast } from 'sonner@2.0.3';
 
 export function Sessions({ user }) {
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('create');
+
+  // Check for tab parameter in URL and set active tab accordingly
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'manage') {
+      setActiveTab('manage');
+    }
+  }, [searchParams]);
+
   const [sessionForm, setSessionForm] = useState({
     title: '',
     description: '',
@@ -107,7 +119,7 @@ export function Sessions({ user }) {
       </div>
 
       {/* Sessions Tabs */}
-      <Tabs defaultValue="create" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 bg-card border-border">
           <TabsTrigger value="create" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -119,109 +131,145 @@ export function Sessions({ user }) {
           </TabsTrigger>
         </TabsList>
 
-        {/* Create Session Tab */}
-        <TabsContent value="create" className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="font-bold text-2xl">Create a new session</CardTitle>
-              <CardDescription className="mt-2">Set details and share with a study partner</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <Label htmlFor="session-title">Session Topic</Label>
-                <Input
-                  id="session-title"
-                  value={sessionForm.title}
-                  onChange={(e) => setSessionForm(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="What would you like to learn?"
-                />
-              </div>
+                 {/* Create Session Tab */}
+         <TabsContent value="create" className="space-y-6">
+           <div className="flex flex-col lg:flex-row gap-6">
+             {/* Create Session Form - 50% width */}
+             <div className="lg:w-1/2 flex-1">
+               <Card className="bg-card border-border">
+                 <CardHeader>
+                   <CardTitle className="font-bold text-2xl">Create a new session</CardTitle>
+                   <CardDescription className="mt-2">Set details and share with a study partner</CardDescription>
+                 </CardHeader>
+                 <CardContent className="space-y-4">
+                   <div className="space-y-3">
+                     <Label htmlFor="session-title">Session Topic</Label>
+                     <Input
+                       id="session-title"
+                       value={sessionForm.title}
+                       onChange={(e) => setSessionForm(prev => ({ ...prev, title: e.target.value }))}
+                       placeholder="What would you like to learn?"
+                     />
+                   </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="session-description">Additional Details</Label>
-                <Textarea
-                  id="session-description"
-                  value={sessionForm.description}
-                  onChange={(e) => setSessionForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Any specific topics or questions you'd like to cover?"
-                  rows={3}
-                />
-              </div>
+                   <div className="space-y-3">
+                     <Label htmlFor="session-description">Additional Details</Label>
+                     <Textarea
+                       id="session-description"
+                       value={sessionForm.description}
+                       onChange={(e) => setSessionForm(prev => ({ ...prev, description: e.target.value }))}
+                       placeholder="Any specific topics or questions you'd like to cover?"
+                       rows={3}
+                     />
+                   </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <Label htmlFor="session-type">Session Type</Label>
-                  <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="video">Video Session</SelectItem>
-                      <SelectItem value="inperson">In Person</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-3">
+                       <Label htmlFor="session-type">Session Type</Label>
+                       <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="video">Video Session</SelectItem>
+                           <SelectItem value="inperson">In Person</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="session-duration">Duration</Label>
-                  <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                     <div className="space-y-3">
+                       <Label htmlFor="session-duration">Duration</Label>
+                       <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="30">30 minutes</SelectItem>
+                           <SelectItem value="60">1 hour</SelectItem>
+                           <SelectItem value="90">1.5 hours</SelectItem>
+                           <SelectItem value="120">2 hours</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   </div>
 
-              {sessionForm.type === 'video' && (
-                <div className="space-y-3">
-                  <Label htmlFor="meeting-link">Meeting Link</Label>
-                  <Input
-                    id="meeting-link"
-                    value={sessionForm.meetingLink}
-                    onChange={(e) => setSessionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
-                    placeholder="Paste Google Meet/Zoom/Teams link"
-                  />
-                  <div className="text-xs text-muted-foreground flex items-center gap-2"><Video className="h-3 w-3" /> Share a valid link</div>
-                </div>
-              )}
-              {sessionForm.type === 'inperson' && (
-                <div className="space-y-3">
-                  <Label htmlFor="meeting-address">Location</Label>
-                  <Input
-                    id="meeting-address"
-                    value={sessionForm.meetingAddress}
-                    onChange={(e) => setSessionForm(prev => ({ ...prev, meetingAddress: e.target.value }))}
-                    placeholder="Enter address or location to meet"
-                  />
-                  <div className="text-xs text-muted-foreground flex items-center gap-2"><MapPin className="h-3 w-3" /> Provide a clear address</div>
-                </div>
-              )}
+                   {sessionForm.type === 'video' && (
+                     <div className="space-y-3">
+                       <Label htmlFor="meeting-link">Meeting Link</Label>
+                       <Input
+                         id="meeting-link"
+                         value={sessionForm.meetingLink}
+                         onChange={(e) => setSessionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
+                         placeholder="Paste Google Meet/Zoom/Teams link"
+                       />
+                       <div className="text-xs text-muted-foreground flex items-center gap-2"><Video className="h-3 w-3" /> Share a valid link</div>
+                     </div>
+                   )}
+                   {sessionForm.type === 'inperson' && (
+                     <div className="space-y-3">
+                       <Label htmlFor="meeting-address">Location</Label>
+                       <Input
+                         id="meeting-address"
+                         value={sessionForm.meetingAddress}
+                         onChange={(e) => setSessionForm(prev => ({ ...prev, meetingAddress: e.target.value }))}
+                         placeholder="Enter address or location to meet"
+                       />
+                       <div className="text-xs text-muted-foreground flex items-center gap-2"><MapPin className="h-3 w-3" /> Provide a clear address</div>
+                     </div>
+                   )}
 
-              <div className="space-y-3">
-                <Label htmlFor="preferred-times">Preferred Times</Label>
-                <Input
-                  id="preferred-times"
-                  value={sessionForm.preferredTimes}
-                  onChange={(e) => setSessionForm(prev => ({ ...prev, preferredTimes: e.target.value }))}
-                  placeholder="e.g., Weekday evenings, Saturday mornings"
-                />
-              </div>
+                   <div className="space-y-3">
+                     <Label htmlFor="preferred-times">Preferred Times</Label>
+                     <Input
+                       id="preferred-times"
+                       value={sessionForm.preferredTimes}
+                       onChange={(e) => setSessionForm(prev => ({ ...prev, preferredTimes: e.target.value }))}
+                       placeholder="e.g., Weekday evenings, Saturday mornings"
+                     />
+                   </div>
 
-              <div className="flex gap-3">
-                <Button onClick={handleCreateSession} className="flex-1">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Create Session
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                   <div className="flex gap-3">
+                     <Button onClick={handleCreateSession} className="flex-1">
+                       <Calendar className="h-4 w-4 mr-2" />
+                       Create Session
+                     </Button>
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
+
+             {/* Created Sessions List - 50% width */}
+             <div className="lg:w-1/2 flex-1">
+               <Card className="bg-card border-border h-fit">
+                 <CardHeader>
+                   <CardTitle className="text-2xl font-bold">Your Created Sessions</CardTitle>
+                   <CardDescription className="text-m mt-2">Recently created sessions</CardDescription>
+                 </CardHeader>
+                 <CardContent className="space-y-3">
+                   {sessions.length === 0 && (
+                     <div className="text-m text-muted-foreground text-center py-4">No sessions created yet</div>
+                   )}
+                   {sessions.slice(0, 5).map((s) => (
+                     <div key={s.id} className="p-3 rounded-lg border bg-muted/40">
+                       <div className="font-medium text-sm text-foreground truncate">{s.title}</div>
+                       <div className="text-xs text-muted-foreground mt-1">
+                         {s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins
+                       </div>
+                       {s.description && (
+                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</div>
+                       )}
+                     </div>
+                   ))}
+                   {sessions.length > 5 && (
+                     <div className="text-xs text-muted-foreground text-center py-2">
+                       +{sessions.length - 5} more sessions
+                     </div>
+                   )}
+                 </CardContent>
+               </Card>
+             </div>
+           </div>
+         </TabsContent>
 
                  {/* Manage Sessions Tab */}
          <TabsContent value="manage" className="space-y-6">
@@ -290,39 +338,6 @@ export function Sessions({ user }) {
              </CardContent>
            </Card>
 
-           {/* Created Sessions */}
-           <Card className="bg-card border-border">
-             <CardHeader>
-               <CardTitle className="font-bold text-2xl">Sessions You've Created</CardTitle>
-               <CardDescription className="mt-2">Sessions you've created for others to join</CardDescription>
-             </CardHeader>
-             <CardContent className="space-y-4">
-               {sessions.length === 0 && (
-                 <div className="text-sm text-muted-foreground">No created sessions yet. Create one in the Create Session tab.</div>
-               )}
-               {sessions.map((s) => (
-                 <div key={s.id} className="p-4 rounded-lg border bg-muted/40">
-                   <div className="flex items-center justify-between">
-                     <div>
-                       <div className="font-medium text-foreground">{s.title}</div>
-                       <div className="text-xs text-muted-foreground">{s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins</div>
-                     </div>
-                   </div>
-                   {s.description && (
-                     <div className="mt-2 text-sm text-muted-foreground">{s.description}</div>
-                   )}
-                   <div className="mt-2 text-sm">
-                     {s.type === 'video' && s.meetingLink && (
-                       <a href={s.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">Join link</a>
-                     )}
-                     {s.type === 'inperson' && s.meetingAddress && (
-                       <span className="text-foreground">Location: {s.meetingAddress}</span>
-                     )}
-                   </div>
-                 </div>
-               ))}
-             </CardContent>
-           </Card>
          </TabsContent>
       </Tabs>
     </div>

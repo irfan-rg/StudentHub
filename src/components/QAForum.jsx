@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -22,7 +22,11 @@ import {
   Eye,
   MessageCircle,
   Check,
-  X
+  X,
+  Reply,
+  Heart,
+  Share,
+  MoreHorizontal
 } from 'lucide-react';
 
 export function QAForum({ user }) {
@@ -236,7 +240,12 @@ export function QAForum({ user }) {
     toast.success('Question posted successfully!');
   };
 
-  const handleAddAnswer = (questionId) => {
+  const handleAnswerChange = useCallback((e) => {
+    e.preventDefault();
+    setNewAnswer(e.target.value);
+  }, []);
+
+  const handleAddAnswer = useCallback((questionId) => {
     if (!newAnswer.trim()) {
       toast.error('Please enter an answer');
       return;
@@ -270,7 +279,7 @@ export function QAForum({ user }) {
 
     setNewAnswer('');
     toast.success('Answer posted successfully!');
-  };
+  }, [newAnswer, user]);
 
   const addTag = (tag) => {
     if (!newQuestion.tags.includes(tag)) {
@@ -286,7 +295,7 @@ export function QAForum({ user }) {
   };
 
   const QuestionCard = ({ question }) => (
-    <Card className="hover:shadow-md transition-shadow bg-card border-border">
+    <Card className="hover:shadow-md transition-shadow bg-card border-border cursor-pointer" onClick={() => setSelectedQuestion(question)}>
       <CardContent className="p-6">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
@@ -294,7 +303,10 @@ export function QAForum({ user }) {
               variant="ghost" 
               size="sm" 
               className={`p-1 ${question.userVote === 1 ? 'text-blue-600' : ''}`}
-              onClick={() => handleVote(question.id, 'up')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVote(question.id, 'up');
+              }}
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
@@ -303,7 +315,10 @@ export function QAForum({ user }) {
               variant="ghost" 
               size="sm" 
               className={`p-1 ${question.userVote === -1 ? 'text-red-600' : ''}`}
-              onClick={() => handleVote(question.id, 'down')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVote(question.id, 'down');
+              }}
             >
               <ChevronDown className="h-5 w-5" />
             </Button>
@@ -311,10 +326,7 @@ export function QAForum({ user }) {
 
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
-              <h3 
-                className="font-semibold text-lg hover:text-blue-600 cursor-pointer text-foreground"
-                onClick={() => setSelectedQuestion(question)}
-              >
+              <h3 className="font-semibold text-lg hover:text-blue-600 text-foreground">
                 {question.title}
               </h3>
               {question.isAnswered && (
@@ -333,7 +345,10 @@ export function QAForum({ user }) {
                   key={tag} 
                   variant="outline" 
                   className="text-xs cursor-pointer hover:bg-accent/50"
-                  onClick={() => setFilterTag(tag)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFilterTag(tag);
+                  }}
                 >
                   {tag}
                 </Badge>
@@ -378,124 +393,196 @@ export function QAForum({ user }) {
     </Card>
   );
 
-  const QuestionDetail = ({ question }) => (
-    <Dialog open={!!selectedQuestion} onOpenChange={() => setSelectedQuestion(null)}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{question?.title}</DialogTitle>
-        </DialogHeader>
-        
-        {question && (
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`p-1 ${question.userVote === 1 ? 'text-blue-600' : ''}`}
-                  onClick={() => handleVote(question.id, 'up')}
-                >
-                  <ChevronUp className="h-5 w-5" />
-                </Button>
-                <span className="font-medium text-lg">{question.upvotes}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`p-1 ${question.userVote === -1 ? 'text-red-600' : ''}`}
-                  onClick={() => handleVote(question.id, 'down')}
-                >
-                  <ChevronDown className="h-5 w-5" />
-                </Button>
-              </div>
-              
-              <div className="flex-1">
-                <p className="mb-4">{question.content}</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {question.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={question.author.avatar} alt={question.author.name} />
-                    <AvatarFallback className="text-xs">
-                      {question.author.name.split(' ').map((n) => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>Asked by <strong>{question.author.name}</strong> {question.timeAgo}</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">
-                {question.answerList.length} Answer{question.answerList.length !== 1 ? 's' : ''}
-              </h3>
-              
-              <div className="space-y-4">
-                {question.answerList.map((answer) => (
-                  <div key={answer.id} className="border rounded-lg p-4">
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`p-1 ${answer.userVote === 1 ? 'text-blue-600' : ''}`}
-                          onClick={() => handleVote(question.id, 'up', true, answer.id)}
-                        >
-                          <ChevronUp className="h-5 w-5" />
-                        </Button>
-                        <span className="font-medium">{answer.upvotes}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`p-1 ${answer.userVote === -1 ? 'text-red-600' : ''}`}
-                          onClick={() => handleVote(question.id, 'down', true, answer.id)}
-                        >
-                          <ChevronDown className="h-5 w-5" />
-                        </Button>
-                        {answer.isAccepted && (
-                          <Check className="h-5 w-5 text-green-600 mt-2" />
-                        )}
-                      </div>
-                      
+    const QuestionThread = ({ question }) => (
+    <>
+      {selectedQuestion && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-[85vw] h-[85vh] bg-background border border-border rounded-lg shadow-lg overflow-hidden relative">
+              <button 
+                onClick={() => setSelectedQuestion(null)} 
+                className="absolute top-3 right-4 z-50 text-black hover:text-gray-600 transition-colors font-bold text-lg"
+                style={{ zIndex: 9999 }}
+              >
+                ✕
+              </button>
+              <div className="flex h-full w-full max-w-6xl mx-auto">
+                {/* Left Side - Question */}
+                <div className="w-1/2 border-r border-border overflow-y-auto">
+                  <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b p-6">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="mb-3">{answer.content}</p>
+                        <h2 className="text-xl font-bold text-foreground mb-2">{question.title}</h2>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Avatar className="h-5 w-5">
-                            <AvatarImage src={answer.author.avatar} alt={answer.author.name} />
+                            <AvatarImage src={question.author.avatar} alt={question.author.name} />
                             <AvatarFallback className="text-xs">
-                              {answer.author.name.split(' ').map((n) => n[0]).join('')}
+                              {question.author.name.split(' ').map((n) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <span>Answered by <strong>{answer.author.name}</strong> {answer.timeAgo}</span>
+                          <span className="font-medium text-foreground">{question.author.name}</span>
+                          <span>•</span>
+                          <span>{question.timeAgo}</span>
+                          <span>•</span>
+                          <span>{question.views} views</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+
+                  <div className="p-6">
+                    <div className="flex gap-6">
+                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`p-1 ${question.userVote === 1 ? 'text-blue-600' : ''}`}
+                          onClick={() => handleVote(question.id, 'up')}
+                        >
+                          <ChevronUp className="h-5 w-5" />
+                        </Button>
+                        <span className="font-medium text-lg">{question.upvotes}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`p-1 ${question.userVote === -1 ? 'text-red-600' : ''}`}
+                          onClick={() => handleVote(question.id, 'down')}
+                        >
+                          <ChevronDown className="h-5 w-5" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <p className="text-foreground mb-4 text-lg leading-relaxed">{question.content}</p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {question.tags.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                        {/* <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                            <Reply className="h-4 w-4" />
+                            Reply
+                          </Button>
+                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                            <Heart className="h-4 w-4" />
+                            Like
+                          </Button>
+                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                            <Share className="h-4 w-4" />
+                            Share
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </div> */}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side - Answers */}
+                <div className="w-1/2 overflow-y-auto">
+                  <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b p-6">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {question.answerList.length} Answer{question.answerList.length !== 1 ? 's' : ''}
+                    </h3>
+                  </div>
+                  
+                  <div className="p-6 space-y-6">
+                    {question.answerList.map((answer) => (
+                      <div key={answer.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                        <div className="flex gap-6">
+                          <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`p-1 ${answer.userVote === 1 ? 'text-blue-600' : ''}`}
+                              onClick={() => handleVote(question.id, 'up', true, answer.id)}
+                            >
+                              <ChevronUp className="h-5 w-5" />
+                            </Button>
+                            <span className="font-medium">{answer.upvotes}</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`p-1 ${answer.userVote === -1 ? 'text-red-600' : ''}`}
+                              onClick={() => handleVote(question.id, 'down', true, answer.id)}
+                            >
+                              <ChevronDown className="h-5 w-5" />
+                            </Button>
+                            {answer.isAccepted && (
+                              <Check className="h-5 w-5 text-green-600 mt-2" />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <p className="mb-3 text-foreground leading-relaxed">{answer.content}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={answer.author.avatar} alt={answer.author.name} />
+                                  <AvatarFallback className="text-xs">
+                                    {answer.author.name.split(' ').map((n) => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium text-foreground">{answer.author.name}</span>
+                                <span>•</span>
+                                <span>{answer.timeAgo}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                                  <Reply className="h-4 w-4" />
+                                  Reply
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add Answer Section */}
+                    <div className="border-t pt-6 mt-6">
+                      <h3 className="text-lg font-semibold mb-4 text-foreground">Add Your Answer</h3>
+                      <div className="space-y-4">
+                        <Textarea
+                          placeholder="Share your knowledge and help others..."
+                          value={newAnswer}
+                          onChange={handleAnswerChange}
+                          rows={4}
+                          className="resize-none"
+                        />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.avatar} alt={user.name} />
+                              <AvatarFallback className="text-xs">
+                                {user.name.split(' ').map((n) => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>Answering as <strong>{user.name}</strong></span>
+                          </div>
+                          <Button 
+                            onClick={() => handleAddAnswer(question.id)}
+                            disabled={!newAnswer.trim()}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Post Answer
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="border-t pt-4">
-              <h3 className="text-lg font-semibold mb-4">Your Answer</h3>
-              <Textarea
-                placeholder="Write your answer here..."
-                value={newAnswer}
-                onChange={(e) => setNewAnswer(e.target.value)}
-                rows={4}
-                className="mb-4"
-              />
-              <Button onClick={() => handleAddAnswer(question.id)}>
-                Post Answer
-              </Button>
-            </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </>
   );
 
   return (
@@ -672,10 +759,6 @@ export function QAForum({ user }) {
             <TrendingUp className="h-4 w-4" />
             Popular
           </TabsTrigger>
-          <TabsTrigger value="unanswered" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Unanswered
-          </TabsTrigger>
           <TabsTrigger value="my-questions" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             My Questions
@@ -691,14 +774,6 @@ export function QAForum({ user }) {
         <TabsContent value="popular" className="space-y-4">
           {filteredQuestions
             .sort((a, b) => b.upvotes - a.upvotes)
-            .map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
-        </TabsContent>
-
-        <TabsContent value="unanswered" className="space-y-4">
-          {filteredQuestions
-            .filter(q => !q.isAnswered)
             .map((question) => (
               <QuestionCard key={question.id} question={question} />
             ))}
@@ -744,7 +819,7 @@ export function QAForum({ user }) {
         </CardContent>
       </Card>
 
-      <QuestionDetail question={selectedQuestion} />
+      <QuestionThread question={selectedQuestion} />
     </div>
   );
 }

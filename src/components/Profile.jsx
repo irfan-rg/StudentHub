@@ -456,11 +456,11 @@ export function Profile({ user, onUpdateUser }) {
       <Dialog open={manageSkillsOpen} onOpenChange={setManageSkillsOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ maxWidth: '900px', width: '900px' }}> 
           <DialogHeader>
-            <DialogTitle>Manage Skills</DialogTitle>
-            <DialogDescription>Update your teaching skills and learning goals</DialogDescription>
+            <DialogTitle className="text-xl font-bold">Manage Skills</DialogTitle>
+            <DialogDescription className="text-xl">Update your teaching skills and learning goals</DialogDescription>
           </DialogHeader>
 
-          <div className="mb-4">
+          <div className="mb-4 space-y-3">
             <Label htmlFor="skill-search">Search Skills</Label>
             <Input
               id="skill-search"
