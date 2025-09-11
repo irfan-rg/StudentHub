@@ -28,6 +28,7 @@ import {
   Edit,
   Trash
 } from 'lucide-react';
+import ChatbotWidget from './ChatbotWidget';
 
 export function Dashboard({ user }) {
   const navigate = useNavigate();
@@ -616,7 +617,7 @@ export function Dashboard({ user }) {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-title">Session Title</Label>
               <Input
                 id="session-title"
@@ -626,7 +627,7 @@ export function Dashboard({ user }) {
               />
             </div>
             
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-description">Description (Optional)</Label>
               <Textarea
                 id="session-description"
@@ -637,7 +638,7 @@ export function Dashboard({ user }) {
               />
             </div>
             
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-partner">Select Partner</Label>
               <Select 
                 value={sessionForm.partnerId?.toString() || ''} 
@@ -657,7 +658,7 @@ export function Dashboard({ user }) {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-type">Session Type</Label>
                 <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
@@ -671,7 +672,7 @@ export function Dashboard({ user }) {
                 </Select>
               </div>
               
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-duration">Duration</Label>
                 <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
                   <SelectTrigger>
@@ -688,7 +689,7 @@ export function Dashboard({ user }) {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-date">Date</Label>
                 <Input
                   id="session-date"
@@ -698,7 +699,7 @@ export function Dashboard({ user }) {
                 />
               </div>
               
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="session-time">Time</Label>
                 <Input
                   id="session-time"
@@ -709,7 +710,7 @@ export function Dashboard({ user }) {
               </div>
             </div>
             
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="session-link">Attach Session Link</Label>
               <Input
                 id="session-link"
@@ -745,7 +746,7 @@ export function Dashboard({ user }) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="connect-message">Message (Optional)</Label>
               <Textarea
                 id="connect-message"
@@ -766,6 +767,7 @@ export function Dashboard({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+      <ChatbotWidget user={user} />
     </div>
   );
 }
