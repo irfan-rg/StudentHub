@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Badge } from './ui/badge';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner@2.0.3';
+import { userService } from '../services/api';
 import { 
   User, 
   Mail, 
@@ -43,6 +45,21 @@ export function Profile({ user, onUpdateUser }) {
   const [teachSkills, setTeachSkills] = useState(user.skillsCanTeach || []);
   const [learnSkills, setLearnSkills] = useState(user.skillsWantToLearn || []);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Avatar management state
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const AVAILABLE_AVATARS = [
+    'https://avatar.iran.liara.run/public/22',
+    'https://avatar.iran.liara.run/public/48',
+    'https://avatar.iran.liara.run/public/33',
+    'https://avatar.iran.liara.run/public/50',
+    'https://avatar.iran.liara.run/public/81',
+    'https://avatar.iran.liara.run/public/73',
+    'https://avatar.iran.liara.run/public/85',
+    'https://avatar.iran.liara.run/public/78'
+  ];
 
   const availableSkills = [
     'JavaScript', 'Python', 'Java', 'C++', 'React', 'Node.js', 'HTML/CSS', 'TypeScript',
@@ -82,6 +99,14 @@ export function Profile({ user, onUpdateUser }) {
     setLearnSkills((prev) => prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]);
   };
 
+  const levels = ['beginner','intermediate','advanced','expert'];
+
+  const updateTeachSkillLevel = (name, newLevel) => {
+    setTeachSkills((prev) => prev.map((s) => s.name === name ? { ...s, level: newLevel } : s));
+    const label = levelLabels[newLevel]?.label || newLevel;
+    toast.success(`Level updated to ${label}`);
+  };
+
   const handleSaveSkills = () => {
     if (onUpdateUser) {
       onUpdateUser({
@@ -102,6 +127,57 @@ export function Profile({ user, onUpdateUser }) {
     setIsEditing(false);
   };
 
+  const handleSelectAvatarFromGallery = async () => {
+    if (!selectedAvatar) return;
+    // Optimistic UI: update and close immediately
+    if (onUpdateUser) {
+      onUpdateUser({ ...user, avatar: selectedAvatar });
+    }
+    setAvatarDialogOpen(false);
+    toast.success('Profile photo updated');
+    try {
+      await userService.updateProfile({ avatar: selectedAvatar });
+    } catch (err) {
+      // Silent fallback; keep optimistic avatar
+      console.warn('Avatar update failed on server, keeping local change');
+    }
+  };
+
+  const handleUploadAvatar = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be ≤ 2 MB');
+      return;
+    }
+    try {
+      setIsUploading(true);
+      const form = new FormData();
+      form.append('file', file);
+      const data = await userService.uploadAvatar(form);
+      const newUrl = data?.avatar || data?.url || data; // backend returns avatar URL
+      if (newUrl) {
+        if (onUpdateUser) {
+          onUpdateUser({ ...user, avatar: newUrl });
+        }
+        toast.success('Profile photo uploaded');
+        setAvatarDialogOpen(false);
+      } else {
+        throw new Error('No URL returned');
+      }
+    } catch (err) {
+      toast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      // reset input value so same file can be selected again if needed
+      event.target.value = '';
+    }
+  };
+
   const handleCancel = () => {
     setFormData({
       name: user.name,
@@ -112,10 +188,10 @@ export function Profile({ user, onUpdateUser }) {
     setIsEditing(false);
   };
 
-  // Get top skills to display
-  const topSkills = (user.skillsCanTeach || []).slice(0, 6);
-  const expertSkills = (user.skillsCanTeach || []).filter(s => s.level === 'expert').length;
-  const advancedSkills = (user.skillsCanTeach || []).filter(s => s.level === 'advanced').length;
+  // Get top skills to display (use local state so changes reflect immediately)
+  const topSkills = (teachSkills || []).slice(0, 6);
+  const expertSkills = (teachSkills || []).filter(s => s.level === 'expert').length;
+  const advancedSkills = (teachSkills || []).filter(s => s.level === 'advanced').length;
 
   // Filter available skills based on search term
   const filteredSkills = availableSkills.filter(skill =>
@@ -156,13 +232,18 @@ export function Profile({ user, onUpdateUser }) {
           <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-blue-100 dark:ring-blue-900"
-                />
+                 <img
+                   src={user.avatar}
+                   alt={user.name}
+                   className="w-24 h-24 rounded-full mx-auto mb-3 object-cover ring-4 ring-blue-100 dark:ring-blue-900"
+                 />
                 {isEditing ? (
-                  <div className="space-y-3">
+                 <div className="space-y-3">
+                    <div className="flex justify-center mb-2">
+                      <Button size="sm" variant="outline" onClick={() => setAvatarDialogOpen(true)}>
+                        Change Photo
+                      </Button>
+                    </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
@@ -400,9 +481,20 @@ export function Profile({ user, onUpdateUser }) {
                           className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
                         >
                           <span className="font-medium text-sm text-foreground">{skill.name}</span>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {skill.level}
-                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="outline-none">
+                              <Badge variant="outline" className="text-xs capitalize cursor-pointer">
+                                {skill.level}
+                              </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {['beginner','intermediate','advanced','expert'].map((lvl) => (
+                                <DropdownMenuItem key={lvl} onClick={() => updateTeachSkillLevel(skill.name, lvl)}>
+                                  {levelLabels[lvl].icon} {levelLabels[lvl].label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       ))}
                     </div>
@@ -558,6 +650,45 @@ export function Profile({ user, onUpdateUser }) {
             </Button>
             <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
               <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Avatar Picker Modal */}
+      <Dialog open={avatarDialogOpen} onOpenChange={(open) => { setAvatarDialogOpen(open); if (!open) setSelectedAvatar(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ maxWidth: '640px', width: '640px' }}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Update Profile Photo</DialogTitle>
+            <DialogDescription className="text-md font-semibold">Choose one of our avatars</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <div className="grid grid-cols-4 gap-3">
+                {AVAILABLE_AVATARS.map((src) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setSelectedAvatar(src)}
+                    className={`relative rounded-full p-0 ring-2 ${selectedAvatar === src ? 'ring-blue-500' : 'ring-transparent'} hover:ring-blue-400`}
+                    title="Select avatar"
+                  >
+                    <img src={src} alt="Avatar option" className="w-20 h-20 rounded-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Upload option removed as per requirement */}
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button onClick={handleSelectAvatarFromGallery} disabled={!selectedAvatar || isUploading} className="flex-1">
+              Save Selection
+            </Button>
+            <Button variant="outline" onClick={() => setAvatarDialogOpen(false)} disabled={isUploading} className="flex-1">
               Cancel
             </Button>
           </div>

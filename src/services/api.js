@@ -18,6 +18,14 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options
   };
 
+  // If sending FormData, let the browser set the Content-Type with boundary
+  if (config.body instanceof FormData) {
+    const headers = { ...config.headers };
+    delete headers['Content-Type'];
+    delete headers['content-type'];
+    config.headers = headers;
+  }
+
   try {
     const response = await fetch(url, config);
     const data = await response.json();
