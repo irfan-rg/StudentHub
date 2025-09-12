@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Calendar, Video, MapPin, Plus, List, User, Clock, CheckCircle, PlayCircle } from 'lucide-react';
+import { Calendar, Video, MapPin, Plus, List, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 export function Sessions({ user }) {
@@ -109,6 +109,62 @@ export function Sessions({ user }) {
     });
   };
 
+  const openInNewTab = (url) => {
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      toast.error('Could not open link');
+    }
+  };
+
+  const handleOpenGoogleMeet = () => {
+    openInNewTab('https://meet.new');
+    toast.message('Google Meet', {
+      description: 'A new Google Meet tab has been opened. Create the meeting, copy the link, then click Paste to auto-fill.',
+    });
+  };
+
+  const handleOpenZoom = () => {
+    openInNewTab('https://zoom.us/start/videomeeting');
+    toast.message('Zoom', {
+      description: 'A Zoom tab has been opened. Create the meeting, copy the link, then click Paste to auto-fill.',
+    });
+  };
+
+  const copyMeetingLinkToClipboard = async () => {
+    try {
+      const link = sessionForm.meetingLink?.trim();
+      if (!link) {
+        toast.error('No meeting link to copy');
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+      toast.success('Meeting link copied');
+    } catch (err) {
+      toast.error('Clipboard access denied');
+    }
+  };
+
+  const pasteMeetingLinkFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        toast.error('Clipboard is empty');
+        return;
+      }
+      const trimmed = text.trim();
+      const looksLikeMeeting = /https?:\/\/meet\.google\.com\/[a-z0-9-]+/i.test(trimmed) || /https?:\/\/(?:[a-z0-9.-]*zoom\.us)\/[a-zA-Z0-9/?=&_.-]+/i.test(trimmed);
+      setSessionForm(prev => ({ ...prev, meetingLink: trimmed }));
+      if (looksLikeMeeting) {
+        toast.success('Meeting link pasted');
+      } else {
+        toast.warning('Pasted text may not be a meeting link');
+      }
+    } catch (err) {
+      toast.error('Clipboard access denied');
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -196,13 +252,44 @@ export function Sessions({ user }) {
                    {sessionForm.type === 'video' && (
                      <div className="space-y-3">
                        <Label htmlFor="meeting-link">Meeting Link</Label>
-                       <Input
-                         id="meeting-link"
-                         value={sessionForm.meetingLink}
-                         onChange={(e) => setSessionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
-                         placeholder="Paste Google Meet/Zoom/Teams link"
-                       />
-                       <div className="text-xs text-muted-foreground flex items-center gap-2"><Video className="h-3 w-3" /> Share a valid link</div>
+                       <div className="flex gap-2 items-center">
+                         <div className="relative flex-1">
+                           <Input
+                             id="meeting-link"
+                             value={sessionForm.meetingLink}
+                             onChange={(e) => setSessionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
+                             placeholder="Paste Google Meet/Zoom link"
+                             className="pr-10"
+                           />
+                           <button
+                             type="button"
+                             onClick={pasteMeetingLinkFromClipboard}
+                             title="Paste meeting link"
+                             aria-label="Paste meeting link"
+                             className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-foreground bg-muted px-2 py-1 rounded border border-border hover:bg-muted/80"
+                           >
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                               <path d="M19 2h-3.18C15.4.84 14.3 0 13 0h-2c-1.3 0-2.4.84-2.82 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H5V4h2v2h10V4h2v16z"/>
+                               <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/>
+                             </svg>
+                           </button>
+                         </div>
+                         <Button variant="outline" size="icon" onClick={handleOpenGoogleMeet} title="Create Google Meet" aria-label="Create Google Meet">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5">
+                             <path fill="#1e8e3e" d="M6 14c0-2.21 1.79-4 4-4h14v28H10c-2.21 0-4-1.79-4-4V14z"/>
+                             <path fill="#34a853" d="M24 10h8l6 6v16l-6 6h-8z"/>
+                             <path fill="#fbbc05" d="M38 16h4c2.21 0 4 1.79 4 4v8c0 2.21-1.79 4-4 4h-4z"/>
+                             <path fill="#ea4335" d="M24 38h8l6-6H24z" opacity=".8"/>
+                           </svg>
+                         </Button>
+                         <Button variant="outline" size="icon" onClick={handleOpenZoom} title="Create Zoom Meeting" aria-label="Create Zoom Meeting">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5">
+                             <path fill="#2D8CFF" d="M6 16c0-3.314 2.686-6 6-6h12c3.314 0 6 2.686 6 6v16c0 3.314-2.686 6-6 6H12c-3.314 0-6-2.686-6-6V16z"/>
+                             <path fill="#2D8CFF" d="M30 22l10-6v16l-10-6z" opacity=".8"/>
+                           </svg>
+                         </Button>
+                       </div>
+                       <div className="text-xs text-muted-foreground flex items-center gap-2"><Video className="h-3 w-3" /> Use the icons to create a meeting, then click Paste</div>
                      </div>
                    )}
                    {sessionForm.type === 'inperson' && (
@@ -343,5 +430,4 @@ export function Sessions({ user }) {
     </div>
   );
 }
-
 
