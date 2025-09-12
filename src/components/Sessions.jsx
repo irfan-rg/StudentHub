@@ -283,62 +283,128 @@ export function Sessions({ user }) {
                {joinedSessions.length === 0 && (
                  <div className="text-sm text-muted-foreground">No joined sessions yet. Find sessions in the Skill Matching section.</div>
                )}
-               {joinedSessions.map((session) => (
-                 <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
-                   <div className="flex items-start justify-between">
-                     <div className="flex-1">
-                       <div className="flex items-center gap-3 mb-2">
-                         <Avatar className="w-8 h-8">
-                           <AvatarImage src={session.creatorAvatar} alt={session.creator} />
-                           <AvatarFallback>{session.creator?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                         </Avatar>
-                         <div>
-                           <div className="font-medium text-foreground">{session.title}</div>
-                           <div className="text-xs text-muted-foreground">
-                             Created by {session.creator} • {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
-                           </div>
-                         </div>
-                       </div>
-                       {session.description && (
-                         <div className="text-sm text-muted-foreground mb-2">{session.description}</div>
-                       )}
-                       <div className="flex items-center gap-4 text-sm">
-                         <div className="flex items-center gap-1">
-                           <Calendar className="h-3 w-3" />
-                           {session.date} at {session.time}
-                         </div>
-                         {session.type === 'video' && session.meetingLink && (
-                           <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline flex items-center gap-1">
-                             <Video className="h-3 w-3" />
-                             Join Meeting
-                           </a>
-                         )}
-                         {session.type === 'inperson' && session.meetingAddress && (
-                           <div className="flex items-center gap-1 text-foreground">
-                             <MapPin className="h-3 w-3" />
-                             {session.meetingAddress}
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                     <Badge 
-                       className={
-                         session.status === 'upcoming' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
-                         session.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
-                         'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-                       }
-                     >
-                       {session.status === 'upcoming' && <Clock className="h-3 w-3 mr-1" />}
-                       {session.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                       {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                     </Badge>
-                   </div>
-                 </div>
-               ))}
-             </CardContent>
-           </Card>
 
-         </TabsContent>
+               {joinedSessions.length > 0 && (
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Pending (left) */}
+                  <div className="lg:w-1/2 flex-1">
+                    <Card className="bg-card border-border h-fit">
+                      <CardHeader>
+                        <CardTitle className="text-xl font-bold flex items-center gap-2"><Clock className="h-4 w-4" /> Pending</CardTitle>
+                        <CardDescription className="mt-1">Upcoming and in-progress sessions</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {joinedSessions.filter(s => s.status !== 'completed').map((session) => (
+                          <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage src={session.creatorAvatar} alt={session.creator} />
+                                    <AvatarFallback>{session.creator?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium text-foreground">{session.title}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Created by {session.creator} • {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                                    </div>
+                                  </div>
+                                </div>
+                                {session.description && (
+                                  <div className="text-sm text-muted-foreground mb-2">{session.description}</div>
+                                )}
+                                <div className="flex items-center gap-4 text-sm">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {session.date} at {session.time}
+                                  </div>
+                                  {session.type === 'video' && session.meetingLink && (
+                                    <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline flex items-center gap-1">
+                                      <Video className="h-3 w-3" />
+                                      Join Meeting
+                                    </a>
+                                  )}
+                                  {session.type === 'inperson' && session.meetingAddress && (
+                                    <div className="flex items-center gap-1 text-foreground">
+                                      <MapPin className="h-3 w-3" />
+                                      {session.meetingAddress}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <Badge className={'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'}>
+                                <Clock className="h-3 w-3 mr-1" />
+                                Upcoming
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        {joinedSessions.filter(s => s.status !== 'completed').length === 0 && (
+                          <div className="text-sm text-muted-foreground">No pending sessions.</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Completed (right) */}
+                  <div className="lg:w-1/2 flex-1">
+                    <Card className="bg-card border-border h-fit">
+                      <CardHeader>
+                        <CardTitle className="text-xl font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Completed</CardTitle>
+                        <CardDescription className="mt-1">Sessions you've already finished</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {joinedSessions.filter(s => s.status === 'completed').map((session) => (
+                          <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage src={session.creatorAvatar} alt={session.creator} />
+                                    <AvatarFallback>{session.creator?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium text-foreground">{session.title}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Created by {session.creator} • {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                                    </div>
+                                  </div>
+                                </div>
+                                {session.description && (
+                                  <div className="text-sm text-muted-foreground mb-2">{session.description}</div>
+                                )}
+                                <div className="flex items-center gap-4 text-sm">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {session.date} at {session.time}
+                                  </div>
+                                  {session.type === 'video' && session.meetingLink && (
+                                    <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline flex items-center gap-1">
+                                      <Video className="h-3 w-3" />
+                                      Recording/Link
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <Badge className={'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'}>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Completed
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        {joinedSessions.filter(s => s.status === 'completed').length === 0 && (
+                          <div className="text-sm text-muted-foreground">No completed sessions yet.</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+        </TabsContent>
       </Tabs>
     </div>
   );
