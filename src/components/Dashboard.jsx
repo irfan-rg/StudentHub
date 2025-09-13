@@ -141,19 +141,60 @@ export function Dashboard({ user }) {
       sessions: 15,
       matchPercentage: 82
     },
-    {
-      id: 6,
-      name: "Alex Rivera",
-      college: "University of California",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "Web Development", level: "intermediate" },
-        { name: "JavaScript", level: "advanced" }
-      ],
-      points: 1800,
-      sessions: 12,
-      matchPercentage: 75
-    }
+     {
+       id: 6,
+       name: "Alex Rivera",
+       college: "University of California",
+       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+       skillsCanTeach: [
+         { name: "Web Development", level: "intermediate" },
+         { name: "JavaScript", level: "advanced" }
+       ],
+       points: 1800,
+       sessions: 12,
+       matchPercentage: 75
+     },
+     {
+       id: 7,
+       name: "Priya Patel",
+       college: "Carnegie Mellon University",
+       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+       skillsCanTeach: [
+         { name: "Data Science", level: "expert" },
+         { name: "R Programming", level: "advanced" },
+         { name: "Statistics", level: "expert" }
+       ],
+       points: 3100,
+       sessions: 25,
+       matchPercentage: 92
+     },
+     {
+       id: 8,
+       name: "Marcus Johnson",
+       college: "Georgia Tech",
+       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+       skillsCanTeach: [
+         { name: "Cybersecurity", level: "advanced" },
+         { name: "Network Security", level: "expert" }
+       ],
+       points: 2650,
+       sessions: 18,
+       matchPercentage: 87
+     },
+     {
+       id: 9,
+       name: "Luna Zhang",
+       college: "University of Washington",
+       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+       skillsCanTeach: [
+         { name: "Mobile Development", level: "expert" },
+         { name: "React Native", level: "advanced" },
+         { name: "iOS Development", level: "intermediate" }
+       ],
+       points: 2400,
+       sessions: 20,
+       matchPercentage: 85
+     }
   ];
 
   const recentActivity = [
@@ -357,7 +398,12 @@ export function Dashboard({ user }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {suggestedConnections.map((connection) => (
+                {suggestedConnections
+                  .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                  .length > 0 ? (
+                  suggestedConnections
+                    .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                    .map((connection) => (
                   <div key={connection.id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -402,32 +448,37 @@ export function Dashboard({ user }) {
                         <span>{connection.points} points</span>
                         <span>{connection.sessions} sessions</span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleScheduleSession(connection.id)}
-                        >
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Schedule
-                        </Button>
-                        <Button 
-                          size="sm"
-                          disabled={connectionRequests[connection.id] || connectedUsers.some(conn => conn.id === connection.id)}
-                          onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
-                        >
-                          {connectionRequests[connection.id] ? (
-                            <Badge variant="secondary">Pending</Badge>
-                          ) : connectedUsers.some(conn => conn.id === connection.id && conn.status === "connected") ? (
-                            <Badge>Connected</Badge>
-                          ) : (
-                            <UserPlus className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <Button 
+                           size="sm"
+                           disabled={connectionRequests[connection.id] || connectedUsers.some(conn => conn.id === connection.id)}
+                           onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
+                         >
+                           {connectionRequests[connection.id] ? (
+                             <Badge variant="secondary">Pending</Badge>
+                           ) : connectedUsers.some(conn => conn.id === connection.id && conn.status === "connected") ? (
+                             <Badge>Connected</Badge>
+                           ) : (
+                             <UserPlus className="h-3 w-3" />
+                           )}
+                         </Button>
+                       </div>
                     </div>
                   </div>
-                ))}
+                ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">All caught up!</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      You've connected with all suggested study partners. Check back later for new matches!
+                    </p>
+                    <Button variant="outline" onClick={() => navigate('/matching')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Explore More Matches
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -648,7 +699,9 @@ export function Dashboard({ user }) {
                   <SelectValue placeholder="Select a partner" />
                 </SelectTrigger>
                 <SelectContent>
-                  {suggestedConnections.map((connection) => (
+                  {suggestedConnections
+                    .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                    .map((connection) => (
                     <SelectItem key={connection.id} value={connection.id.toString()}>
                       {connection.name} ({connection.college})
                     </SelectItem>
