@@ -295,6 +295,60 @@ UserRank/MentorRank example:
 
 ---
 
+## Notifications
+
+### GET /notifications (auth)
+- Query params: `page=1`, `limit=20`, `unread_only?`
+- 200: `{ data: NOTIFICATION[], pagination }`
+
+### PUT /notifications/:id/read (auth)
+- Mark single notification as read
+- 200: `{ success: true }`
+
+### PUT /notifications/read-all (auth)
+- Mark all notifications as read
+- 200: `{ success: true }`
+
+### DELETE /notifications/:id (auth)
+- Delete single notification
+- 204 No Content
+
+### DELETE /notifications (auth)
+- Clear all notifications
+- 204 No Content
+
+### GET /notifications/unread-count (auth)
+- 200: `{ data: { count: number } }`
+
+### PUT /notifications/preferences (auth)
+- Body: `{ email: boolean, push: boolean, types: [string] }`
+- 200: `{ data: preferences }`
+
+NOTIFICATION model (3 main categories):
+```json
+{
+  "id": 1,
+  "type": "session_reminder|connection_request|qa_activity",
+  "title": "Session Starting Soon",
+  "message": "React session with John Doe starts in 15 minutes",
+  "read": false,
+  "actionUrl": "/sessions",
+  "metadata": {
+    "sessionId": 123,
+    "mentorName": "John Doe"
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
+```
+
+**Notification Types:**
+- `session_reminder` - Session starting soon, scheduled, cancelled
+- `connection_request` - New connection requests, accepted/rejected
+- `qa_activity` - Questions answered, upvoted, comments
+
+---
+
 ## Security & Auth Notes
 - Use HTTP-only refresh tokens if implementing refresh; short-lived JWT for access
 - All modifying endpoints require auth

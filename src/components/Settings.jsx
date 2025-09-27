@@ -41,8 +41,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
     profileVisibility: 'public',
     showPoints: true,
     showCollege: true,
-    allowMessages: true,
-    showOnlineStatus: true
+    allowMessages: true
   });
 
   const [appearance, setAppearance] = useState({
@@ -183,21 +182,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
 
                 <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <Label className="text-foreground">New Messages</Label>
-                      <p className="text-sm text-muted-foreground">Notify when you receive new messages</p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={notifications.newMessages}
-                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, newMessages: checked }))}
-                  />
-                </div>
 
-                <Separator />
+
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -214,6 +200,7 @@ export function Settings({ user, settings, onUpdateSettings }) {
                 </div>
 
                 <Separator />
+
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -292,27 +279,8 @@ export function Settings({ user, settings, onUpdateSettings }) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Allow Messages</Label>
-                    <p className="text-sm text-muted-foreground">Let other students message you</p>
-                  </div>
-                  <Switch
-                    checked={privacy.allowMessages}
-                    onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, allowMessages: checked }))}
-                  />
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Show Online Status</Label>
-                    <p className="text-sm text-muted-foreground">Let others see when you're online</p>
-                  </div>
-                  <Switch
-                    checked={privacy.showOnlineStatus}
-                    onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showOnlineStatus: checked }))}
-                  />
-                </div>
+
               </div>
             </CardContent>
           </Card>

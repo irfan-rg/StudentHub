@@ -89,7 +89,6 @@ export function SkillMatching({ user }) {
       rating: 4.9,
       availability: "Available now",
       matchPercentage: 95,
-      isOnline: true,
       bio: "PhD student passionate about AI and machine learning. Love helping others understand complex concepts."
     },
     {
@@ -108,7 +107,6 @@ export function SkillMatching({ user }) {
       rating: 4.8,
       availability: "Available today",
       matchPercentage: 88,
-      isOnline: false,
       bio: "Design student with internship experience at top tech companies. Happy to share design knowledge!"
     },
     {
@@ -127,7 +125,6 @@ export function SkillMatching({ user }) {
       rating: 4.7,
       availability: "Weekends only",
       matchPercentage: 82,
-      isOnline: true,
       bio: "Computer Science major with focus on cloud infrastructure and DevOps practices."
     },
     {
@@ -146,7 +143,6 @@ export function SkillMatching({ user }) {
       rating: 4.9,
       availability: "Evenings preferred",
       matchPercentage: 91,
-      isOnline: true,
       bio: "Full-stack developer and teaching assistant. Love mentoring students in modern web development."
     },
     {
@@ -165,7 +161,6 @@ export function SkillMatching({ user }) {
       rating: 4.6,
       availability: "Flexible schedule",
       matchPercentage: 76,
-      isOnline: false,
       bio: "Business major with marketing internship experience. Passionate about digital strategies and content creation."
     }
   ];
@@ -349,9 +344,6 @@ export function SkillMatching({ user }) {
                       alt={student.name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
-                    {student.isOnline && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{student.name}</h3>

@@ -72,6 +72,17 @@ export const LEADERBOARD_ENDPOINTS = {
   GET_USER_RANK: '/leaderboard/rank/:userId'
 };
 
+// Notification Endpoints
+export const NOTIFICATION_ENDPOINTS = {
+  GET_NOTIFICATIONS: '/notifications',
+  MARK_AS_READ: '/notifications/:id/read',
+  MARK_ALL_READ: '/notifications/read-all',
+  DELETE_NOTIFICATION: '/notifications/:id',
+  CLEAR_ALL: '/notifications',
+  GET_UNREAD_COUNT: '/notifications/unread-count',
+  UPDATE_PREFERENCES: '/notifications/preferences'
+};
+
 // Expected Data Structures for Backend Team
 
 // User Registration Data
@@ -171,6 +182,19 @@ export const ANSWER_STRUCTURE = {
   authorId: 'number',
   votes: 'number',
   isAccepted: 'boolean',
+  createdAt: 'date',
+  updatedAt: 'date'
+};
+
+// Notification Data Structure (3 main categories)
+export const NOTIFICATION_STRUCTURE = {
+  id: 'number',
+  type: 'string', // 'session_reminder', 'connection_request', 'qa_activity'
+  title: 'string',
+  message: 'string',
+  read: 'boolean',
+  actionUrl: 'string', // Optional URL to navigate to when clicked
+  metadata: 'object', // Additional data specific to notification type
   createdAt: 'date',
   updatedAt: 'date'
 };

@@ -169,6 +169,14 @@ ${pointers.join('\n')}`,
             <MessageCircle className="h-6 w-6" />
           </button>
 
+          {/* Dim overlay */}
+          {open && (
+            <div
+              onClick={() => setOpen(false)}
+              style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.65)', zIndex: 2147483646 }}
+            />
+          )}
+
           {/* Panel */}
           {open && (
             <div

@@ -133,6 +133,23 @@
   }
 }
 
+/* Global cursor affordances */
+button,
+[role="button"],
+a,
+input[type="button"],
+input[type="submit"],
+label[for],
+.clickable {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"],
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+
 /**
  * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
  */

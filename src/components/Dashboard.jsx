@@ -29,6 +29,7 @@ import {
   Trash
 } from 'lucide-react';
 import ChatbotWidget from './ChatbotWidget';
+import NotificationWidget from './NotificationWidget';
 
 export function Dashboard({ user }) {
   const navigate = useNavigate();
@@ -821,6 +822,7 @@ export function Dashboard({ user }) {
         </DialogContent>
       </Dialog>
       <ChatbotWidget user={user} />
+      <NotificationWidget user={user} />
     </div>
   );
 }

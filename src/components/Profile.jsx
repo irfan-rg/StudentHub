@@ -51,10 +51,10 @@ export function Profile({ user, onUpdateUser }) {
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const AVAILABLE_AVATARS = [
-    'https://avatar.iran.liara.run/public/22',
+    'https://avatar.iran.liara.run/public/40',
     'https://avatar.iran.liara.run/public/48',
-    'https://avatar.iran.liara.run/public/33',
-    'https://avatar.iran.liara.run/public/50',
+    'https://avatar.iran.liara.run/public/32',
+    'https://avatar.iran.liara.run/public/36',
     'https://avatar.iran.liara.run/public/81',
     'https://avatar.iran.liara.run/public/73',
     'https://avatar.iran.liara.run/public/85',

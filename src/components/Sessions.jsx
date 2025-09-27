@@ -9,7 +9,8 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Calendar, Video, MapPin, Plus, List, Clock, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Calendar, Video, MapPin, Plus, List, User, Clock, CheckCircle, PlayCircle, Star } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 export function Sessions({ user }) {
@@ -35,6 +36,10 @@ export function Sessions({ user }) {
   });
 
   const [sessions, setSessions] = useState([]);
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
   const [joinedSessions, setJoinedSessions] = useState([
     {
       id: 1,
@@ -107,6 +112,60 @@ export function Sessions({ user }) {
       meetingLink: '',
       meetingAddress: ''
     });
+  };
+
+  // Cancel/remove handlers
+  const cancelJoinedSession = (id) => {
+    setJoinedSessions(prev => prev.map(s => s.id === id ? { ...s, status: 'cancelled' } : s));
+    toast.success('Session cancelled');
+  };
+
+  const removeCreatedSession = (id) => {
+    setSessions(prev => prev.filter(s => s.id !== id));
+    toast.success('Removed from your created sessions');
+  };
+
+  // Rating handlers
+  const openRatingDialog = (session) => {
+    setSelectedSession(session);
+    setRating(session.rating || 0);
+    setRatingComment(session.ratingComment || '');
+    setRatingDialogOpen(true);
+  };
+
+  const handleRatingSubmit = () => {
+    if (rating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+    
+    setJoinedSessions(prev => prev.map(s => 
+      s.id === selectedSession.id 
+        ? { ...s, rating, ratingComment } 
+        : s
+    ));
+    
+    toast.success('Rating submitted successfully!');
+    setRatingDialogOpen(false);
+    setSelectedSession(null);
+    setRating(0);
+    setRatingComment('');
+  };
+
+  const handleRatingCancel = () => {
+    setRatingDialogOpen(false);
+    setSelectedSession(null);
+    setRating(0);
+    setRatingComment('');
+  };
+
+  // Calculate average rating for completed sessions
+  const getAverageRating = () => {
+    const completedSessions = joinedSessions.filter(s => s.status === 'completed' && s.rating);
+    if (completedSessions.length === 0) return 0;
+    
+    const totalRating = completedSessions.reduce((sum, session) => sum + session.rating, 0);
+    return (totalRating / completedSessions.length).toFixed(1);
   };
 
   const openInNewTab = (url) => {
@@ -338,7 +397,16 @@ export function Sessions({ user }) {
                    )}
                    {sessions.slice(0, 5).map((s) => (
                      <div key={s.id} className="p-3 rounded-lg border bg-muted/40">
-                       <div className="font-medium text-sm text-foreground truncate">{s.title}</div>
+                       <div className="font-medium text-sm text-foreground truncate flex items-center justify-between gap-3">
+                         <span className="truncate">{s.title}</span>
+                         <Button
+                           variant="outline"
+                           onClick={() => removeCreatedSession(s.id)}
+                           className="h-7 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
+                         >
+                           Remove
+                         </Button>
+                       </div>
                        <div className="text-xs text-muted-foreground mt-1">
                          {s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins
                        </div>
@@ -366,12 +434,12 @@ export function Sessions({ user }) {
                <CardTitle className="font-bold text-2xl">Sessions You've Joined</CardTitle>
                <CardDescription className="mt-2">Sessions you've signed up for from other creators</CardDescription>
              </CardHeader>
-             <CardContent className="space-y-4">
-               {joinedSessions.length === 0 && (
-                 <div className="text-sm text-muted-foreground">No joined sessions yet. Find sessions in the Skill Matching section.</div>
-               )}
+            <CardContent className="space-y-4">
+              {joinedSessions.length === 0 && (
+                <div className="text-sm text-muted-foreground">No joined sessions yet. Find sessions in the Skill Matching section.</div>
+              )}
 
-               {joinedSessions.length > 0 && (
+              {joinedSessions.length > 0 && (
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Pending (left) */}
                   <div className="lg:w-1/2 flex-1">
@@ -381,7 +449,7 @@ export function Sessions({ user }) {
                         <CardDescription className="mt-1">Upcoming and in-progress sessions</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {joinedSessions.filter(s => s.status !== 'completed').map((session) => (
+                        {joinedSessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled').map((session) => (
                           <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -418,15 +486,24 @@ export function Sessions({ user }) {
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                              <Badge className={'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'}>
-                                <Clock className="h-3 w-3 mr-1" />
-                                Upcoming
-                              </Badge>
+                               </div>
+                               <div className="flex flex-col items-center gap-2">
+                                 <Badge className={'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'}>
+                                   <Clock className="h-3 w-3 mr-1" />
+                                   Upcoming
+                                 </Badge>
+                                 <Button
+                                   variant="outline"
+                                   onClick={() => cancelJoinedSession(session.id)}
+                                   className="h-7 mt-3 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
+                                 >
+                                   Cancel
+                                 </Button>
+                               </div>
                             </div>
                           </div>
                         ))}
-                        {joinedSessions.filter(s => s.status !== 'completed').length === 0 && (
+                        {joinedSessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled').length === 0 && (
                           <div className="text-sm text-muted-foreground">No pending sessions.</div>
                         )}
                       </CardContent>
@@ -465,18 +542,26 @@ export function Sessions({ user }) {
                                     <Calendar className="h-3 w-3" />
                                     {session.date} at {session.time}
                                   </div>
-                                  {session.type === 'video' && session.meetingLink && (
-                                    <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline flex items-center gap-1">
-                                      <Video className="h-3 w-3" />
-                                      Recording/Link
-                                    </a>
-                                  )}
                                 </div>
                               </div>
-                              <Badge className={'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'}>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Completed
-                              </Badge>
+                              <div className="flex flex-col items-center gap-2">
+                                <Badge className={'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 mb-2'}>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Completed
+                                </Badge>
+                                <div className="text-center">
+                                  <div className="text-lg font-semibold text-muted-foreground mb-2">
+                                    <Star className="h-5 w-5 inline mr-1 mb-1 text-yellow-400" />
+                                    {getAverageRating()}/5
+                                  </div>
+                                  <button
+                                    onClick={() => openRatingDialog(session)}
+                                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 underline"
+                                  >
+                                    Rate
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -493,6 +578,73 @@ export function Sessions({ user }) {
 
         </TabsContent>
       </Tabs>
+
+      {/* Rating Dialog */}
+      <Dialog open={ratingDialogOpen} onOpenChange={setRatingDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rate Session</DialogTitle>
+            <DialogDescription>
+              How was your experience with "{selectedSession?.title}"?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Star Rating */}
+            <div className="space-y-2">
+              <Label>Rating</Label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${
+                        star <= rating
+                          ? 'text-yellow-400 fill-current'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {rating === 0 && 'Select a rating'}
+                {rating === 1 && 'Poor'}
+                {rating === 2 && 'Fair'}
+                {rating === 3 && 'Good'}
+                {rating === 4 && 'Very Good'}
+                {rating === 5 && 'Excellent'}
+              </p>
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-2">
+              <Label htmlFor="rating-comment">Comment (Optional)</Label>
+              <Textarea
+                id="rating-comment"
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                placeholder="Share your thoughts about the session..."
+                rows={3}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button onClick={handleRatingSubmit} className="flex-1">
+                Submit Rating
+              </Button>
+              <Button variant="outline" onClick={handleRatingCancel} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

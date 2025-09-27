@@ -448,6 +448,86 @@ export const leaderboardService = {
   }
 };
 
+// Notification Services
+export const notificationService = {
+  // Get user notifications
+  getNotifications: async (page = 1, limit = 20) => {
+    try {
+      const response = await apiRequest(`/notifications?page=${page}&limit=${limit}`);
+      return response;
+    } catch (error) {
+      throw new Error('Failed to fetch notifications');
+    }
+  },
+
+  // Mark notification as read
+  markAsRead: async (notificationId) => {
+    try {
+      await apiRequest(`/notifications/${notificationId}/read`, {
+        method: 'PUT'
+      });
+    } catch (error) {
+      throw new Error('Failed to mark notification as read');
+    }
+  },
+
+  // Mark all notifications as read
+  markAllAsRead: async () => {
+    try {
+      await apiRequest('/notifications/read-all', {
+        method: 'PUT'
+      });
+    } catch (error) {
+      throw new Error('Failed to mark all notifications as read');
+    }
+  },
+
+  // Delete notification
+  deleteNotification: async (notificationId) => {
+    try {
+      await apiRequest(`/notifications/${notificationId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw new Error('Failed to delete notification');
+    }
+  },
+
+  // Clear all notifications
+  clearAll: async () => {
+    try {
+      await apiRequest('/notifications', {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw new Error('Failed to clear all notifications');
+    }
+  },
+
+  // Get unread count
+  getUnreadCount: async () => {
+    try {
+      const response = await apiRequest('/notifications/unread-count');
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to get unread count');
+    }
+  },
+
+  // Update notification preferences
+  updatePreferences: async (preferences) => {
+    try {
+      const response = await apiRequest('/notifications/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(preferences)
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to update notification preferences');
+    }
+  }
+};
+
 // Utility function to handle API errors globally
 export const handleApiError = (error) => {
   console.error('API Error:', error);
