@@ -1,13 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from './ui/dialog';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { ScrollArea } from './ui/scroll-area';
+import { Separator } from './ui/separator';
 import { toast } from 'sonner@2.0.3';
 import { 
   Plus, 
@@ -26,7 +28,9 @@ import {
   Reply,
   Heart,
   Share,
-  MoreHorizontal
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export function QAForum({ user }) {
@@ -40,6 +44,11 @@ export function QAForum({ user }) {
   const [filterTag, setFilterTag] = useState('');
   const [filterAnswered, setFilterAnswered] = useState('all');
   const [filterTime, setFilterTime] = useState('all');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [popularPage, setPopularPage] = useState(0);
+  const [myQuestionsPage, setMyQuestionsPage] = useState(0);
+  const [isThreadModalOpen, setIsThreadModalOpen] = useState(false);
+  const itemsPerPage = 10;
 
   const [questions, setQuestions] = useState([
     {
@@ -57,6 +66,7 @@ export function QAForum({ user }) {
       answerCount: 8,
       views: 156,
       timeAgo: "2 hours ago",
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       isAnswered: true,
       userVote: 0,
       answerList: [
@@ -105,6 +115,7 @@ export function QAForum({ user }) {
       answerCount: 5,
       views: 89,
       timeAgo: "4 hours ago",
+      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
       isAnswered: false,
       userVote: 0,
       answerList: []
@@ -124,6 +135,7 @@ export function QAForum({ user }) {
       answerCount: 3,
       views: 67,
       timeAgo: "1 day ago",
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       isAnswered: true,
       userVote: 0,
       answerList: []
@@ -143,11 +155,16 @@ export function QAForum({ user }) {
       answerCount: 12,
       views: 234,
       timeAgo: "2 days ago",
+      createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000),
       isAnswered: true,
       userVote: 0,
       answerList: []
     }
   ]);
+
+  useEffect(() => {
+    // TODO: Fetch from backend e.g., api.get('/questions').then(setQuestions).catch(() => setQuestions(mocks));
+  }, []);
 
   const popularTags = ["React", "JavaScript", "Python", "Machine Learning", "CSS", "Node.js", "Database", "Algorithm"];
 
@@ -159,53 +176,53 @@ export function QAForum({ user }) {
                           (filterAnswered === 'answered' && question.isAnswered) || 
                           (filterAnswered === 'unanswered' && !question.isAnswered);
     const matchesTime = filterTime === 'all' || 
-                       (filterTime === 'last24h' && ['2 hours ago', '4 hours ago'].includes(question.timeAgo)) || 
-                       (filterTime === 'last7d' && ['1 day ago', '2 days ago'].includes(question.timeAgo));
+  (filterTime === 'last24h' && (Date.now() - new Date(question.createdAt).getTime()) < 24 * 60 * 60 * 1000) || 
+  (filterTime === 'last7d' && (Date.now() - new Date(question.createdAt).getTime()) < 7 * 24 * 60 * 60 * 1000);
     return matchesSearch && matchesTag && matchesAnswered && matchesTime;
   });
 
   const handleVote = (questionId, voteType, isAnswer = false, answerId = null) => {
-    if (isAnswer && answerId) {
-      setQuestions(prev => prev.map(q => {
-        if (q.id === questionId) {
-          return {
-            ...q,
-            answerList: q.answerList.map(answer => {
-              if (answer.id === answerId) {
-                const currentVote = answer.userVote;
-                const newVote = voteType === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
-                const voteDiff = newVote - currentVote;
-                
-                return {
-                  ...answer,
-                  upvotes: answer.upvotes + voteDiff,
-                  userVote: newVote
-                };
-              }
-              return answer;
-            })
-          };
-        }
-        return q;
-      }));
-    } else {
-      setQuestions(prev => prev.map(q => {
-        if (q.id === questionId) {
-          const currentVote = q.userVote;
-          const newVote = voteType === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
-          const voteDiff = newVote - currentVote;
-          
-          return {
-            ...q,
-            upvotes: q.upvotes + voteDiff,
-            userVote: newVote
-          };
-        }
-        return q;
-      }));
-    }
-    
-    toast.success(`${voteType === 'up' ? 'Upvoted' : 'Downvoted'}!`);
+      if (isAnswer && answerId) {
+        setQuestions(prev => prev.map(q => {
+          if (q.id === questionId) {
+            return {
+              ...q,
+              answerList: q.answerList.map(answer => {
+                if (answer.id === answerId) {
+                  const currentVote = answer.userVote;
+                  const newVote = voteType === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
+                  const voteDiff = newVote - currentVote;
+                  
+                  return {
+                    ...answer,
+                    upvotes: answer.upvotes + voteDiff,
+                    userVote: newVote
+                  };
+                }
+                return answer;
+              })
+            };
+          }
+          return q;
+        }));
+      } else {
+        setQuestions(prev => prev.map(q => {
+          if (q.id === questionId) {
+            const currentVote = q.userVote;
+            const newVote = voteType === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
+            const voteDiff = newVote - currentVote;
+            
+            return {
+              ...q,
+              upvotes: q.upvotes + voteDiff,
+              userVote: newVote
+            };
+          }
+          return q;
+        }));
+      }
+      
+      toast.success(`${voteType === 'up' ? 'Upvoted' : 'Downvoted'}!`);
   };
 
   const handleAskQuestion = () => {
@@ -216,8 +233,8 @@ export function QAForum({ user }) {
 
     const question = {
       id: questions.length + 1,
-      title: newQuestion.title,
-      content: newQuestion.content,
+        title: newQuestion.title,
+        content: newQuestion.content,
       author: {
         name: user.name,
         avatar: user.avatar,
@@ -228,22 +245,22 @@ export function QAForum({ user }) {
       upvotes: 0,
       answerCount: 0,
       views: 0,
-      timeAgo: "Just now",
+        timeAgo: "Just now",
+      createdAt: new Date(),
       isAnswered: false,
-      userVote: 0,
-      answerList: []
-    };
+        userVote: 0,
+        answerList: []
+      };
 
     setQuestions(prev => [question, ...prev]);
-    setIsAskingQuestion(false);
-    setNewQuestion({ title: '', content: '', tags: [] });
-    toast.success('Question posted successfully!');
+      setIsAskingQuestion(false);
+      setNewQuestion({ title: '', content: '', tags: [] });
+      toast.success('Question posted successfully!');
   };
 
-  const handleAnswerChange = useCallback((e) => {
-    e.preventDefault();
+  const handleAnswerChange = (e) => {
     setNewAnswer(e.target.value);
-  }, []);
+  };
 
   const handleAddAnswer = useCallback((questionId) => {
     if (!newAnswer.trim()) {
@@ -261,24 +278,29 @@ export function QAForum({ user }) {
         college: user.college
       },
       upvotes: 0,
-      timeAgo: "Just now",
+        timeAgo: "Just now",
       isAccepted: false,
-      userVote: 0
-    };
+        userVote: 0
+      };
 
-    setQuestions(prev => prev.map(q => {
-      if (q.id === questionId) {
-        return {
-          ...q,
-          answerList: [...q.answerList, answer],
-          answerCount: q.answerCount + 1
-        };
-      }
-      return q;
-    }));
+      setQuestions(prev => prev.map(q => {
+        if (q.id === questionId) {
+        const updatedQuestion = {
+            ...q,
+          answerList: [answer, ...q.answerList],
+            answerCount: q.answerCount + 1
+          };
+        // Update selectedQuestion if this is the currently viewed question
+        if (selectedQuestion && selectedQuestion.id === questionId) {
+          setSelectedQuestion(updatedQuestion);
+        }
+        return updatedQuestion;
+        }
+        return q;
+      }));
 
-    setNewAnswer('');
-    toast.success('Answer posted successfully!');
+      setNewAnswer('');
+      toast.success('Answer posted successfully!');
   }, [newAnswer, user]);
 
   const addTag = (tag) => {
@@ -295,7 +317,10 @@ export function QAForum({ user }) {
   };
 
   const QuestionCard = ({ question }) => (
-    <Card className="hover:shadow-md transition-shadow bg-card border-border cursor-pointer" onClick={() => setSelectedQuestion(question)}>
+    <Card className="hover:shadow-md transition-shadow bg-card border-border cursor-pointer" onClick={() => {
+      setSelectedQuestion(question);
+      setIsThreadModalOpen(true);
+    }}>
       <CardContent className="p-6">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
@@ -307,6 +332,7 @@ export function QAForum({ user }) {
                 e.stopPropagation();
                 handleVote(question.id, 'up');
               }}
+              aria-label="Upvote question"
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
@@ -319,6 +345,7 @@ export function QAForum({ user }) {
                 e.stopPropagation();
                 handleVote(question.id, 'down');
               }}
+              aria-label="Downvote question"
             >
               <ChevronDown className="h-5 w-5" />
             </Button>
@@ -393,216 +420,69 @@ export function QAForum({ user }) {
     </Card>
   );
 
-    const QuestionThread = ({ question }) => (
-    <>
-      {selectedQuestion && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-[85vw] h-[85vh] bg-background border border-border rounded-lg shadow-lg overflow-hidden relative">
-              <button 
-                onClick={() => setSelectedQuestion(null)} 
-                className="absolute top-3 right-4 z-50 text-black hover:text-gray-600 transition-colors font-bold text-lg"
-                style={{ zIndex: 9999 }}
-              >
-                ✕
-              </button>
-              <div className="flex h-full w-full max-w-6xl mx-auto">
-                {/* Left Side - Question */}
-                <div className="w-1/2 border-r border-border overflow-y-auto">
-                  <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h2 className="text-xl font-bold text-foreground mb-2">{question.title}</h2>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={question.author.avatar} alt={question.author.name} />
-                            <AvatarFallback className="text-xs">
-                              {question.author.name.split(' ').map((n) => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-foreground">{question.author.name}</span>
-                          <span>•</span>
-                          <span>{question.timeAgo}</span>
-                          <span>•</span>
-                          <span>{question.views} views</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="flex gap-6">
-                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`p-1 ${question.userVote === 1 ? 'text-blue-600' : ''}`}
-                          onClick={() => handleVote(question.id, 'up')}
-                        >
-                          <ChevronUp className="h-5 w-5" />
-                        </Button>
-                        <span className="font-medium text-lg">{question.upvotes}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`p-1 ${question.userVote === -1 ? 'text-red-600' : ''}`}
-                          onClick={() => handleVote(question.id, 'down')}
-                        >
-                          <ChevronDown className="h-5 w-5" />
-                        </Button>
-                      </div>
-                      
-                      <div className="flex-1">
-                        <p className="text-foreground mb-4 text-lg leading-relaxed">{question.content}</p>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {question.tags.map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                        {/* <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                            <Reply className="h-4 w-4" />
-                            Reply
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                            <Heart className="h-4 w-4" />
-                            Like
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                            <Share className="h-4 w-4" />
-                            Share
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div> */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Side - Answers */}
-                <div className="w-1/2 overflow-y-auto">
-                  <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b p-6">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {question.answerList.length} Answer{question.answerList.length !== 1 ? 's' : ''}
-                    </h3>
-                  </div>
-                  
-                  <div className="p-6 space-y-6">
-                    {question.answerList.map((answer) => (
-                      <div key={answer.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex gap-6">
-                          <div className="flex flex-col items-center gap-1 min-w-[60px]">
+  // Custom pagination component
+  const Pagination = ({ currentPage, totalPages, onPageChange, className = "" }) => {
+    const maxVisiblePages = 5;
+    const startPage = Math.max(0, Math.min(currentPage - Math.floor(maxVisiblePages / 2), totalPages - maxVisiblePages));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages);
+    
+    return (
+      <div className={`flex items-center justify-center gap-2 ${className}`}>
+                    <Button 
+          variant="outline"
+                      size="sm" 
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 0}
+          className="flex items-center gap-1"
+                    >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+                    </Button>
+        
+        {Array.from({ length: endPage - startPage }, (_, i) => startPage + i).map(pageNum => (
+                    <Button 
+            key={pageNum}
+            variant={pageNum === currentPage ? "default" : "outline"}
+                      size="sm" 
+            onClick={() => onPageChange(pageNum)}
+            className="min-w-[40px]"
+                    >
+            {pageNum + 1}
+                    </Button>
+        ))}
+        
                             <Button 
-                              variant="ghost" 
+          variant="outline"
                               size="sm" 
-                              className={`p-1 ${answer.userVote === 1 ? 'text-blue-600' : ''}`}
-                              onClick={() => handleVote(question.id, 'up', true, answer.id)}
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages - 1}
+          className="flex items-center gap-1"
                             >
-                              <ChevronUp className="h-5 w-5" />
+          Next
+          <ChevronRight className="h-4 w-4" />
                             </Button>
-                            <span className="font-medium">{answer.upvotes}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`p-1 ${answer.userVote === -1 ? 'text-red-600' : ''}`}
-                              onClick={() => handleVote(question.id, 'down', true, answer.id)}
-                            >
-                              <ChevronDown className="h-5 w-5" />
-                            </Button>
-                            {answer.isAccepted && (
-                              <Check className="h-5 w-5 text-green-600 mt-2" />
-                            )}
-                          </div>
-                          
-                          <div className="flex-1">
-                            <p className="mb-3 text-foreground leading-relaxed">{answer.content}</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Avatar className="h-5 w-5">
-                                  <AvatarImage src={answer.author.avatar} alt={answer.author.name} />
-                                  <AvatarFallback className="text-xs">
-                                    {answer.author.name.split(' ').map((n) => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium text-foreground">{answer.author.name}</span>
-                                <span>•</span>
-                                <span>{answer.timeAgo}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                                  <Reply className="h-4 w-4" />
-                                  Reply
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Add Answer Section */}
-                    <div className="border-t pt-6 mt-6">
-                      <h3 className="text-lg font-semibold mb-4 text-foreground">Add Your Answer</h3>
-                      <div className="space-y-4">
-                        <Textarea
-                          placeholder="Share your knowledge and help others..."
-                          value={newAnswer}
-                          onChange={handleAnswerChange}
-                          rows={4}
-                          className="resize-none"
-                        />
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback className="text-xs">
-                                {user.name.split(' ').map((n) => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>Answering as <strong>{user.name}</strong></span>
-                          </div>
-                          <Button 
-                            onClick={() => handleAddAnswer(question.id)}
-                            disabled={!newAnswer.trim()}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            Post Answer
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    );
+  };
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="text-center mb-8">
+        {/* Header */}
+        <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2 text-foreground">💬 Q&A Forum</h1>
         <p className="text-muted-foreground">Ask questions, share knowledge, and learn from peers</p>
-      </div>
+        </div>
 
-      {/* Ask Question Button */}
-      <div className="flex justify-center">
-        <Button 
-          onClick={() => setIsAskingQuestion(true)}
+        {/* Ask Question Button */}
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => setIsAskingQuestion(true)}
           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
+          >
           <Plus className="h-4 w-4 mr-2" />
-          Ask a Question
-        </Button>
-      </div>
+            Ask a Question
+          </Button>
+        </div>
 
       {/* Ask Question Dialog */}
       <Dialog open={isAskingQuestion} onOpenChange={setIsAskingQuestion}>
@@ -674,26 +554,26 @@ export function QAForum({ user }) {
         </DialogContent>
       </Dialog>
 
-      {/* Search and Filters */}
+        {/* Search and Filters */}
       <Card className="bg-card border-border">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search questions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search questions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
-              />
-            </div>
-            <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <DialogTrigger asChild>
+                />
+              </div>
+              <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-              </DialogTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Filter Questions</DialogTitle>
@@ -766,25 +646,45 @@ export function QAForum({ user }) {
         </TabsList>
 
         <TabsContent value="recent" className="space-y-4">
-          {filteredQuestions.map((question) => (
-            <QuestionCard key={question.id} question={question} />
-          ))}
+            {filteredQuestions.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((question) => (
+                <QuestionCard key={question.id} question={question} />
+            ))}
+          {filteredQuestions.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredQuestions.length / itemsPerPage)}
+              onPageChange={setCurrentPage}
+              className="mt-6"
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="popular" className="space-y-4">
-          {filteredQuestions
-            .sort((a, b) => b.upvotes - a.upvotes)
-            .map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
+            {filteredQuestions
+              .sort((a, b) => b.upvotes - a.upvotes)
+              .slice(popularPage * itemsPerPage, (popularPage + 1) * itemsPerPage)
+              .map((question) => (
+                <QuestionCard key={question.id} question={question} />
+              ))
+            }
+          {filteredQuestions.length > 0 && (
+            <Pagination
+              currentPage={popularPage}
+              totalPages={Math.ceil(filteredQuestions.length / itemsPerPage)}
+              onPageChange={setPopularPage}
+              className="mt-6"
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="my-questions" className="space-y-4">
-          {filteredQuestions
-            .filter(q => q.author.name === user.name)
-            .map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
+                {filteredQuestions
+                  .filter(q => q.author.name === user.name)
+                  .slice(myQuestionsPage * itemsPerPage, (myQuestionsPage + 1) * itemsPerPage)
+                  .map((question) => (
+                    <QuestionCard key={question.id} question={question} />
+                  ))
+                }
           {filteredQuestions.filter(q => q.author.name === user.name).length === 0 && (
             <div className="text-center py-12">
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -793,33 +693,239 @@ export function QAForum({ user }) {
               <Button onClick={() => setIsAskingQuestion(true)}>
                 Ask Your First Question
               </Button>
-            </div>
+              </div>
+          )}
+          {filteredQuestions.filter(q => q.author.name === user.name).length > 0 && (
+            <Pagination
+              currentPage={myQuestionsPage}
+              totalPages={Math.ceil(filteredQuestions.filter(q => q.author.name === user.name).length / itemsPerPage)}
+              onPageChange={setMyQuestionsPage}
+              className="mt-6"
+            />
           )}
         </TabsContent>
       </Tabs>
 
       <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Popular Tags</CardTitle>
-          <CardDescription className="text-muted-foreground">Browse questions by topic</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <Badge 
-                key={tag} 
-                variant={selectedTag === tag ? "default" : "outline"}
+          <CardHeader>
+            <CardTitle className="text-foreground">Popular Tags</CardTitle>
+            <CardDescription className="text-muted-foreground">Browse questions by topic</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {popularTags.map((tag) => (
+                <Badge 
+                  key={tag} 
+                  variant={selectedTag === tag ? "default" : "outline"}
                 className="cursor-pointer hover:bg-accent/50"
-                onClick={() => setFilterTag(selectedTag === tag ? '' : tag)}
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                  onClick={() => setFilterTag(selectedTag === tag ? '' : tag)}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      <QuestionThread question={selectedQuestion} />
+      {/* Question Thread Modal */}
+      <Dialog open={isThreadModalOpen} onOpenChange={setIsThreadModalOpen}>
+        <DialogContent className="w-[90vw] h-[85vh] max-w-none p-0 overflow-hidden flex flex-col" style={{ maxWidth: '90vw', height: '85vh', width: '90vw', minHeight: '85vh' }}>
+          <DialogHeader className="px-4 py-3 border-b bg-muted/20">
+            <DialogTitle className="text-lg font-bold">
+              {selectedQuestion?.title}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-4 w-4">
+                  <AvatarImage src={selectedQuestion?.author.avatar} alt={selectedQuestion?.author.name} />
+                  <AvatarFallback className="text-xs">
+                    {selectedQuestion?.author.name.split(' ').map((n) => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-medium">{selectedQuestion?.author.name}</span>
+      </div>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {selectedQuestion?.timeAgo}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-1 min-h-0 max-h-full" style={{ height: '100%' }}>
+            {/* Left Panel - Question */}
+            <div className="w-1/2 flex flex-col border-r min-h-0" style={{ width: '50%', minWidth: '50%', maxWidth: '50%' }}>
+              <ScrollArea className="flex-1 overflow-y-auto min-h-0">
+                <div className="px-4 pt-2 pb-6">
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center gap-2 min-w-[40px]">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`p-2 h-8 w-8 rounded-full hover:bg-blue-50 ${selectedQuestion?.userVote === 1 ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground'}`}
+                        onClick={() => selectedQuestion && handleVote(selectedQuestion.id, 'up')}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <span className="font-bold text-lg">{selectedQuestion?.upvotes}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`p-2 h-8 w-8 rounded-full hover:bg-red-50 ${selectedQuestion?.userVote === -1 ? 'text-red-600 bg-red-50' : 'text-muted-foreground'}`}
+                        onClick={() => selectedQuestion && handleVote(selectedQuestion.id, 'down')}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex-1 space-y-4">
+                      <p className="text-foreground leading-relaxed">
+                        {selectedQuestion?.content}
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {selectedQuestion?.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      <Separator className="my-4" />
+                      
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                          <Heart className="h-4 w-4 mr-1" />
+                          Like
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                          <Share className="h-4 w-4 mr-1" />
+                          Share
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Right Panel - Answers */}
+            <div className="w-1/2 flex flex-col min-h-0" style={{ width: '50%', minWidth: '50%', maxWidth: '50%' }}>
+              <div className="px-4 py-2 border-b bg-muted/10 flex-shrink-0">
+                <h3 className="text-base font-semibold">
+                  {selectedQuestion?.answerList?.length || 0} Answer{(selectedQuestion?.answerList?.length || 0) !== 1 ? 's' : ''}
+                </h3>
+              </div>
+              
+              {/* Answers List - Scrollable */}
+              <div className="flex-1 overflow-y-auto min-h-0" style={{ minHeight: '300px' }}>
+                <div className="px-4 pt-2 pb-4 space-y-3">
+                  {selectedQuestion?.answerList?.map((answer) => (
+                    <div key={answer.id} className="border rounded-lg p-3 hover:bg-muted/20 transition-colors">
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center gap-2 min-w-[40px]">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`p-1 h-6 w-6 rounded-full hover:bg-blue-50 ${answer.userVote === 1 ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground'}`}
+                            onClick={() => selectedQuestion && handleVote(selectedQuestion.id, 'up', true, answer.id)}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <span className="font-medium text-sm">{answer.upvotes}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`p-1 h-6 w-6 rounded-full hover:bg-red-50 ${answer.userVote === -1 ? 'text-red-600 bg-red-50' : 'text-muted-foreground'}`}
+                            onClick={() => selectedQuestion && handleVote(selectedQuestion.id, 'down', true, answer.id)}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                          {answer.isAccepted && (
+                            <Check className="h-4 w-4 text-green-600 mt-1" />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 space-y-3">
+                          <p className="text-foreground leading-relaxed">{answer.content}</p>
+                          
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Avatar className="h-4 w-4">
+                                <AvatarImage src={answer.author.avatar} alt={answer.author.name} />
+                                <AvatarFallback className="text-xs">
+                                  {answer.author.name.split(' ').map((n) => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{answer.author.name}</span>
+                              <span>•</span>
+                              <span>{answer.timeAgo}</span>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground p-1">
+                              <Reply className="h-3 w-3 mr-1" />
+                              Reply
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {selectedQuestion?.answerList?.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No answers yet. Be the first to help!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Add Answer Section - Sticky at Bottom */}
+              <div className="flex-shrink-0 border-t bg-background">
+                <div className="p-4">
+                  <div className="border-2 border-dashed border-muted rounded-lg p-4 bg-muted/20">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Add Your Answer
+                    </h4>
+                    <div className="space-y-3">
+                      <Textarea
+                        placeholder="Share your knowledge and help others..."
+                        value={newAnswer}
+                        onChange={handleAnswerChange}
+                        rows={3}
+                        className="resize-none"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={user?.avatar} alt={user?.name} />
+                            <AvatarFallback className="text-xs">
+                              {user?.name?.split(' ').map((n) => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>Answering as <strong>{user?.name}</strong></span>
+                        </div>
+                        <Button 
+                          onClick={() => selectedQuestion && handleAddAnswer(selectedQuestion.id)}
+                          disabled={!newAnswer.trim()}
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          Post Answer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
