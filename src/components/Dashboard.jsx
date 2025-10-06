@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import ChatbotWidget from './ChatbotWidget';
 import NotificationWidget from './NotificationWidget';
+import { useSessionStore } from '../stores/useSessionStore';
+import { useConnectionsStore } from '../stores/useConnectionsStore';
 
 export function Dashboard({ user }) {
   const navigate = useNavigate();
@@ -44,34 +46,17 @@ export function Dashboard({ user }) {
     partnerId: null,
     sessionLink: '' // Added sessionLink field
   });
-  const [upcomingSessions, setUpcomingSessions] = useState([
-    {
-      id: 1,
-      title: "React Hooks Deep Dive",
-      partner: "Emma Watson",
-      date: "Today",
-      time: "2:00 PM",
-      type: "Video Call",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      title: "Python Data Analysis",
-      partner: "David Kim",
-      date: "Tomorrow",
-      time: "10:00 AM",
-      type: "Video Call",
-      status: "pending"
-    }
-  ]);
-  const [connectedUsers, setConnectedUsers] = useState([
-    { id: 1, name: "Emma Watson", college: "Harvard University", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 2, name: "David Kim", college: "Stanford University", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 3, name: "Sarah Chen", college: "MIT", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 4, name: "John Doe", college: "Oxford University", avatar: "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=150&h=150&fit=crop&crop=face", status: "connected" },
-    { id: 5, name: "Maria Garcia", college: "University of Tokyo", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face", status: "connected" }
-  ]);
-  const [connectionRequests, setConnectionRequests] = useState({}); // Track pending connection requests
+  const sessions = useSessionStore(state => state.sessions);
+  const createSession = useSessionStore(state => state.createSession);
+  const updateSession = useSessionStore(state => state.updateSession);
+  const deleteSession = useSessionStore(state => state.deleteSession);
+
+  const suggestedConnections = useConnectionsStore(state => state.suggested);
+  const connections = useConnectionsStore(state => state.connections);
+  const connectionRequests = useConnectionsStore(state => state.connectionRequests);
+  const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
+  const deleteConnection = useConnectionsStore(state => state.deleteConnection);
+  const setConnections = useConnectionsStore(state => state.setConnections);
   const [connectModal, setConnectModal] = useState({ isOpen: false, partnerId: null, message: '' });
 
   const levelConfig = {
@@ -101,102 +86,7 @@ export function Dashboard({ user }) {
     }
   };
 
-  // Mock data
-  const suggestedConnections = [
-    {
-      id: 1,
-      name: "Emma Watson",
-      college: "Harvard University",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "Machine Learning", level: "expert" },
-        { name: "Python", level: "advanced" }
-      ],
-      points: 3250,
-      sessions: 28,
-      matchPercentage: 95
-    },
-    {
-      id: 2,
-      name: "David Kim",
-      college: "Stanford University",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "UI/UX Design", level: "expert" },
-        { name: "Figma", level: "advanced" }
-      ],
-      points: 2890,
-      sessions: 22,
-      matchPercentage: 88
-    },
-    {
-      id: 3,
-      name: "Sarah Chen",
-      college: "MIT",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "DevOps", level: "advanced" },
-        { name: "Docker", level: "intermediate" }
-      ],
-      points: 2150,
-      sessions: 15,
-      matchPercentage: 82
-    },
-     {
-       id: 6,
-       name: "Alex Rivera",
-       college: "University of California",
-       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-       skillsCanTeach: [
-         { name: "Web Development", level: "intermediate" },
-         { name: "JavaScript", level: "advanced" }
-       ],
-       points: 1800,
-       sessions: 12,
-       matchPercentage: 75
-     },
-     {
-       id: 7,
-       name: "Priya Patel",
-       college: "Carnegie Mellon University",
-       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
-       skillsCanTeach: [
-         { name: "Data Science", level: "expert" },
-         { name: "R Programming", level: "advanced" },
-         { name: "Statistics", level: "expert" }
-       ],
-       points: 3100,
-       sessions: 25,
-       matchPercentage: 92
-     },
-     {
-       id: 8,
-       name: "Marcus Johnson",
-       college: "Georgia Tech",
-       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-       skillsCanTeach: [
-         { name: "Cybersecurity", level: "advanced" },
-         { name: "Network Security", level: "expert" }
-       ],
-       points: 2650,
-       sessions: 18,
-       matchPercentage: 87
-     },
-     {
-       id: 9,
-       name: "Luna Zhang",
-       college: "University of Washington",
-       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-       skillsCanTeach: [
-         { name: "Mobile Development", level: "expert" },
-         { name: "React Native", level: "advanced" },
-         { name: "iOS Development", level: "intermediate" }
-       ],
-       points: 2400,
-       sessions: 20,
-       matchPercentage: 85
-     }
-  ];
+  // Suggested connections now come from store
 
   const recentActivity = [
     { type: "session_completed", message: "Completed session with Emma Watson", time: "2 hours ago" },
@@ -209,12 +99,12 @@ export function Dashboard({ user }) {
     { label: "Total Points", value: user.points, icon: Trophy, color: "text-yellow-600" },
     { label: "Sessions Completed", value: user.sessionsCompleted, icon: Calendar, color: "text-green-600" },
     { label: "Questions Answered", value: user.questionsAnswered, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Active Connections", value: connectedUsers.filter(user => user.status === "connected").length, icon: Users, color: "text-purple-600" }
+    { label: "Active Connections", value: connections.filter(user => user.status === "connected").length, icon: Users, color: "text-purple-600" }
   ];
 
   const handleScheduleSession = (partnerId, sessionId = null, isEdit = false) => {
     if (isEdit && sessionId) {
-      const sessionToEdit = upcomingSessions.find(session => session.id === sessionId);
+      const sessionToEdit = sessions.find(session => session.id === sessionId);
       setSessionForm({
         title: sessionToEdit.title,
         description: sessionToEdit.description || '',
@@ -248,26 +138,10 @@ export function Dashboard({ user }) {
     
     const partnerName = suggestedConnections.find(conn => conn.id === sessionForm.partnerId).name;
     if (sessionModal.isEdit && sessionModal.sessionId) {
-      setUpcomingSessions(prevSessions =>
-        prevSessions.map(session =>
-          session.id === sessionModal.sessionId
-            ? { ...session, title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: "pending", sessionLink: sessionForm.sessionLink }
-            : session
-        )
-      );
+      updateSession(sessionModal.sessionId, { title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: 'pending', sessionLink: sessionForm.sessionLink });
       toast.success('Session updated successfully!');
     } else {
-      const newSession = {
-        id: Date.now(),
-        title: sessionForm.title,
-        partner: partnerName,
-        date: sessionForm.date,
-        time: sessionForm.time,
-        type: sessionForm.type,
-        status: "pending",
-        sessionLink: sessionForm.sessionLink
-      };
-      setUpcomingSessions(prevSessions => [...prevSessions, newSession]);
+      createSession({ title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, sessionLink: sessionForm.sessionLink });
       toast.success('Session scheduled successfully!');
     }
     setSessionModal({ isOpen: false, partnerId: null, isEdit: false, sessionId: null });
@@ -284,31 +158,17 @@ export function Dashboard({ user }) {
   };
 
   const handleDeleteSession = (sessionId) => {
-    setUpcomingSessions(prevSessions => prevSessions.filter(session => session.id !== sessionId));
+    deleteSession(sessionId);
     toast.success('Session deleted successfully!');
   };
 
   const handleConnectRequest = (partnerId) => {
     const partnerToConnect = suggestedConnections.find(conn => conn.id === partnerId);
-    if (partnerToConnect && !connectedUsers.some(conn => conn.id === partnerId)) {
-      setConnectionRequests(prev => ({ ...prev, [partnerId]: true }));
+    if (partnerToConnect && !connections.some(conn => conn.id === partnerId)) {
+      sendConnectionRequest(partnerId);
       setConnectModal({ isOpen: false, partnerId: null, message: '' });
       toast.success(`Connection request sent to ${partnerToConnect.name}`);
-
-      // Simulate acceptance after 2 seconds
-      setTimeout(() => {
-        setConnectedUsers(prev => [
-          ...prev,
-          { id: partnerToConnect.id, name: partnerToConnect.name, college: partnerToConnect.college, avatar: partnerToConnect.avatar, status: "connected" }
-        ]);
-        setConnectionRequests(prev => {
-          const updated = { ...prev };
-          delete updated[partnerId];
-          return updated;
-        });
-        toast.success(`Connected with ${partnerToConnect.name}`);
-      }, 2000);
-    } else if (connectedUsers.some(conn => conn.id === partnerId)) {
+    } else if (connections.some(conn => conn.id === partnerId)) {
       toast.info('Already connected');
     } else {
       toast.error('Invalid partner');
@@ -316,7 +176,7 @@ export function Dashboard({ user }) {
   };
 
   const handleDeleteConnection = (connectionId) => {
-    setConnectedUsers(prev => prev.filter(conn => conn.id !== connectionId));
+    deleteConnection(connectionId);
     toast.success('Connection deleted');
   };
 
@@ -329,9 +189,10 @@ export function Dashboard({ user }) {
   };
 
   const handleSaveEdit = () => {
-    setConnectedUsers(prev => prev.map(conn =>
+    const updated = connections.map(conn =>
       conn.id === editConnection ? { ...conn, name: editForm.name, college: editForm.college } : conn
-    ));
+    );
+    setConnections(updated);
     setEditConnection(null);
     setEditForm({ name: '', college: '' });
     toast.success('Connection updated');
@@ -344,7 +205,7 @@ export function Dashboard({ user }) {
 
   useEffect(() => {
     // Ensure stats update with connected users
-  }, [connectedUsers]);
+  }, [connections]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -400,10 +261,10 @@ export function Dashboard({ user }) {
             <CardContent>
               <div className="space-y-4">
                 {suggestedConnections
-                  .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                  .filter(connection => !connections.some(conn => conn.id === connection.id))
                   .length > 0 ? (
                   suggestedConnections
-                    .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                    .filter(connection => !connections.some(conn => conn.id === connection.id))
                     .map((connection) => (
                   <div key={connection.id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-start justify-between mb-3">
@@ -452,12 +313,12 @@ export function Dashboard({ user }) {
                        <div className="flex gap-2">
                          <Button 
                            size="sm"
-                           disabled={connectionRequests[connection.id] || connectedUsers.some(conn => conn.id === connection.id)}
+                           disabled={connectionRequests[connection.id] || connections.some(conn => conn.id === connection.id)}
                            onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
                          >
                            {connectionRequests[connection.id] ? (
                              <Badge variant="secondary">Pending</Badge>
-                           ) : connectedUsers.some(conn => conn.id === connection.id && conn.status === "connected") ? (
+                          ) : connections.some(conn => conn.id === connection.id && conn.status === "connected") ? (
                              <Badge>Connected</Badge>
                            ) : (
                              <UserPlus className="h-3 w-3" />
@@ -575,7 +436,7 @@ export function Dashboard({ user }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {upcomingSessions.map((session) => (
+                {sessions.map((session) => (
                   <div key={session.id} className="p-3 border border-border rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-sm text-foreground">{session.title}</h4>
@@ -623,8 +484,8 @@ export function Dashboard({ user }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {connectedUsers.length > 0 ? (
-                  connectedUsers.map((connection) => (
+                {connections.length > 0 ? (
+                  connections.map((connection) => (
                     <div key={connection.id} className="p-3 border border-border rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
@@ -701,7 +562,7 @@ export function Dashboard({ user }) {
                 </SelectTrigger>
                 <SelectContent>
                   {suggestedConnections
-                    .filter(connection => !connectedUsers.some(conn => conn.id === connection.id))
+                    .filter(connection => !connections.some(conn => conn.id === connection.id))
                     .map((connection) => (
                     <SelectItem key={connection.id} value={connection.id.toString()}>
                       {connection.name} ({connection.college})

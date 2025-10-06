@@ -18,95 +18,9 @@ import { Toaster } from './components/ui/sonner';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './contexts/ThemeContext';
+import { useAuthStore } from './stores/useAuthStore';
 
-// API Configuration - Update these for your backend
-// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// API Helper Functions for Backend Integration
-const api = {
-  // Authentication endpoints
-  login: async (credentials) => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/auth/login`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(credentials)
-    // }).then(res => res.json());
-    
-    // Mock response for now
-    return Promise.resolve({ user: mockUser, token: 'mock-token' });
-  },
-  
-  signup: async (userData) => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/auth/signup`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(userData)
-    // }).then(res => res.json());
-    
-    // Mock response for now
-    return Promise.resolve({ user: { ...mockUser, ...userData }, token: 'mock-token' });
-  },
-  
-  // User endpoints
-  getProfile: async (userId) => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/users/${userId}`).then(res => res.json());
-    return Promise.resolve(mockUser);
-  },
-  
-  updateProfile: async (userId, userData) => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/users/${userId}`, {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(userData)
-    // }).then(res => res.json());
-    return Promise.resolve({ ...mockUser, ...userData });
-  },
-  
-  // Skills endpoints
-  getSkills: async () => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/skills`).then(res => res.json());
-    return Promise.resolve([]);
-  },
-  
-  // Sessions endpoints
-  getSessions: async (userId) => {
-    // TODO: Replace with actual API call
-    // return fetch(`${API_BASE_URL}/sessions/user/${userId}`).then(res => res.json());
-    return Promise.resolve([]);
-  }
-};
-
-// Mock user data - Remove this when connecting to backend
-const mockUser = {
-  id: 1,
-  name: "Alex Chen",
-  email: "alex.chen@university.edu",
-  college: "MIT",
-  educationLevel: "Undergraduate",
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-  skillsCanTeach: [
-    { name: "React", level: "advanced" },
-    { name: "JavaScript", level: "expert" },
-    { name: "Python", level: "intermediate" },
-    { name: "Data Analysis", level: "intermediate" },
-    { name: "UI/UX Design", level: "advanced" },
-    { name: "Machine Learning", level: "beginner" },
-    { name: "TypeScript", level: "advanced" },
-    { name: "Node.js", level: "intermediate" }
-  ],
-  skillsWantToLearn: ["Machine Learning", "DevOps", "System Design", "Advanced Statistics"],
-  points: 2450,
-  badges: ["Helper", "Quick Learner", "Top Contributor"],
-  level: "Advanced",
-  sessionsCompleted: 12,
-  questionsAnswered: 34,
-  questionsAsked: 18
-};
+// Using Zustand store for auth, no inline API mocks here
 
 // Protected Route Component
 function ProtectedRoute({ children, user, loading }) {
@@ -139,143 +53,23 @@ function PublicRoute({ children, user, loading }) {
   return children;
 }
 
-// Auth Context Provider Component
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-
-  // Check for existing session on app load
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const savedUser = localStorage.getItem('user');
-        
-        if (token && savedUser) {
-          try {
-            // TODO: Verify token with backend
-            // const userData = await api.getProfile(JSON.parse(savedUser).id);
-            
-            // For now, use saved user data
-            const userData = JSON.parse(savedUser);
-            setUser(userData);
-          } catch (error) {
-            console.error('Session verification failed:', error);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-        setUser(null);
-      } finally {
-        // Add a small delay to ensure smooth transitions
-        setTimeout(() => setLoading(false), 100);
-      }
-    };
-
-    // Add a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn('Authentication check timed out, setting loading to false');
-        setLoading(false);
-      }
-    }, 5000); // 5 second timeout
-
-    checkExistingSession();
-
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
-
-  // Authentication Handlers
-  const handleLogin = async (credentials, redirectPath) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Replace with actual API call
-      const response = await api.login(credentials);
-      
-      // Store auth data
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      setUser(response.user);
-      
-      // Navigate to dashboard or the page they were trying to access
-      const safePath = typeof redirectPath === 'string' && redirectPath.startsWith('/')
-        ? redirectPath
-        : '/dashboard';
-      navigate(safePath, { replace: true });
-    } catch (error) {
-      console.error('Login failed:', error);
-      setError('Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignup = async (userData) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Replace with actual API call
-      const response = await api.signup(userData);
-      
-      // Store auth data
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      setUser(response.user);
-      navigate('/dashboard', { replace: true });
-    } catch (error) {
-      console.error('Signup failed:', error);
-      setError('Signup failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setUser(null);
-    navigate('/', { replace: true });
-  };
-
-  const updateUser = (userData) => {
-    const updatedUser = { ...user, ...userData };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  return React.cloneElement(children, {
-    user,
-    loading,
-    error,
-    handleLogin,
-    handleSignup,
-    handleLogout,
-    updateUser
-  });
-}
+// Using Zustand store instead of custom AuthProvider
 
 // Main App Layout Component
-function AppLayout({ 
-  user, 
-  loading, 
-  error, 
-  handleLogin, 
-  handleSignup, 
-  handleLogout, 
-  updateUser 
-}) {
+function AppLayout() {
+  const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
+  const loading = useAuthStore(state => state.loading) || false;
+  const error = useAuthStore(state => state.error) || null;
+  const login = useAuthStore(state => state.login);
+  const signup = useAuthStore(state => state.signup);
+  const logout = useAuthStore(state => state.logout);
+  const updateUser = useAuthStore(state => state.updateUser);
+
+  // Initialize persisted store once
+  const initialize = useAuthStore(state => state.initialize);
+  useEffect(() => { initialize(); }, [initialize]);
+
   const location = useLocation();
   const isLoggedIn = !!user;
   
@@ -309,7 +103,7 @@ function AppLayout({
       {showSidebar && (
         <Sidebar 
           user={user}
-          onLogout={handleLogout}
+          onLogout={logout}
         />
       )}
       <main className={showSidebar ? "pl-64" : ""} style={showSidebar ? { paddingLeft: '16rem' } : undefined}>
@@ -320,7 +114,12 @@ function AppLayout({
               <LandingPage 
                 loading={loading}
                 error={error}
-                handleLogin={handleLogin}
+                handleLogin={(creds, redirectPath) => {
+                  login(creds).then(() => {
+                    const safePath = typeof redirectPath === 'string' && redirectPath.startsWith('/') ? redirectPath : '/dashboard';
+                    navigate(safePath, { replace: true });
+                  }).catch(() => {});
+                }}
               />
             </PublicRoute>
           } />
@@ -330,7 +129,12 @@ function AppLayout({
               <SignupPage 
                 loading={loading}
                 error={error}
-                handleSignup={handleSignup}
+                handleSignup={async (userData) => {
+                  try {
+                    await signup(userData);
+                    navigate('/dashboard', { replace: true });
+                  } catch (e) {}
+                }}
               />
             </PublicRoute>
           } />
@@ -474,9 +278,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <AuthProvider>
-          <AppLayout />
-        </AuthProvider>
+        <AppLayout />
       </Router>
     </ErrorBoundary>
   );

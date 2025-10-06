@@ -24,6 +24,7 @@ import {
   Target,
   BookOpen
 } from 'lucide-react';
+import { useConnectionsStore } from '../stores/useConnectionsStore';
 
 // Move levelLabels outside component to prevent recreation on every render
 const levelLabels = {
@@ -70,6 +71,11 @@ export function SkillMatching({ user }) {
     meetingLink: '',
     meetingAddress: ''
   });
+
+  // Connections store
+  const connections = useConnectionsStore(state => state.connections);
+  const connectionRequests = useConnectionsStore(state => state.connectionRequests);
+  const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
 
   // Mock data for students
   const students = [
@@ -203,7 +209,9 @@ export function SkillMatching({ user }) {
       toast.error('Please write a message');
       return;
     }
-    
+    if (connectionModal.student?.id) {
+      sendConnectionRequest(connectionModal.student.id);
+    }
     toast.success(`Connection request sent to ${connectionModal.student?.name}!`);
     setConnectionModal({ isOpen: false, student: null });
     setConnectionMessage('');
@@ -431,9 +439,10 @@ export function SkillMatching({ user }) {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => handleConnect(student)}
+                  disabled={!!connectionRequests[student.id] || connections.some(conn => conn.id === student.id)}
                 >
                   <UserPlus className="h-4 w-4 mr-1" />
-                  Connect
+                  {connectionRequests[student.id] ? 'Pending' : connections.some(conn => conn.id === student.id) ? 'Connected' : 'Connect'}
                 </Button>
                 <Button 
                   size="sm" 
