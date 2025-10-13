@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Badge } from './ui/badge';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts@2.15.2';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -198,6 +200,64 @@ export function Profile({ user, onUpdateUser }) {
     skill.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPoints = Math.max(user.points ?? 0, 0);
+  const pointsGoal = Math.max(user.pointsGoal ?? 3000, totalPoints || 1);
+  const sessionsCompleted = Math.max(user.sessionsCompleted ?? 0, 0);
+  const sessionsGoal = Math.max(user.sessionTarget ?? 20, sessionsCompleted || 1);
+  const questionsAnswered = Math.max(user.questionsAnswered ?? 0, 0);
+  const answeredGoal = Math.max(user.questionsAnsweredGoal ?? 40, questionsAnswered || 1);
+  const questionsAsked = Math.max(user.questionsAsked ?? 0, 0);
+  const askedGoal = Math.max(user.questionsAskedGoal ?? 30, questionsAsked || 1);
+
+  const radarMetrics = [
+    {
+      key: 'points',
+      label: 'Points',
+      value: totalPoints,
+      goal: pointsGoal,
+      unit: 'pts',
+      score: Math.min(100, Math.round((totalPoints / pointsGoal) * 100))
+    },
+    {
+      key: 'sessions',
+      label: 'Sessions',
+      value: sessionsCompleted,
+      goal: sessionsGoal,
+      unit: 'sessions',
+      score: Math.min(100, Math.round((sessionsCompleted / sessionsGoal) * 100))
+    },
+    {
+      key: 'answered',
+      label: 'Answers',
+      value: questionsAnswered,
+      goal: answeredGoal,
+      unit: 'answers',
+      score: Math.min(100, Math.round((questionsAnswered / answeredGoal) * 100))
+    },
+    {
+      key: 'asked',
+      label: 'Questions',
+      value: questionsAsked,
+      goal: askedGoal,
+      unit: 'questions',
+      score: Math.min(100, Math.round((questionsAsked / askedGoal) * 100))
+    }
+  ];
+
+  const radarData = radarMetrics.map((metric) => ({
+    metric: metric.label,
+    score: metric.score,
+    raw: metric.value,
+    goal: metric.goal,
+    unit: metric.unit
+  }));
+
+  const radarChartConfig = {
+    score: { label: 'Progress', color: 'hsl(221, 83%, 53%)' }
+  };
+
+  const levelLabel = user.level || 'Member';
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -302,33 +362,79 @@ export function Profile({ user, onUpdateUser }) {
           {/* Stats Card */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Trophy className="h-5 w-5 text-yellow-600" />
-                Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Points</span>
-                <span className="font-semibold text-blue-600 dark:text-blue-400">{user.points}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Level</span>
+              <div className="flex items-center justify-between gap-4">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Trophy className="h-5 w-5 text-yellow-600" />
+                  Performance Snapshot
+                </CardTitle>
                 <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
-                  {user.level}
+                  {levelLabel}
                 </Badge>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sessions</span>
-                <span className="font-semibold text-foreground">{user.sessionsCompleted}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Questions Answered</span>
-                <span className="font-semibold text-foreground">{user.questionsAnswered}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Questions Asked</span>
-                <span className="font-semibold text-foreground">{user.questionsAsked}</span>
+              <CardDescription className="text-muted-foreground">
+                Radar view of how you&apos;re tracking toward your goals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-6">
+                <ChartContainer config={radarChartConfig} className="h-56 w-full max-w-xs sm:max-w-sm">
+                  <RadarChart outerRadius="80%" data={radarData}>
+                    <PolarGrid strokeDasharray="4 4" />
+                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                    <Radar
+                      name="Progress"
+                      dataKey="score"
+                      stroke="var(--color-score)"
+                      fill="var(--color-score)"
+                      fillOpacity={0.25}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          hideIndicator
+                          labelKey="metric"
+                          formatter={(value, _name, item) => {
+                            const raw = Number(item?.payload?.raw ?? 0);
+                            const unit = item?.payload?.unit ? ` ${item.payload.unit}` : '';
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-medium text-foreground">
+                                  {raw.toLocaleString()}
+                                  {unit}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{Number(value)}% of goal</span>
+                              </div>
+                            );
+                          }}
+                        />
+                      }
+                    />
+                  </RadarChart>
+                </ChartContainer>
+
+                <div className="w-full space-y-3">
+                  {radarMetrics.map((metric) => (
+                    <div
+                      key={metric.key}
+                      className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{metric.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Goal: {metric.goal.toLocaleString()} {metric.unit}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">
+                          {metric.value.toLocaleString()} {metric.unit}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{metric.score}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

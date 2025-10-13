@@ -10,7 +10,7 @@ import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   Plus, 
   Search, 
@@ -61,6 +61,16 @@ export function QAForum({ user }) {
     // TODO: Fetch from backend e.g., api.get('/questions').then(setQuestions).catch(() => setQuestions(mocks));
   }, []);
 
+  // Sync selectedQuestion with store when questions change
+  useEffect(() => {
+    if (selectedQuestion) {
+      const updatedQuestion = questions.find(q => q.id === selectedQuestion.id);
+      if (updatedQuestion && JSON.stringify(updatedQuestion) !== JSON.stringify(selectedQuestion)) {
+        setSelectedQuestion(updatedQuestion);
+      }
+    }
+  }, [questions, selectedQuestion]);
+
   const popularTags = ["React", "JavaScript", "Python", "Machine Learning", "CSS", "Node.js", "Database", "Algorithm"];
 
   const filteredQuestions = questions.filter(question => {
@@ -78,11 +88,69 @@ export function QAForum({ user }) {
 
   const handleVote = (questionId, voteType, isAnswer = false, answerId = null) => {
     if (isAnswer && answerId) {
-      voteAnswer(questionId, answerId, voteType);
+      // Find the current answer to check existing vote
+      const question = questions.find(q => q.id === questionId);
+      const answer = question?.answerList?.find(a => a.id === answerId);
+      
+      if (answer) {
+        const currentVote = answer.userVote || 0;
+        const targetVote = voteType === 'up' ? 1 : -1;
+        
+        // Check if user is trying to vote in the same direction
+        if (currentVote === targetVote) {
+          toast.info(`You have already ${voteType === 'up' ? 'upvoted' : 'downvoted'} this answer`);
+          return;
+        }
+        
+        // Execute the vote
+        voteAnswer(questionId, answerId, voteType);
+        
+        // Show appropriate toast message based on the action
+        if (currentVote === 0) {
+          // New vote
+          toast.success(`Answer ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
+        } else {
+          // Changing from opposite vote or removing vote
+          const newVote = currentVote === targetVote ? 0 : targetVote;
+          if (newVote === 0) {
+            toast.success(`${voteType === 'up' ? 'Upvote' : 'Downvote'} removed`);
+          } else {
+            toast.success(`Answer ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
+          }
+        }
+      }
     } else {
-      voteQuestion(questionId, voteType);
+      // Find the current question to check existing vote
+      const question = questions.find(q => q.id === questionId);
+      
+      if (question) {
+        const currentVote = question.userVote || 0;
+        const targetVote = voteType === 'up' ? 1 : -1;
+        
+        // Check if user is trying to vote in the same direction
+        if (currentVote === targetVote) {
+          toast.info(`You have already ${voteType === 'up' ? 'upvoted' : 'downvoted'} this question`);
+          return;
+        }
+        
+        // Execute the vote
+        voteQuestion(questionId, voteType);
+        
+        // Show appropriate toast message based on the action
+        if (currentVote === 0) {
+          // New vote
+          toast.success(`Question ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
+        } else {
+          // Changing from opposite vote or removing vote
+          const newVote = currentVote === targetVote ? 0 : targetVote;
+          if (newVote === 0) {
+            toast.success(`${voteType === 'up' ? 'Upvote' : 'Downvote'} removed`);
+          } else {
+            toast.success(`Question ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
+          }
+        }
+      }
     }
-    toast.success(`${voteType === 'up' ? 'Upvoted' : 'Downvoted'}!`);
   };
 
   const handleAskQuestion = () => {
@@ -176,7 +244,7 @@ export function QAForum({ user }) {
             <Button 
               variant="ghost" 
               size="sm" 
-              className={`p-1 ${question.userVote === 1 ? 'text-blue-600' : ''}`}
+              className={`p-1 hover:bg-blue-50 ${question.userVote === 1 ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground hover:text-blue-600'}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleVote(question.id, 'up');
@@ -189,7 +257,7 @@ export function QAForum({ user }) {
             <Button 
               variant="ghost" 
               size="sm" 
-              className={`p-1 ${question.userVote === -1 ? 'text-red-600' : ''}`}
+              className={`p-1 hover:bg-red-50 ${question.userVote === -1 ? 'text-red-600 bg-red-50' : 'text-muted-foreground hover:text-red-600'}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleVote(question.id, 'down');
@@ -643,11 +711,11 @@ export function QAForum({ user }) {
                       <Separator className="my-4" />
                       
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => toast.success('Coming Soon!')}>
                           <Heart className="h-4 w-4 mr-1" />
                           Like
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => toast.success('Share feature coming soon!')}>
                           <Share className="h-4 w-4 mr-1" />
                           Share
                         </Button>
@@ -713,7 +781,7 @@ export function QAForum({ user }) {
                               <span>•</span>
                               <span>{answer.timeAgo}</span>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground p-1">
+                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground p-1" onClick={() => toast.info(`Reply feature Coming Soon!`)}>
                               <Reply className="h-3 w-3 mr-1" />
                               Reply
                             </Button>
@@ -778,4 +846,3 @@ export function QAForum({ user }) {
     </div>
   );
 }
-
