@@ -52,8 +52,10 @@ export function Dashboard({ user }) {
   const deleteSession = useSessionStore(state => state.deleteSession);
   const loadSessions = useSessionStore(state => state.loadSessions);
 
-  const suggestedConnections = useConnectionsStore(state => state.suggested);
-  const connections = useConnectionsStore(state => state.connections);
+  const suggestedConnectionsRaw = useConnectionsStore(state => state.suggested);
+  const suggestedConnections = Array.isArray(suggestedConnectionsRaw) ? suggestedConnectionsRaw : [];
+  const connectionsRaw = useConnectionsStore(state => state.connections);
+  const connections = Array.isArray(connectionsRaw) ? connectionsRaw : [];
   const connectionRequests = useConnectionsStore(state => state.connectionRequests);
   const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
   const deleteConnection = useConnectionsStore(state => state.deleteConnection);
@@ -456,29 +458,33 @@ export function Dashboard({ user }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div key={session.id} className="p-3 border border-border rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm text-foreground">{session.title}</h4>
-                      <Badge 
-                        variant={session.status === 'confirmed' ? 'default' : 'outline'}
-                        className="text-xs"
-                      >
-                        {session.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">with {session.partner}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      <span>{session.date} at {session.time}</span>
-                    </div>
-                    {session.sessionLink && (
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>Link: {session.sessionLink}</span>
+                {Array.isArray(sessions) && sessions.length > 0 ? (
+                  sessions.map((session) => (
+                    <div key={session.id} className="p-3 border border-border rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-sm text-foreground">{session.title}</h4>
+                        <Badge 
+                          variant={session.status === 'confirmed' ? 'default' : 'outline'}
+                          className="text-xs"
+                        >
+                          {session.status}
+                        </Badge>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <p className="text-xs text-muted-foreground">with {session.partner}</p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>{session.date} at {session.time}</span>
+                      </div>
+                      {session.sessionLink && (
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span>Link: {session.sessionLink}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">No upcoming sessions yet</p>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm" 

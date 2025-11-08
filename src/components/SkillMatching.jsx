@@ -74,7 +74,8 @@ export function SkillMatching({ user }) {
   });
 
   // Connections store
-  const connections = useConnectionsStore(state => state.connections);
+  const connectionsRaw = useConnectionsStore(state => state.connections);
+  const connections = Array.isArray(connectionsRaw) ? connectionsRaw : [];
   const connectionRequests = useConnectionsStore(state => state.connectionRequests);
   const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
 
@@ -207,7 +208,8 @@ export function SkillMatching({ user }) {
         }
 
         const data = await response.json();
-        setStudents(data.data || data || MOCK_STUDENTS);
+        const studentsData = data.data || data || MOCK_STUDENTS;
+        setStudents(Array.isArray(studentsData) ? studentsData : MOCK_STUDENTS);
         setIsLoading(false);
       } catch (err) {
         console.error('Error loading students:', err);
@@ -222,25 +224,34 @@ export function SkillMatching({ user }) {
   }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
 
   // Get unique skills for filter
-  const allSkills = useMemo(() => [...new Set(students.flatMap(s => s.skillsCanTeach?.map(skill => skill.name) || []))], [students]);
-  const universities = useMemo(() => [...new Set(students.map(s => s.college || s.university))], [students]);
+  const allSkills = useMemo(() => {
+    if (!Array.isArray(students)) return [];
+    return [...new Set(students.flatMap(s => s.skillsCanTeach?.map(skill => skill.name) || []))];
+  }, [students]);
+  
+  const universities = useMemo(() => {
+    if (!Array.isArray(students)) return [];
+    return [...new Set(students.map(s => s.college || s.university))];
+  }, [students]);
 
   // Filter students with useMemo for better performance
   const filteredStudents = useMemo(() => {
+    if (!Array.isArray(students)) return [];
+    
     return students.filter(student => {
       const matchesSearch = searchTerm === '' || 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.college.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.skillsCanTeach.some(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.college?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.skillsCanTeach?.some(skill => skill.name?.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesSkill = selectedSkill === 'all' || 
-        student.skillsCanTeach.some(skill => skill.name === selectedSkill);
+        student.skillsCanTeach?.some(skill => skill.name === selectedSkill);
       
       const matchesUniversity = selectedUniversity === 'all' || 
         student.college === selectedUniversity;
       
       const matchesLevel = selectedLevel === 'all' || 
-        student.skillsCanTeach.some(skill => skill.level === selectedLevel);
+        student.skillsCanTeach?.some(skill => skill.level === selectedLevel);
       
       // Exclude already connected users from discovery results
       const isNotConnected = !connections.some(conn => conn.id === student.id);
@@ -476,7 +487,7 @@ export function SkillMatching({ user }) {
                 </div>
                 
                 <div className="grid grid-cols-1 gap-2">
-                  {student.skillsCanTeach.slice(0, 3).map((skill, index) => {
+                  {student.skillsCanTeach?.slice(0, 3)?.map((skill, index) => {
                     const levelInfo = levelLabels[skill.level];
                     return (
                       <div 
@@ -582,7 +593,7 @@ export function SkillMatching({ user }) {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {connections.map((student) => {
               // Get full student data from students array for additional info
-              const fullStudentData = students.find(s => s.id === student.id);
+              const fullStudentData = Array.isArray(students) ? students.find(s => s.id === student.id) : null;
               return (
                 <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
                   <CardContent className="p-6">
@@ -609,12 +620,12 @@ export function SkillMatching({ user }) {
                       <div className="mb-3">
                         <p className="text-xs font-semibold text-muted-foreground mb-2">Can teach</p>
                         <div className="flex flex-wrap gap-1">
-                          {fullStudentData.skillsCanTeach.slice(0, 3).map((skill) => (
+                          {fullStudentData?.skillsCanTeach?.slice(0, 3)?.map((skill) => (
                             <Badge key={skill.name} variant="outline" className="text-xs">
                               {skill.name}
                             </Badge>
-                          ))}
-                          {fullStudentData.skillsCanTeach.length > 3 && (
+                          )) || []}
+                          {fullStudentData?.skillsCanTeach?.length > 3 && (
                             <Badge variant="outline" className="text-xs">
                               +{fullStudentData.skillsCanTeach.length - 3}
                             </Badge>
