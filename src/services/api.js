@@ -385,6 +385,19 @@ export const sessionService = {
     }
   },
 
+  // Update a session
+  updateSession: async (sessionId, updates) => {
+    try {
+      const response = await apiRequest(SESSION_ENDPOINTS.UPDATE_SESSION || `/session/${sessionId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+      return response.data?.session || response.data;
+    } catch (error) {
+      throw new Error('Failed to update session');
+    }
+  },
+
   // Rate a session
   rateSession: async ({ sessionId, rating, comment }) => {
     try {

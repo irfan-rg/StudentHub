@@ -181,7 +181,8 @@ export function Sessions({ user }) {
     startPeriod: 'AM',
     duration: '60',
     meetingLink: '',
-    meetingAddress: ''
+    meetingAddress: '',
+    documents: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
@@ -554,25 +555,71 @@ export function Sessions({ user }) {
       payload.location = sessionForm.meetingAddress.trim();
     }
 
-    try {
-      await createSessionStore(payload);
-      toast.success('Session created');
-      setSessionForm({
-        title: '',
-        description: '',
-        type: 'video',
-        date: undefined,
-        startHour: '09',
-        startMinute: '00',
-        startPeriod: 'AM',
-        duration: '60',
-        meetingLink: '',
-        meetingAddress: ''
+    // Handle document uploads if there are any
+    if (sessionForm.documents.length > 0) {
+      const formData = new FormData();
+      formData.append('sessionData', JSON.stringify(payload));
+      
+      sessionForm.documents.forEach((doc, index) => {
+        formData.append(`documents`, doc);
       });
-    } catch (error) {
-      toast.error(error.message || 'Failed to create session');
-    } finally {
-      setIsSubmitting(false);
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/session/create-with-documents`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create session with documents');
+        }
+
+        toast.success('Session created with documents');
+        setSessionForm({
+          title: '',
+          description: '',
+          type: 'video',
+          date: undefined,
+          startHour: '09',
+          startMinute: '00',
+          startPeriod: 'AM',
+          duration: '60',
+          meetingLink: '',
+          meetingAddress: '',
+          documents: []
+        });
+      } catch (error) {
+        toast.error(error.message || 'Failed to create session');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // No documents, use regular API call
+      try {
+        await createSessionStore(payload);
+        toast.success('Session created');
+        setSessionForm({
+          title: '',
+          description: '',
+          type: 'video',
+          date: undefined,
+          startHour: '09',
+          startMinute: '00',
+          startPeriod: 'AM',
+          duration: '60',
+          meetingLink: '',
+          meetingAddress: '',
+          documents: []
+        });
+      } catch (error) {
+        toast.error(error.message || 'Failed to create session');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -957,6 +1004,67 @@ export function Sessions({ user }) {
                        <div className="text-xs text-muted-foreground flex items-center gap-2"><MapPin className="h-3 w-3" /> Provide a clear address</div>
                      </div>
                    )}
+
+                   {/* Document Upload Section */}
+                   <div className="space-y-3 border-t border-border pt-4">
+                     <Label htmlFor="session-documents">Attach Document</Label>
+                     <div className="flex items-center gap-2">
+                       <input
+                         id="session-documents"
+                         type="file"
+                         multiple
+                         accept=".pdf,.doc,.docx,.txt,.pptx,.xlsx"
+                         onChange={(e) => {
+                           const files = Array.from(e.target.files || []);
+                           setSessionForm(prev => ({
+                             ...prev,
+                             documents: [...prev.documents, ...files]
+                           }));
+                           e.target.value = ''; // Reset input
+                         }}
+                         className="hidden"
+                       />
+                       <Button
+                         type="button"
+                         variant="outline"
+                         onClick={() => document.getElementById('session-documents').click()}
+                         className="flex-1"
+                       >
+                         📎 Add Documents
+                       </Button>
+                     </div>
+                     
+                     {/* Display uploaded documents */}
+                     {sessionForm.documents.length > 0 && (
+                       <div className="space-y-2">
+                         <p className="text-sm font-medium text-foreground">Attached Documents ({sessionForm.documents.length})</p>
+                         <div className="space-y-2">
+                           {sessionForm.documents.map((doc, index) => (
+                             <div key={index} className="flex items-center justify-between p-2 bg-muted rounded border border-border">
+                               <span className="text-sm text-foreground truncate flex-1">
+                                 📄 {doc.name || `Document ${index + 1}`}
+                               </span>
+                               <Button
+                                 type="button"
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => {
+                                   setSessionForm(prev => ({
+                                     ...prev,
+                                     documents: prev.documents.filter((_, i) => i !== index)
+                                   }));
+                                 }}
+                                 className="h-6 w-6 p-0"
+                               >
+                                 ✕
+                               </Button>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+                     <div className="text-xs text-muted-foreground">Supported: PDF, DOC, DOCX, TXT, PPTX, XLSX (Max 10MB each)</div>
+                   </div>
                   </div>
 
                    <div className="flex gap-3">

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -59,6 +59,7 @@ export function SkillMatching({ user }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedUniversity, setSelectedUniversity] = useState('all');
   const [selectedLevel, setSelectedLevel] = useState('all');
+  const [activeTab, setActiveTab] = useState('discover'); // 'discover' or 'connected'
   const [connectionModal, setConnectionModal] = useState({ isOpen: false, student: null });
   const [sessionModal, setSessionModal] = useState({ isOpen: false, student: null });
   const [connectionMessage, setConnectionMessage] = useState('');
@@ -77,8 +78,13 @@ export function SkillMatching({ user }) {
   const connectionRequests = useConnectionsStore(state => state.connectionRequests);
   const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
 
-  // Mock data for students
-  const students = [
+  // State for students data
+  const [students, setStudents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Mock data for fallback
+  const MOCK_STUDENTS = [
     {
       id: 1,
       name: "Emma Watson",
@@ -171,9 +177,53 @@ export function SkillMatching({ user }) {
     }
   ];
 
+  // Fetch students from API
+  useEffect(() => {
+    const loadStudents = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('authToken');
+        const queryParams = new URLSearchParams({
+          skill: selectedSkill !== 'all' ? selectedSkill : '',
+          university: selectedUniversity !== 'all' ? selectedUniversity : '',
+          level: selectedLevel !== 'all' ? selectedLevel : '',
+          search: searchTerm
+        });
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/find?${queryParams}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { Authorization: `Bearer ${token}` })
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch students');
+        }
+
+        const data = await response.json();
+        setStudents(data.data || data || MOCK_STUDENTS);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error loading students:', err);
+        setError(err.message);
+        setIsLoading(false);
+        // Fallback to mock data
+        setStudents(MOCK_STUDENTS);
+      }
+    };
+
+    loadStudents();
+  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
+
   // Get unique skills for filter
-  const allSkills = useMemo(() => [...new Set(students.flatMap(s => s.skillsCanTeach.map(skill => skill.name)))], []);
-  const universities = useMemo(() => [...new Set(students.map(s => s.college))], []);
+  const allSkills = useMemo(() => [...new Set(students.flatMap(s => s.skillsCanTeach?.map(skill => skill.name) || []))], [students]);
+  const universities = useMemo(() => [...new Set(students.map(s => s.college || s.university))], [students]);
 
   // Filter students with useMemo for better performance
   const filteredStudents = useMemo(() => {
@@ -192,9 +242,12 @@ export function SkillMatching({ user }) {
       const matchesLevel = selectedLevel === 'all' || 
         student.skillsCanTeach.some(skill => skill.level === selectedLevel);
       
-      return matchesSearch && matchesSkill && matchesUniversity && matchesLevel;
+      // Exclude already connected users from discovery results
+      const isNotConnected = !connections.some(conn => conn.id === student.id);
+      
+      return matchesSearch && matchesSkill && matchesUniversity && matchesLevel && isNotConnected;
     });
-  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
+  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel, connections]);
 
   const handleConnect = (student) => {
     setConnectionModal({ isOpen: true, student });
@@ -327,26 +380,70 @@ export function SkillMatching({ user }) {
         </CardContent>
       </Card>
 
-      {/* Results */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground">
-          {filteredStudents.length} Study Partners Found
-        </h2>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <TrendingUp className="h-4 w-4" />
-          Sorted by match percentage
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-6">
+        <Button
+          variant={activeTab === 'discover' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('discover')}
+          className="flex-1 justify-center"
+        >
+          Discover ({filteredStudents.length})
+        </Button>
+        <Button
+          variant={activeTab === 'connected' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('connected')}
+          className="flex-1 justify-center"
+        >
+          Connected ({connections.length})
+        </Button>
       </div>
 
-      {/* Student Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStudents.map((student) => (
-          <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
-            <CardContent className="p-6">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
+      {/* Results */}
+      {activeTab === 'discover' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground">
+              {isLoading ? 'Loading...' : `${filteredStudents.length} Study Partners Found`}
+            </h2>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              Sorted by match percentage
+            </div>
+          </div>
+
+          {isLoading && (
+            <Card className="text-center py-12 bg-card border-border">
+              <CardContent>
+                <div className="flex justify-center items-center gap-2">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                  <p className="text-muted-foreground">Loading study partners...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isLoading && error && (
+            <Card className="text-center py-12 bg-card border-border">
+              <CardContent>
+                <p className="text-red-500">Error: {error}</p>
+                <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isLoading && (
+            <>
+              {/* Student Cards */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredStudents.map((student) => (
+                  <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
+                    <CardContent className="p-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
                     <img
                       src={student.avatar}
                       alt={student.name}
@@ -433,49 +530,132 @@ export function SkillMatching({ user }) {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => handleConnect(student)}
-                  disabled={!!connectionRequests[student.id] || connections.some(conn => conn.id === student.id)}
-                >
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  {connectionRequests[student.id] ? 'Pending' : connections.some(conn => conn.id === student.id) ? 'Connected' : 'Connect'}
-                </Button>
-                <Button 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleScheduleSession(student)}
-                >
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Session
-                </Button>
-              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full"
+                onClick={() => handleConnect(student)}
+                disabled={!!connectionRequests[student.id] || connections.some(conn => conn.id === student.id)}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                {connectionRequests[student.id] ? 'Pending' : connections.some(conn => conn.id === student.id) ? 'Connected' : 'Connect'}
+              </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+                ))}
+              </div>
 
-      {filteredStudents.length === 0 && (
-        <Card className="text-center py-12 bg-card border-border">
-          <CardContent>
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No students found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search terms or filters to find more study partners.
-            </p>
-            <Button variant="outline" onClick={() => {
-              setSearchTerm('');
-              setSelectedSkill('all');
-              setSelectedUniversity('all');
-              setSelectedLevel('all');
-            }}>
-              Clear All Filters
-            </Button>
-          </CardContent>
-        </Card>
+              {filteredStudents.length === 0 && (
+                <Card className="text-center py-12 bg-card border-border">
+                  <CardContent>
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No students found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Try adjusting your search terms or filters to find more study partners.
+                    </p>
+                    <Button variant="outline" onClick={() => {
+                      setSearchTerm('');
+                      setSelectedSkill('all');
+                      setSelectedUniversity('all');
+                      setSelectedLevel('all');
+                    }}>
+                      Clear All Filters
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Connected Users Tab */}
+      {activeTab === 'connected' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground">
+              {connections.length} Connected Study Partners
+            </h2>
+          </div>
+
+          {/* Connected Users Cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {connections.map((student) => {
+              // Get full student data from students array for additional info
+              const fullStudentData = students.find(s => s.id === student.id);
+              return (
+                <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
+                  <CardContent className="p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img
+                            src={student.avatar}
+                            alt={student.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">{student.name}</h3>
+                          <p className="text-sm text-muted-foreground">{student.college}</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">Connected</Badge>
+                    </div>
+
+                    {/* Skills */}
+                    {fullStudentData?.skillsCanTeach && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Can teach</p>
+                        <div className="flex flex-wrap gap-1">
+                          {fullStudentData.skillsCanTeach.slice(0, 3).map((skill) => (
+                            <Badge key={skill.name} variant="outline" className="text-xs">
+                              {skill.name}
+                            </Badge>
+                          ))}
+                          {fullStudentData.skillsCanTeach.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{fullStudentData.skillsCanTeach.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rating & Availability */}
+                    {fullStudentData && (
+                      <div className="flex items-center gap-2 mb-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold text-foreground">{fullStudentData.rating?.average || 'N/A'}</span>
+                          <span className="text-muted-foreground">({fullStudentData.rating?.count || 0})</span>
+                        </div>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground">{fullStudentData.availability}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {connections.length === 0 && (
+            <Card className="text-center py-12 bg-card border-border">
+              <CardContent>
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No connections yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start connecting with study partners in the Discover tab.
+                </p>
+                <Button variant="outline" onClick={() => setActiveTab('discover')}>
+                  Go to Discover
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Connection Modal */}

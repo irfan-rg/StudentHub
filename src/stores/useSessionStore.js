@@ -116,6 +116,26 @@ export const useSessionStore = create(
         }
       },
 
+      updateSession: async (sessionId, updates) => {
+        set({ loading: true, error: null })
+        try {
+          const updated = await sessionService.updateSession(sessionId, updates)
+          const normalized = normalizeSession(updated)
+          if (normalized) {
+            set({
+              sessions: get().sessions.map(session => session.id === normalized.id ? normalized : session),
+              loading: false
+            })
+          } else {
+            set({ loading: false })
+          }
+          return normalized
+        } catch (error) {
+          set({ error: error.message || 'Failed to update session', loading: false })
+          throw error
+        }
+      },
+
       rateSession: async ({ sessionId, rating, comment }) => {
         set({ loading: true, error: null })
         try {

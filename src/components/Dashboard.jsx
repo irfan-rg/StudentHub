@@ -50,6 +50,7 @@ export function Dashboard({ user }) {
   const createSession = useSessionStore(state => state.createSession);
   const updateSession = useSessionStore(state => state.updateSession);
   const deleteSession = useSessionStore(state => state.deleteSession);
+  const loadSessions = useSessionStore(state => state.loadSessions);
 
   const suggestedConnections = useConnectionsStore(state => state.suggested);
   const connections = useConnectionsStore(state => state.connections);
@@ -57,6 +58,8 @@ export function Dashboard({ user }) {
   const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
   const deleteConnection = useConnectionsStore(state => state.deleteConnection);
   const setConnections = useConnectionsStore(state => state.setConnections);
+  const loadSuggestedConnections = useConnectionsStore(state => state.loadSuggestedConnections);
+  const loadConnections = useConnectionsStore(state => state.loadConnections);
   const [connectModal, setConnectModal] = useState({ isOpen: false, partnerId: null, message: '' });
 
   const levelConfig = {
@@ -202,6 +205,23 @@ export function Dashboard({ user }) {
     setEditConnection(null);
     setEditForm({ name: '', college: '' });
   };
+
+  useEffect(() => {
+    // Load suggested connections and existing connections on component mount
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          loadSuggestedConnections(),
+          loadConnections(),
+          loadSessions()
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+    
+    loadInitialData();
+  }, [loadSuggestedConnections, loadConnections, loadSessions]);
 
   useEffect(() => {
     // Ensure stats update with connected users

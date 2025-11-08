@@ -13,7 +13,7 @@ import { Contact } from './components/Contact';
 import { About } from './components/About';
 import { Blog } from './components/Blog';
 import { Sidebar } from './components/Navigation';
-import Sessions from './components/Sessions';
+import {Sessions} from './components/Sessions';
 import { Toaster } from './components/ui/sonner';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
