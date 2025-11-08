@@ -10,9 +10,12 @@ import {
   Clock,
   UserPlus,
   MessageCircle,
-  List
+  List,
+  Check,
+  X as XIcon
 } from 'lucide-react';
 import { notificationService } from '../services/api';
+import { toast } from 'sonner@2.0.3';
 
 // Mock notification data - focused on 3 main categories
 const mockNotifications = [
@@ -80,6 +83,13 @@ const mockNotifications = [
 
 // Notification type configurations - 3 main categories
 const notificationConfig = {
+  session_invite: {
+    icon: UserPlus,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/50',
+    priority: 'high',
+    label: 'Session Invite'
+  },
   session_reminder: {
     icon: Clock,
     color: 'text-orange-600',
@@ -89,15 +99,15 @@ const notificationConfig = {
   },
   connection_request: {
     icon: UserPlus,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/50',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50 dark:bg-green-950/50',
     priority: 'medium',
     label: 'Connection'
   },
   qa_activity: {
     icon: MessageCircle,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 dark:bg-green-950/50',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/50',
     priority: 'medium',
     label: 'Q&A'
   }
@@ -127,7 +137,7 @@ export default function NotificationWidget({ user }) {
   const scrollRef = useRef(null);
 
   // Calculate unread count
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Filter notifications based on active tab
   const filteredNotifications = activeTab === 'all' 
@@ -137,15 +147,13 @@ export default function NotificationWidget({ user }) {
   // Fetch notifications from API
   const fetchNotifications = async () => {
     try {
-      // In production, replace mockNotifications with API call
-      // const response = await notificationService.getNotifications();
-      // setNotifications(response.data);
-      
-      // For now, use mock data but simulate API behavior
-      setNotifications(mockNotifications);
+      const response = await notificationService.getNotifications();
+      setNotifications(response.data.notifications || []);
       setLastFetch(Date.now());
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+      // Fallback to empty array on error
+      setNotifications([]);
     }
   };
 
@@ -178,34 +186,29 @@ export default function NotificationWidget({ user }) {
 
   // Mark notification as read
   const markAsRead = async (notificationId) => {
+    const previousState = notifications;
     setNotifications(prev => 
       prev.map(n => 
-        n.id === notificationId ? { ...n, read: true } : n
+        n._id === notificationId ? { ...n, isRead: true } : n
       )
     );
     
     try {
-      // In production, uncomment this API call
-      // await notificationService.markAsRead(notificationId);
+      await notificationService.markAsRead(notificationId);
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
       // Revert optimistic update on error
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId ? { ...n, read: false } : n
-        )
-      );
+      setNotifications(previousState);
     }
   };
 
   // Mark all as read
   const markAllAsRead = async () => {
     const previousState = notifications;
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     
     try {
-      // In production, uncomment this API call
-      // await notificationService.markAllAsRead();
+      await notificationService.markAllAsRead();
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
       // Revert optimistic update on error
@@ -213,11 +216,40 @@ export default function NotificationWidget({ user }) {
     }
   };
 
+  // Handle session invite response
+  const handleSessionInviteResponse = async (notificationId, action) => {
+    try {
+      await notificationService.respondToSessionInvite(notificationId, action);
+      
+      // Remove the notification from the list since it's been responded to
+      setNotifications(prev => prev.filter(n => n._id !== notificationId));
+      
+      // Show success message
+      if (action === 'accept') {
+        toast.success('Session invitation accepted!');
+      } else {
+        toast.success('Session invitation declined.');
+      }
+    } catch (error) {
+      console.error('Failed to respond to session invite:', error);
+      toast.error('Failed to respond to invitation. Please try again.');
+    }
+  };
+
   // Handle notification click
   const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+    markAsRead(notification._id);
+    
+    // Special handling for session invites - redirect to invites tab
+    if (notification.type === 'session_invite') {
+      navigate('/sessions?tab=invites');
+      setOpen(false);
+      return;
+    }
+    
+    // Handle other notification types
+    if (notification.metadata?.actionUrl) {
+      navigate(notification.metadata.actionUrl);
       setOpen(false);
     }
   };
@@ -226,11 +258,10 @@ export default function NotificationWidget({ user }) {
   const deleteNotification = async (notificationId, event) => {
     event.stopPropagation();
     const previousState = notifications;
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setNotifications(prev => prev.filter(n => n._id !== notificationId));
     
     try {
-      // In production, uncomment this API call
-      // await notificationService.deleteNotification(notificationId);
+      await notificationService.deleteNotification(notificationId);
     } catch (error) {
       console.error('Failed to delete notification:', error);
       // Revert optimistic update on error
@@ -244,8 +275,7 @@ export default function NotificationWidget({ user }) {
     setNotifications([]);
     
     try {
-      // In production, uncomment this API call
-      // await notificationService.clearAll();
+      await notificationService.clearAll();
     } catch (error) {
       console.error('Failed to clear all notifications:', error);
       // Revert optimistic update on error
@@ -372,10 +402,10 @@ export default function NotificationWidget({ user }) {
                   )}
                   
                   {/* Category Tabs */}
-                  <div className="flex gap-1 mt-3 p-1 bg-muted rounded-lg">
+                  <div className="flex justify-between mt-3 p-1 bg-muted rounded-lg">
                     <button
                       onClick={() => setActiveTab('all')}
-                      className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
                         activeTab === 'all' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
@@ -385,8 +415,19 @@ export default function NotificationWidget({ user }) {
                       All
                     </button>
                     <button
+                      onClick={() => setActiveTab('session_invite')}
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                        activeTab === 'session_invite' 
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      Invites
+                    </button>
+                    <button
                       onClick={() => setActiveTab('session_reminder')}
-                      className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
                         activeTab === 'session_reminder' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
@@ -396,19 +437,8 @@ export default function NotificationWidget({ user }) {
                       Sessions
                     </button>
                     <button
-                      onClick={() => setActiveTab('connection_request')}
-                      className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
-                        activeTab === 'connection_request' 
-                          ? 'bg-background text-foreground shadow-sm' 
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <UserPlus className="h-3 w-3" />
-                      Connections
-                    </button>
-                    <button
                       onClick={() => setActiveTab('qa_activity')}
-                      className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
                         activeTab === 'qa_activity' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
@@ -439,11 +469,11 @@ export default function NotificationWidget({ user }) {
                         
                         return (
                           <div
-                            key={notification.id}
+                            key={notification._id}
                             onClick={() => handleNotificationClick(notification)}
                             className={`
                               p-4 border-b border-border cursor-pointer transition-colors hover:bg-muted/50
-                              ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-950/20 border-l-4 border-l-blue-500' : ''}
+                              ${!notification.isRead ? 'bg-blue-50/50 dark:bg-blue-950/20 border-l-4 border-l-blue-500' : ''}
                               ${index === sortedNotifications.length - 1 ? 'border-b-0' : ''}
                             `}
                           >
@@ -455,25 +485,54 @@ export default function NotificationWidget({ user }) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1 min-w-0">
-                                    <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                    <p className={`text-sm font-medium ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
                                       {notification.title}
                                     </p>
                                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                       {notification.message}
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-2">
-                                      {formatRelativeTime(notification.timestamp)}
+                                      {formatRelativeTime(new Date(notification.createdAt))}
                                     </p>
+                                    
+                                    {/* Accept/Decline buttons for session invites */}
+                                    {notification.type === 'session_invite' && (
+                                      <div className="flex gap-2 mt-3">
+                                        <Button
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSessionInviteResponse(notification._id, 'accept');
+                                          }}
+                                          className="h-7 px-3 text-xs bg-green-600 hover:bg-green-700"
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSessionInviteResponse(notification._id, 'decline');
+                                          }}
+                                          className="h-7 px-3 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                                        >
+                                          <XIcon className="h-3 w-3 mr-1" />
+                                          Decline
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                   
                                   <div className="flex items-center gap-1 flex-shrink-0">
-                                    {!notification.read && (
+                                    {!notification.isRead && (
                                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     )}
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={(e) => deleteNotification(notification.id, e)}
+                                      onClick={(e) => deleteNotification(notification._id, e)}
                                       className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                     >
                                       <X className="h-3 w-3" />

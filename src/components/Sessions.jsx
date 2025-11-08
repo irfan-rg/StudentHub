@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
@@ -10,8 +10,154 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Calendar, Video, MapPin, Plus, List, User, Clock, CheckCircle, PlayCircle, Star } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Calendar, Video, MapPin, Plus, List, User, Clock, CheckCircle, PlayCircle, Star, Loader2, Inbox, Sparkles, Check, Award } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { Calendar as CalendarComponent } from './ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { format } from 'date-fns';
+import { useSessionStore } from '../stores/useSessionStore.js';
+import { notificationService, sessionService } from '../services/api.js';
+
+const DEFAULT_HOST_NAME = 'Session host';
+
+const HOURS_12 = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+const PERIODS = ['AM', 'PM'];
+const QUIZ_MAX_QUESTIONS = 6;
+const QUIZ_PASSING_SCORE = 4;
+const QUIZ_POINTS_PER_CORRECT = 10;
+
+const buildUniqueOptions = (options = []) => Array.from(new Set(options.filter(Boolean)));
+
+const createQuizQuestions = (session = {}) => {
+  const safeTitle = session?.title || 'This session';
+  const safeDuration = session?.duration ? `${session.duration} minutes` : '60 minutes';
+  const safeType = session?.type === 'video' ? 'Video session' : 'In person meetup';
+  const alternateType = session?.type === 'video' ? 'In person meetup' : 'Video session';
+  const safeDate = session?.dateLabel || 'Date to be decided';
+  const safeTime = session?.timeLabel || 'Time to be decided';
+
+  const questions = [
+    {
+      question: `What was the main focus of "${safeTitle}"?`,
+      options: buildUniqueOptions([
+        safeTitle,
+        'Building a growth mindset',
+        'Mastering exam routines',
+        'Planning a study schedule'
+      ]),
+      answer: safeTitle
+    },
+    {
+      question: 'How long was the session scheduled for?',
+      options: buildUniqueOptions([
+        safeDuration,
+        '30 minutes',
+        '45 minutes',
+        '90 minutes'
+      ]),
+      answer: safeDuration
+    },
+    {
+      question: 'Which delivery format best fits this session?',
+      options: buildUniqueOptions([
+        safeType,
+        alternateType,
+        'Self-paced course',
+        'Email series'
+      ]),
+      answer: safeType
+    },
+    {
+      question: 'When was this session held?',
+      options: buildUniqueOptions([
+        `${safeDate} (${safeTime})`,
+        'Next Monday at 9:00 AM',
+        'Last Friday evening',
+        'Scheduled asynchronously'
+      ]),
+      answer: `${safeDate} (${safeTime})`
+    },
+    {
+      question: 'What is a strong follow-up action after attending a session?',
+      options: [
+        'Write down two key takeaways',
+        'Ignore the new information',
+        'Stop communicating with your partner',
+        'Avoid reviewing the shared notes'
+      ],
+      answer: 'Write down two key takeaways'
+    },
+    {
+      question: 'How can you support your study partner after the session?',
+      options: [
+        'Share helpful resources or notes',
+        'Criticize their questions',
+        'Discourage future collaboration',
+        'Delete the meeting recording'
+      ],
+      answer: 'Share helpful resources or notes'
+    }
+  ];
+
+  return questions
+    .slice(0, QUIZ_MAX_QUESTIONS)
+    .map((item, index) => ({ ...item, id: `quiz-${index + 1}` }));
+};
+
+const buildInitials = (value = '') => {
+  const target = (value || '').trim();
+  if (!target) {
+    return 'SH';
+  }
+
+  const parts = target
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase());
+
+  return parts.join('') || 'SH';
+};
+
+const formatUserInfo = (info) => {
+  if (!info) {
+    return {
+      name: DEFAULT_HOST_NAME,
+      email: '',
+      avatar: '',
+      initials: buildInitials(DEFAULT_HOST_NAME)
+    };
+  }
+
+  const source = info.user || info.profile || info.member || info.target || info;
+
+  if (typeof source === 'string') {
+    const name = source.trim() || DEFAULT_HOST_NAME;
+    return {
+      name,
+      email: '',
+      avatar: '',
+      initials: buildInitials(name)
+    };
+  }
+
+  const firstName = source.firstName || source.firstname;
+  const lastName = source.lastName || source.lastname;
+  let name = source.name || source.fullName || [firstName, lastName].filter(Boolean).join(' ');
+  name = (name || DEFAULT_HOST_NAME).trim();
+
+  const email = source.email || source.mail || '';
+  const avatar = source.avatar || source.profileImage || source.image || source.picture || '';
+
+  return {
+    name,
+    email,
+    avatar,
+    initials: buildInitials(name)
+  };
+};
 
 export function Sessions({ user }) {
   const [searchParams] = useSearchParams();
@@ -20,8 +166,8 @@ export function Sessions({ user }) {
   // Check for tab parameter in URL and set active tab accordingly
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'manage') {
-      setActiveTab('manage');
+    if (tabParam === 'manage' || tabParam === 'invites') {
+      setActiveTab(tabParam);
     }
   }, [searchParams]);
 
@@ -29,62 +175,342 @@ export function Sessions({ user }) {
     title: '',
     description: '',
     type: 'video',
+    date: undefined,
+    startHour: '09',
+    startMinute: '00',
+    startPeriod: 'AM',
     duration: '60',
-    preferredTimes: '',
     meetingLink: '',
     meetingAddress: ''
   });
-
-  const [sessions, setSessions] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
-  const [joinedSessions, setJoinedSessions] = useState([
-    {
-      id: 1,
-      title: "Advanced React Patterns",
-      description: "Learn advanced React patterns and best practices",
-      type: "video",
-      duration: "90",
-      meetingLink: "https://meet.google.com/abc-defg-hij",
-      creator: "Emma Watson",
-      creatorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face",
-      date: "2024-01-15",
-      time: "14:00",
-      status: "upcoming"
-    },
-    {
-      id: 2,
-      title: "Machine Learning Basics",
-      description: "Introduction to ML concepts and algorithms",
-      type: "inperson",
-      duration: "120",
-      meetingAddress: "MIT Campus, Building 32, Room 101",
-      creator: "David Kim",
-      creatorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      date: "2024-01-20",
-      time: "10:00",
-      status: "upcoming"
-    },
-    {
-      id: 3,
-      title: "UI/UX Design Workshop",
-      description: "Hands-on workshop for design principles",
-      type: "video",
-      duration: "60",
-      meetingLink: "https://zoom.us/j/123456789",
-      creator: "Sarah Chen",
-      creatorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      date: "2024-01-10",
-      time: "16:00",
-      status: "completed"
-    }
-  ]);
+  const sessionsStore = useSessionStore((state) => state.sessions);
+  const joinedSessions = useSessionStore((state) => state.joinedSessions);
+  const loadSessions = useSessionStore((state) => state.loadSessions);
+  const loadJoinedSessions = useSessionStore((state) => state.loadJoinedSessions);
+  const createSessionStore = useSessionStore((state) => state.createSession);
+  const deleteSessionStore = useSessionStore((state) => state.deleteSession);
+  const rateSessionStore = useSessionStore((state) => state.rateSession);
+  const sessionsLoading = useSessionStore((state) => state.loading);
+  const sessionsError = useSessionStore((state) => state.error);
 
-  const handleCreateSession = () => {
+  const [sessionInvites, setSessionInvites] = useState([]);
+  const [invitesLoading, setInvitesLoading] = useState(false);
+  const [invitesError, setInvitesError] = useState(null);
+  const [pendingActions, setPendingActions] = useState({});
+  const [claimedPoints, setClaimedPoints] = useState({});
+
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+  const [quizSession, setQuizSession] = useState(null);
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizScore, setQuizScore] = useState(null);
+  const [quizResultPoints, setQuizResultPoints] = useState(0);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+
+  const currentUserId = user?._id || user?.id;
+
+  const fetchSessionInvites = useCallback(async () => {
+    if (!currentUserId) return;
+    setInvitesLoading(true);
+    setInvitesError(null);
+    try {
+      const response = await notificationService.getNotifications(1, 50);
+      const notifications = response?.data?.notifications || [];
+      const invites = notifications.filter((item) => item.type === 'session_invite');
+      setSessionInvites(invites);
+    } catch (error) {
+      setInvitesError(error.message || 'Failed to load session invites');
+    } finally {
+      setInvitesLoading(false);
+    }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const loadAll = async () => {
+      await loadSessions().catch(() => {});
+      await loadJoinedSessions().catch(() => {});
+      await fetchSessionInvites();
+    };
+    loadAll();
+  }, [currentUserId, loadSessions, loadJoinedSessions, fetchSessionInvites]);
+
+  const resetQuizState = useCallback(() => {
+    setQuizSession(null);
+    setQuizQuestions([]);
+    setQuizAnswers({});
+    setQuizStep(0);
+    setQuizScore(null);
+    setQuizResultPoints(0);
+    setQuizCompleted(false);
+  }, []);
+
+  const openQuizDialogForSession = (session) => {
+    if (!session) return;
+
+    resetQuizState();
+    const questions = createQuizQuestions(session);
+
+    if (!questions.length) {
+      toast.error('No quiz questions available yet.');
+      return;
+    }
+
+    setQuizSession(session);
+    setQuizQuestions(questions);
+    setQuizDialogOpen(true);
+  };
+
+  const handleQuizDialogChange = (open) => {
+    setQuizDialogOpen(open);
+    if (!open) {
+      resetQuizState();
+    }
+  };
+
+  const handleQuizAnswerChange = (value) => {
+    const activeQuestion = quizQuestions[quizStep];
+    if (!activeQuestion) return;
+
+    setQuizAnswers((prev) => ({
+      ...prev,
+      [activeQuestion.id]: value
+    }));
+  };
+
+  const handleQuizNext = () => {
+    if (quizStep < quizQuestions.length - 1) {
+      setQuizStep((prev) => prev + 1);
+    }
+  };
+
+  const handleQuizBack = () => {
+    setQuizStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleQuizSubmit = () => {
+    if (quizQuestions.length === 0) return;
+
+    const unanswered = quizQuestions.filter((question) => !quizAnswers[question.id]);
+
+    if (unanswered.length > 0) {
+      toast.error('Please answer every question before submitting.');
+      return;
+    }
+
+    const score = quizQuestions.reduce((total, question) => {
+      return total + (quizAnswers[question.id] === question.answer ? 1 : 0);
+    }, 0);
+
+    setQuizScore(score);
+    setQuizResultPoints(score * QUIZ_POINTS_PER_CORRECT);
+    setQuizCompleted(true);
+  };
+
+  const handleQuizRetake = () => {
+    setQuizAnswers({});
+    setQuizStep(0);
+    setQuizScore(null);
+    setQuizResultPoints(0);
+    setQuizCompleted(false);
+  };
+
+  const handleQuizClaimPoints = () => {
+    if (!quizSession) return;
+
+    const sessionId = quizSession?.raw?._id || quizSession?.id;
+
+    if (!sessionId) {
+      toast.error('Unable to determine which session to reward.');
+      return;
+    }
+
+    setClaimedPoints((prev) => ({
+      ...prev,
+      [sessionId]: true
+    }));
+
+    toast.success('Points claimed successfully!');
+    setQuizDialogOpen(false);
+    resetQuizState();
+  };
+
+  const currentUserIdStr = currentUserId ? String(currentUserId) : null;
+
+  const getScheduleMeta = useCallback((isoDate) => {
+    if (!isoDate) {
+      return {
+        dateLabel: 'Date to be decided',
+        timeLabel: '',
+        isPast: false
+      };
+    }
+
+    try {
+      const parsed = new Date(isoDate);
+      if (Number.isNaN(parsed.getTime())) {
+        return {
+          dateLabel: 'Date to be decided',
+          timeLabel: '',
+          isPast: false
+        };
+      }
+      return {
+        dateLabel: format(parsed, 'PPP'),
+        timeLabel: format(parsed, 'p'),
+        isPast: parsed.getTime() < Date.now()
+      };
+    } catch (error) {
+      return {
+        dateLabel: 'Date to be decided',
+        timeLabel: '',
+        isPast: false
+      };
+    }
+  }, []);
+
+  const extractUserRating = useCallback((sessionRaw) => {
+    if (!sessionRaw || !currentUserIdStr) return null;
+    const ratings = Array.isArray(sessionRaw.ratings) ? sessionRaw.ratings : [];
+    const entry = ratings.find((item) => {
+      const userField = item.user;
+      if (!userField) return false;
+      if (typeof userField === 'string') {
+        return userField === currentUserIdStr;
+      }
+      if (typeof userField === 'object') {
+        const value = userField._id || userField.id;
+        return value ? String(value) === currentUserIdStr : false;
+      }
+      return false;
+    });
+    return entry ? { rating: entry.rating || 0, comment: entry.comment || '' } : null;
+  }, [currentUserIdStr]);
+
+  const createdSessions = useMemo(() => {
+    return sessionsStore.map((session) => {
+      const schedule = getScheduleMeta(session?.dateIso);
+
+      return {
+        id: session.id,
+        title: session.title,
+        description: session.description,
+        type: session.type,
+        duration: session.duration,
+        date: schedule.dateLabel,
+        time: schedule.timeLabel || session.preferredTimes,
+        meetingLink: session.meetingLink,
+        meetingAddress: session.meetingAddress,
+        status: session.status,
+        averageRating: session.averageRating || 0,
+        raw: session.raw,
+        schedule
+      };
+    });
+  }, [sessionsStore, getScheduleMeta]);
+
+  const joinedSessionsByStatus = useMemo(() => {
+    const normalized = joinedSessions.map((session) => {
+      const schedule = getScheduleMeta(session?.dateIso);
+      const userRating = session.userRating || extractUserRating(session.raw);
+      const statusCandidate = typeof session.status === 'string' ? session.status.toLowerCase() : '';
+      const baseStatus = ['completed', 'cancelled'].includes(statusCandidate)
+        ? statusCandidate
+        : schedule.isPast
+          ? 'completed'
+          : 'upcoming';
+
+      const hostSource = session.otherUser || session.original?.otherUser || session.raw?.createdBy || session.raw?.owner || session.raw?.host;
+      const creator = formatUserInfo(hostSource);
+
+      return {
+        id: session.id,
+        title: session.title,
+        description: session.description,
+        type: session.type,
+        duration: session.duration,
+        meetingLink: session.meetingLink,
+        meetingAddress: session.meetingAddress,
+        preferredTimes: session.preferredTimes,
+        schedule,
+        status: baseStatus,
+        averageRating: session.averageRating || session.raw?.averageRating || 0,
+        creator,
+        userRating,
+        raw: session.raw,
+        otherUser: session.otherUser,
+        dateLabel: schedule.dateLabel,
+        timeLabel: schedule.timeLabel || session.preferredTimes
+      };
+    });
+
+    return {
+      upcoming: normalized.filter((session) => !['completed', 'cancelled'].includes(session.status)),
+      completed: normalized.filter((session) => session.status === 'completed'),
+      cancelled: normalized.filter((session) => session.status === 'cancelled')
+    };
+  }, [joinedSessions, getScheduleMeta, extractUserRating]);
+
+  const totalJoinedSessions = joinedSessions.length;
+  const pendingJoinedSessions = joinedSessionsByStatus.upcoming || [];
+  const completedJoinedSessions = joinedSessionsByStatus.completed || [];
+
+  const quizTotalQuestions = quizQuestions.length;
+  const activeQuizQuestion = quizQuestions[quizStep] ?? null;
+  const activeQuizAnswer = activeQuizQuestion ? (quizAnswers[activeQuizQuestion.id] || '') : '';
+  const answeredQuizCount = Object.values(quizAnswers).filter(Boolean).length;
+  const quizHasPassed = quizScore !== null && quizScore >= QUIZ_PASSING_SCORE;
+  const activeQuizSessionId = quizSession?.raw?._id || quizSession?.id;
+  const quizPointsAlreadyClaimed = activeQuizSessionId ? Boolean(claimedPoints[activeQuizSessionId]) : false;
+
+  // Compute smart session status based on time + duration
+  const computeSessionStatus = useCallback((session) => {
+    const now = new Date();
+    const sessionDate = new Date(session.dateIso || session.sessionOn);
+    const durationMinutes = parseInt(session.duration) || 60;
+    const endTime = new Date(sessionDate.getTime() + durationMinutes * 60 * 1000);
+    const oneHourAfterEnd = new Date(endTime.getTime() + 60 * 60 * 1000);
+
+    // Respect manual cancellation
+    if (session.status === 'cancelled') {
+      return 'cancelled';
+    }
+
+    // Auto-complete sessions that ended >1 hour ago
+    if (now > oneHourAfterEnd) {
+      return 'completed';
+    }
+
+    // Show "in-progress" during session window
+    if (now >= sessionDate && now <= endTime) {
+      return 'in-progress';
+    }
+
+    // Upcoming
+    if (now < sessionDate) {
+      return 'upcoming';
+    }
+
+    return 'completed';
+  }, []);
+
+  const handleCreateSession = async () => {
     if (!sessionForm.title.trim()) {
       toast.error('Please provide a session title');
+      return;
+    }
+    if (!sessionForm.date) {
+      toast.error('Please select a session date');
+      return;
+    }
+    if (!sessionForm.startHour || !sessionForm.startMinute || !sessionForm.startPeriod) {
+      toast.error('Please select a session start time');
       return;
     }
     if (sessionForm.type === 'video' && !sessionForm.meetingLink.trim()) {
@@ -96,60 +522,125 @@ export function Sessions({ user }) {
       return;
     }
 
-    const newSession = {
-      id: Date.now(),
-      ...sessionForm,
-      createdBy: user?.name || 'You'
+    setIsSubmitting(true);
+
+    const baseDate = sessionForm.date instanceof Date ? new Date(sessionForm.date) : new Date(sessionForm.date);
+    const rawHour = Number(sessionForm.startHour);
+    const minutes = Number(sessionForm.startMinute);
+
+    if (Number.isNaN(baseDate.getTime()) || Number.isNaN(rawHour) || Number.isNaN(minutes)) {
+      toast.error('Please provide a valid date and time');
+      setIsSubmitting(false);
+      return;
+    }
+
+    let hours24 = rawHour % 12;
+    if (sessionForm.startPeriod === 'PM') {
+      hours24 += 12;
+    }
+    baseDate.setHours(hours24, minutes, 0, 0);
+
+    const payload = {
+      topic: sessionForm.title.trim(),
+      details: sessionForm.description.trim(),
+      sessionType: sessionForm.type === 'video' ? 'Video Session' : 'In Person',
+      duration: sessionForm.duration,
+      sessionOn: baseDate.toISOString()
     };
-    setSessions(prev => [newSession, ...prev]);
-    toast.success('Session created');
-    setSessionForm({
-      title: '',
-      description: '',
-      type: 'video',
-      duration: '60',
-      preferredTimes: '',
-      meetingLink: '',
-      meetingAddress: ''
-    });
+
+    if (sessionForm.type === 'video') {
+      payload.link = sessionForm.meetingLink.trim();
+    } else {
+      payload.location = sessionForm.meetingAddress.trim();
+    }
+
+    try {
+      await createSessionStore(payload);
+      toast.success('Session created');
+      setSessionForm({
+        title: '',
+        description: '',
+        type: 'video',
+        date: undefined,
+        startHour: '09',
+        startMinute: '00',
+        startPeriod: 'AM',
+        duration: '60',
+        meetingLink: '',
+        meetingAddress: ''
+      });
+    } catch (error) {
+      toast.error(error.message || 'Failed to create session');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Cancel/remove handlers
-  const cancelJoinedSession = (id) => {
-    setJoinedSessions(prev => prev.map(s => s.id === id ? { ...s, status: 'cancelled' } : s));
-    toast.success('Session cancelled');
+  const cancelJoinedSession = async (sessionId) => {
+    if (!sessionId) return;
+    setPendingActions((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      await sessionService.cancelSession(sessionId);
+      await loadJoinedSessions();
+      toast.success('Session cancelled');
+    } catch (error) {
+      toast.error(error.message || 'Failed to cancel session');
+    } finally {
+      setPendingActions((prev) => ({ ...prev, [sessionId]: false }));
+    }
   };
 
-  const removeCreatedSession = (id) => {
-    setSessions(prev => prev.filter(s => s.id !== id));
-    toast.success('Removed from your created sessions');
+  const removeCreatedSession = async (id) => {
+    if (!id) return;
+    setPendingActions((prev) => ({ ...prev, [id]: true }));
+    try {
+      await deleteSessionStore(id);
+      toast.success('Removed from your created sessions');
+    } catch (error) {
+      toast.error(error.message || 'Failed to remove session');
+    } finally {
+      setPendingActions((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   // Rating handlers
   const openRatingDialog = (session) => {
+    if (!session) return;
     setSelectedSession(session);
-    setRating(session.rating || 0);
-    setRatingComment(session.ratingComment || '');
+    const existing = session.userRating || extractUserRating(session.raw);
+    setRating(existing?.rating || 0);
+    setRatingComment(existing?.comment || '');
     setRatingDialogOpen(true);
   };
 
-  const handleRatingSubmit = () => {
+  const handleRatingSubmit = async () => {
+    if (!selectedSession) return;
     if (rating === 0) {
       toast.error('Please select a rating');
       return;
     }
-    
-    setJoinedSessions(prev => prev.map(s => 
-      s.id === selectedSession.id 
-        ? { ...s, rating, ratingComment } 
-        : s
-    ));
-    
-    toast.success('Rating submitted successfully!');
-    setRatingDialogOpen(false);
-    setSelectedSession(null);
-    setRating(0);
-    setRatingComment('');
+
+    const sessionId = selectedSession.raw?._id || selectedSession.id;
+    if (!sessionId) {
+      toast.error('Invalid session reference');
+      return;
+    }
+
+    setPendingActions((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      await rateSessionStore({ sessionId, rating, comment: ratingComment });
+      await loadJoinedSessions();
+      toast.success('Rating submitted successfully!');
+      setRatingDialogOpen(false);
+      setSelectedSession(null);
+      setRating(0);
+      setRatingComment('');
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit rating');
+    } finally {
+      setPendingActions((prev) => ({ ...prev, [sessionId]: false }));
+    }
   };
 
   const handleRatingCancel = () => {
@@ -159,13 +650,30 @@ export function Sessions({ user }) {
     setRatingComment('');
   };
 
-  // Calculate average rating for completed sessions
-  const getAverageRating = () => {
-    const completedSessions = joinedSessions.filter(s => s.status === 'completed' && s.rating);
-    if (completedSessions.length === 0) return 0;
-    
-    const totalRating = completedSessions.reduce((sum, session) => sum + session.rating, 0);
-    return (totalRating / completedSessions.length).toFixed(1);
+  const handleInviteResponse = async (invite, action) => {
+    if (!invite || !action) return;
+    const inviteId = invite._id;
+    const sessionId = invite.metadata?.sessionId?._id || invite.metadata?.sessionId;
+
+    setPendingActions((prev) => ({ ...prev, [inviteId]: true }));
+    try {
+      await notificationService.respondToSessionInvite(inviteId, action);
+
+      if (action === 'accept' && sessionId) {
+        await sessionService.acceptSession(sessionId);
+        await loadJoinedSessions();
+        // Switch to My Sessions tab after accepting
+        setActiveTab('manage');
+      }
+
+      setSessionInvites((prev) => prev.filter((item) => item._id !== inviteId));
+      await fetchSessionInvites();
+      toast.success(action === 'accept' ? 'Session invite accepted! Check My Sessions.' : 'Session invite declined');
+    } catch (error) {
+      toast.error(error.message || 'Failed to process invite');
+    } finally {
+      setPendingActions((prev) => ({ ...prev, [inviteId]: false }));
+    }
   };
 
   const openInNewTab = (url) => {
@@ -235,7 +743,7 @@ export function Sessions({ user }) {
 
       {/* Sessions Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 bg-card border-border">
+        <TabsList className="grid w-full grid-cols-3 bg-card border-border">
           <TabsTrigger value="create" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Create Session
@@ -243,6 +751,15 @@ export function Sessions({ user }) {
           <TabsTrigger value="manage" className="flex items-center gap-2">
             <List className="h-4 w-4" />
             My Sessions
+          </TabsTrigger>
+          <TabsTrigger value="invites" className="flex items-center gap-2">
+            <Inbox className="h-4 w-4" />
+            Invites
+            {sessionInvites.length > 0 && (
+              <Badge variant="destructive" className="ml-1 px-1.5 py-0 text-xs h-5 min-w-[20px]">
+                {sessionInvites.length}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -278,36 +795,113 @@ export function Sessions({ user }) {
                      />
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="space-y-3">
-                       <Label htmlFor="session-type">Session Type</Label>
-                       <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
-                         <SelectTrigger>
-                           <SelectValue />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="video">Video Session</SelectItem>
-                           <SelectItem value="inperson">In Person</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <Label htmlFor="session-type">Session Type</Label>
+                      <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="video">Video Session</SelectItem>
+                          <SelectItem value="inperson">In Person</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                     <div className="space-y-3">
-                       <Label htmlFor="session-duration">Duration</Label>
-                       <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
-                         <SelectTrigger>
-                           <SelectValue />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="30">30 minutes</SelectItem>
-                           <SelectItem value="60">1 hour</SelectItem>
-                           <SelectItem value="90">1.5 hours</SelectItem>
-                           <SelectItem value="120">2 hours</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
-                   </div>
+                    <div className="space-y-3">
+                      <Label>Session Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={`w-full justify-start text-left font-normal ${!sessionForm.date && "text-muted-foreground"}`}
+                          >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {sessionForm.date ? format(sessionForm.date, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <CalendarComponent
+                            mode="single"
+                            selected={sessionForm.date}
+                            onSelect={(date) => setSessionForm(prev => ({ ...prev, date }))}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
 
+                    <div className="space-y-3">
+                      <Label htmlFor="session-start-time">Start Time</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Select
+                          value={sessionForm.startHour}
+                          onValueChange={(value) => setSessionForm(prev => ({ ...prev, startHour: value }))}
+                        >
+                          <SelectTrigger id="session-start-hour">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {HOURS_12.map((hour) => (
+                              <SelectItem key={hour} value={hour}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={sessionForm.startMinute}
+                          onValueChange={(value) => setSessionForm(prev => ({ ...prev, startMinute: value }))}
+                        >
+                          <SelectTrigger id="session-start-minute">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MINUTES.map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                {minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={sessionForm.startPeriod}
+                          onValueChange={(value) => setSessionForm(prev => ({ ...prev, startPeriod: value }))}
+                        >
+                          <SelectTrigger id="session-start-period">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PERIODS.map((period) => (
+                              <SelectItem key={period} value={period}>
+                                {period}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="session-duration">Duration</Label>
+                      <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="90">1.5 hours</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
                    {sessionForm.type === 'video' && (
                      <div className="space-y-3">
                        <Label htmlFor="meeting-link">Meeting Link</Label>
@@ -363,21 +957,12 @@ export function Sessions({ user }) {
                        <div className="text-xs text-muted-foreground flex items-center gap-2"><MapPin className="h-3 w-3" /> Provide a clear address</div>
                      </div>
                    )}
-
-                   <div className="space-y-3">
-                     <Label htmlFor="preferred-times">Preferred Times</Label>
-                     <Input
-                       id="preferred-times"
-                       value={sessionForm.preferredTimes}
-                       onChange={(e) => setSessionForm(prev => ({ ...prev, preferredTimes: e.target.value }))}
-                       placeholder="e.g., Weekday evenings, Saturday mornings"
-                     />
-                   </div>
+                  </div>
 
                    <div className="flex gap-3">
-                     <Button onClick={handleCreateSession} className="flex-1">
+                     <Button onClick={handleCreateSession} className="flex-1" disabled={isSubmitting}>
                        <Calendar className="h-4 w-4 mr-2" />
-                       Create Session
+                       {isSubmitting ? 'Creating...' : 'Create Session'}
                      </Button>
                    </div>
                  </CardContent>
@@ -392,32 +977,86 @@ export function Sessions({ user }) {
                    <CardDescription className="text-m mt-2">Recently created sessions</CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-3">
-                   {sessions.length === 0 && (
+                   {sessionsLoading && (
+                     <div className="text-sm text-muted-foreground text-center py-4">Loading sessions...</div>
+                   )}
+                   {!sessionsLoading && sessionsError && (
+                     <div className="text-sm text-red-500 text-center py-2">{sessionsError}</div>
+                   )}
+                   {!sessionsLoading && !sessionsError && createdSessions.length === 0 && (
                      <div className="text-m text-muted-foreground text-center py-4">No sessions created yet</div>
                    )}
-                   {sessions.slice(0, 5).map((s) => (
-                     <div key={s.id} className="p-3 rounded-lg border bg-muted/40">
-                       <div className="font-medium text-sm text-foreground truncate flex items-center justify-between gap-3">
-                         <span className="truncate">{s.title}</span>
-                         <Button
-                           variant="outline"
-                           onClick={() => removeCreatedSession(s.id)}
-                           className="h-7 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
-                         >
-                           Remove
-                         </Button>
+                   {createdSessions.slice(0, 5).map((s) => {
+                     const sessionId = s.raw?._id || s.id;
+                     const removeLoading = Boolean(pendingActions[sessionId]);
+                     const statusLabel = s.status === 'upcoming' ? 'Upcoming' : s.status === 'completed' ? 'Completed' : 'Pending';
+
+                     return (
+                       <div key={s.id} className="p-4 rounded-lg border bg-muted/40">
+                         <div className="flex items-start justify-between gap-4">
+                           <div className="flex-1">
+                             <div className="flex items-center gap-3 mb-2">
+                               <Avatar className="w-9 h-9">
+                                 <AvatarImage src={user?.avatar} alt={user?.name || 'You'} />
+                                 <AvatarFallback>{buildInitials(user?.name || 'You')}</AvatarFallback>
+                               </Avatar>
+                               <div>
+                                 <div className="font-medium text-foreground leading-tight">{s.title}</div>
+                                 <div className="text-xs text-muted-foreground">
+                                   Hosted by you
+                                   {' • '}
+                                   {s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins
+                                 </div>
+                               </div>
+                             </div>
+                             {s.description && (
+                               <div className="text-sm text-muted-foreground mb-2 leading-snug">{s.description}</div>
+                             )}
+                             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                               <div className="flex items-center gap-1 whitespace-nowrap">
+                                 <Calendar className="h-3 w-3" />
+                                 {s.date}
+                                 {s.time && <span>&nbsp;at {s.time}</span>}
+                               </div>
+                               {s.type === 'video' && s.meetingLink && (
+                                 <button
+                                   type="button"
+                                   onClick={() => openInNewTab(s.meetingLink)}
+                                   className="text-blue-600 hover:underline flex items-center gap-1"
+                                 >
+                                   <Video className="h-3 w-3" />
+                                   Join Meeting
+                                 </button>
+                               )}
+                               {s.type === 'inperson' && s.meetingAddress && (
+                                 <div className="flex items-center gap-1 text-foreground">
+                                   <MapPin className="h-3 w-3" />
+                                   <span className="truncate max-w-[180px]" title={s.meetingAddress}>{s.meetingAddress}</span>
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                           <div className="flex flex-col items-center gap-2">
+                             <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 flex items-center gap-1">
+                               <Clock className="h-3 w-3" />
+                               {statusLabel}
+                             </Badge>
+                             <Button
+                               variant="outline"
+                               onClick={() => removeCreatedSession(s.id)}
+                               disabled={removeLoading}
+                               className="h-8 mt-2 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
+                             >
+                               {removeLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
+                             </Button>
+                           </div>
+                         </div>
                        </div>
-                       <div className="text-xs text-muted-foreground mt-1">
-                         {s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins
-                       </div>
-                       {s.description && (
-                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</div>
-                       )}
-                     </div>
-                   ))}
-                   {sessions.length > 5 && (
+                     );
+                   })}
+                   {createdSessions.length > 5 && (
                      <div className="text-xs text-muted-foreground text-center py-2">
-                       +{sessions.length - 5} more sessions
+                       +{createdSessions.length - 5} more sessions
                      </div>
                    )}
                  </CardContent>
@@ -426,7 +1065,7 @@ export function Sessions({ user }) {
            </div>
          </TabsContent>
 
-                 {/* Manage Sessions Tab */}
+        {/* Manage Sessions Tab */}
          <TabsContent value="manage" className="space-y-6">
            {/* Joined Sessions */}
            <Card className="bg-card border-border">
@@ -435,11 +1074,11 @@ export function Sessions({ user }) {
                <CardDescription className="mt-2">Sessions you've signed up for from other creators</CardDescription>
              </CardHeader>
             <CardContent className="space-y-4">
-              {joinedSessions.length === 0 && (
+              {totalJoinedSessions === 0 && (
                 <div className="text-sm text-muted-foreground">No joined sessions yet. Find sessions in the Skill Matching section.</div>
               )}
 
-              {joinedSessions.length > 0 && (
+              {totalJoinedSessions > 0 && (
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Pending (left) */}
                   <div className="lg:w-1/2 flex-1">
@@ -449,61 +1088,85 @@ export function Sessions({ user }) {
                         <CardDescription className="mt-1">Upcoming and in-progress sessions</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {joinedSessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled').map((session) => (
-                          <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarImage src={session.creatorAvatar} alt={session.creator} />
-                                    <AvatarFallback>{session.creator?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="font-medium text-foreground">{session.title}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Created by {session.creator} • {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                        {pendingJoinedSessions.map((session) => {
+                          const sessionId = session.raw?._id || session.id;
+                          const cancelLoading = Boolean(pendingActions[sessionId]);
+                          const computedStatus = computeSessionStatus(session);
+                          
+                          let statusLabel = 'Upcoming';
+                          let statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+                          let StatusIcon = Clock;
+
+                          if (computedStatus === 'in-progress') {
+                            statusLabel = 'In Progress';
+                            statusClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
+                            StatusIcon = PlayCircle;
+                          }
+
+                          return (
+                            <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Avatar className="w-9 h-9">
+                                      <AvatarImage src={session.creator.avatar} alt={session.creator.name} />
+                                      <AvatarFallback>{session.creator.initials}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium text-foreground leading-tight">{session.title}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Hosted by {session.creator.name}
+                                        {' • '}
+                                        {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                                {session.description && (
-                                  <div className="text-sm text-muted-foreground mb-2">{session.description}</div>
-                                )}
-                                <div className="flex items-center gap-4 text-sm">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {session.date} at {session.time}
-                                  </div>
-                                  {session.type === 'video' && session.meetingLink && (
-                                    <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline flex items-center gap-1">
-                                      <Video className="h-3 w-3" />
-                                      Join Meeting
-                                    </a>
+                                  {session.description && (
+                                    <div className="text-sm text-muted-foreground mb-2 leading-snug">{session.description}</div>
                                   )}
-                                  {session.type === 'inperson' && session.meetingAddress && (
-                                    <div className="flex items-center gap-1 text-foreground">
-                                      <MapPin className="h-3 w-3" />
-                                      {session.meetingAddress}
+                                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                      <Calendar className="h-3 w-3" />
+                                      {session.dateLabel}
+                                      {session.timeLabel && <span>&nbsp;at {session.timeLabel}</span>}
                                     </div>
-                                  )}
+                                    {session.type === 'video' && session.meetingLink && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openInNewTab(session.meetingLink)}
+                                        className="text-blue-600 hover:underline flex items-center gap-1"
+                                      >
+                                        <Video className="h-3 w-3" />
+                                        Join Meeting
+                                      </button>
+                                    )}
+                                    {session.type === 'inperson' && session.meetingAddress && (
+                                      <div className="flex items-center gap-1 text-foreground">
+                                        <MapPin className="h-3 w-3" />
+                                        <span className="truncate max-w-[180px]" title={session.meetingAddress}>{session.meetingAddress}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                               </div>
-                               <div className="flex flex-col items-center gap-2">
-                                 <Badge className={'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'}>
-                                   <Clock className="h-3 w-3 mr-1" />
-                                   Upcoming
-                                 </Badge>
-                                 <Button
-                                   variant="outline"
-                                   onClick={() => cancelJoinedSession(session.id)}
-                                   className="h-7 mt-3 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
-                                 >
-                                   Cancel
-                                 </Button>
-                               </div>
+                                <div className="flex flex-col items-center gap-2">
+                                  <Badge className={`${statusClass} flex items-center gap-1`}>
+                                    <StatusIcon className="h-3 w-3" />
+                                    {statusLabel}
+                                  </Badge>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => cancelJoinedSession(session.id)}
+                                    disabled={cancelLoading}
+                                    className="h-8 mt-2 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
+                                  >
+                                    {cancelLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Cancel'}
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                        {joinedSessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled').length === 0 && (
+                          );
+                        })}
+                        {pendingJoinedSessions.length === 0 && (
                           <div className="text-sm text-muted-foreground">No pending sessions.</div>
                         )}
                       </CardContent>
@@ -518,54 +1181,104 @@ export function Sessions({ user }) {
                         <CardDescription className="mt-1">Sessions you've already finished</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {joinedSessions.filter(s => s.status === 'completed').map((session) => (
-                          <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarImage src={session.creatorAvatar} alt={session.creator} />
-                                    <AvatarFallback>{session.creator?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="font-medium text-foreground">{session.title}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Created by {session.creator} • {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                        {completedJoinedSessions.map((session) => {
+                          const sessionId = session.raw?._id || session.id;
+                          const ratingLoading = Boolean(pendingActions[sessionId]);
+                          const userRatingValue = session.userRating?.rating || 0;
+                          const userHasRating = Boolean(userRatingValue);
+
+                          return (
+                            <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Avatar className="w-9 h-9">
+                                      <AvatarImage src={session.creator.avatar} alt={session.creator.name} />
+                                      <AvatarFallback>{session.creator.initials}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium text-foreground leading-tight">{session.title}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Hosted by {session.creator.name}
+                                        {' • '}
+                                        {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {session.description && (
+                                    <div className="text-sm text-muted-foreground mb-2 leading-snug">{session.description}</div>
+                                  )}
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    {session.dateLabel}
+                                    {session.timeLabel && <span>&nbsp;at {session.timeLabel}</span>}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-2 min-w-[140px]">
+                                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 mb-1 flex items-center gap-1">
+                                    <CheckCircle className="h-3 w-3" />
+                                    Completed
+                                  </Badge>
+                                <div className="text-center space-y-3">
+                                  <div className="text-sm text-muted-foreground">
+                                    <span className="text-base font-semibold text-foreground flex items-center justify-center gap-1">
+                                      <Star className="h-4 w-4 text-yellow-400" />
+                                      {session.averageRating > 0 ? `${session.averageRating.toFixed(1)}/5` : 'No ratings yet'}
+                                    </span>
+                                    {userHasRating ? (
+                                      <span className="block text-xs">Your rating: {userRatingValue}/5</span>
+                                    ) : (
+                                      <span className="block text-xs">You haven't rated this session.</span>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Button
+                                      variant="link"
+                                      onClick={() => openRatingDialog(session)}
+                                      disabled={ratingLoading}
+                                      className="h-auto p-0 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                                    >
+                                      {ratingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : userHasRating ? 'Update rating' : 'Rate session'}
+                                    </Button>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => openQuizDialogForSession(session)}
+                                        disabled={Boolean(claimedPoints[sessionId])}
+                                        className={`h-8 px-3 text-xs font-medium ${
+                                          claimedPoints[sessionId]
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                                            : 'bg-purple-600 text-white hover:bg-purple-500'
+                                        }`}
+                                      >
+                                        <span className="flex items-center gap-1">
+                                          {claimedPoints[sessionId] ? (
+                                            <>
+                                              <Check className="h-3 w-3" />
+                                              Points claimed
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Sparkles className="h-3 w-3" />
+                                              Claim points
+                                            </>
+                                          )}
+                                        </span>
+                                      </Button>
+                                      <p className={`text-xs ${claimedPoints[sessionId] ? 'text-green-600 dark:text-green-300' : 'text-muted-foreground'}`}>
+                                        {claimedPoints[sessionId]
+                                          ? 'Your reward has been added.'
+                                          : 'Answer a quick quiz to unlock points.'}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
-                                {session.description && (
-                                  <div className="text-sm text-muted-foreground mb-2">{session.description}</div>
-                                )}
-                                <div className="flex items-center gap-4 text-sm">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {session.date} at {session.time}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-center gap-2">
-                                <Badge className={'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 mb-2'}>
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Completed
-                                </Badge>
-                                <div className="text-center">
-                                  <div className="text-lg font-semibold text-muted-foreground mb-2">
-                                    <Star className="h-5 w-5 inline mr-1 mb-1 text-yellow-400" />
-                                    {getAverageRating()}/5
-                                  </div>
-                                  <button
-                                    onClick={() => openRatingDialog(session)}
-                                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 underline"
-                                  >
-                                    Rate
-                                  </button>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                        {joinedSessions.filter(s => s.status === 'completed').length === 0 && (
+                          );
+                        })}
+                        {completedJoinedSessions.length === 0 && (
                           <div className="text-sm text-muted-foreground">No completed sessions yet.</div>
                         )}
                       </CardContent>
@@ -577,6 +1290,137 @@ export function Sessions({ user }) {
           </Card>
 
         </TabsContent>
+
+        {/* Invites Tab */}
+        <TabsContent value="invites" className="space-y-6">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="font-bold text-2xl flex items-center gap-2">
+                <Inbox className="h-6 w-6" />
+                Session Invites
+              </CardTitle>
+              <CardDescription className="mt-2">
+                Pending invitations from your connections
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {invitesLoading && (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading invites...</p>
+                </div>
+              )}
+
+              {!invitesLoading && invitesError && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-red-500">{invitesError}</p>
+                </div>
+              )}
+
+              {!invitesLoading && !invitesError && sessionInvites.length === 0 && (
+                <div className="text-center py-12">
+                  <Inbox className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">No pending invites</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    When someone invites you to a session, it will appear here
+                  </p>
+                </div>
+              )}
+
+              {!invitesLoading && !invitesError && sessionInvites.length > 0 && (
+                <div className="space-y-3">
+                  {sessionInvites.map((invite) => {
+                    const inviteId = invite._id;
+                    const isLoading = Boolean(pendingActions[inviteId]);
+                    const sessionData = invite.metadata?.sessionId || {};
+                    const senderData = invite.sender || {};
+
+                    const hostInfo = formatUserInfo(senderData);
+                    const sessionTitle = sessionData.topic || sessionData.title || 'Untitled Session';
+                    const sessionDescription = sessionData.details || sessionData.description || '';
+                    const sessionType = (sessionData.sessionType || '').toLowerCase().includes('video') ? 'video' : 'inperson';
+                    const duration = sessionData.duration || '60';
+                    const meetingLink = sessionData.link || '';
+                    const meetingAddress = sessionData.location || '';
+                    
+                    const sessionDate = sessionData.sessionOn || sessionData.date;
+                    const schedule = getScheduleMeta(sessionDate);
+
+                    return (
+                      <div key={inviteId} className="p-4 rounded-lg border bg-muted/40">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Avatar className="w-9 h-9">
+                                <AvatarImage src={hostInfo.avatar} alt={hostInfo.name} />
+                                <AvatarFallback>{hostInfo.initials}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium text-foreground leading-tight">{sessionTitle}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Invited by {hostInfo.name}
+                                  {' • '}
+                                  {sessionType === 'video' ? 'Video' : 'In Person'} • {duration} mins
+                                </div>
+                              </div>
+                            </div>
+                            {sessionDescription && (
+                              <div className="text-sm text-muted-foreground mb-2 leading-snug">{sessionDescription}</div>
+                            )}
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1 whitespace-nowrap">
+                                <Calendar className="h-3 w-3" />
+                                {schedule.dateLabel}
+                                {schedule.timeLabel && <span>&nbsp;at {schedule.timeLabel}</span>}
+                              </div>
+                              {sessionType === 'video' && meetingLink && (
+                                <div className="flex items-center gap-1 text-blue-600">
+                                  <Video className="h-3 w-3" />
+                                  <span className="text-xs">Video call</span>
+                                </div>
+                              )}
+                              {sessionType === 'inperson' && meetingAddress && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  <span className="truncate max-w-[150px]" title={meetingAddress}>{meetingAddress}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 min-w-[120px]">
+                            <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 mb-1">
+                              Pending
+                            </Badge>
+                            <div className="flex gap-2 w-full">
+                              <Button
+                                size="sm"
+                                onClick={() => handleInviteResponse(invite, 'accept')}
+                                disabled={isLoading}
+                                className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleInviteResponse(invite, 'decline')}
+                                disabled={isLoading}
+                                className="flex-1 h-8 text-xs border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                              >
+                                {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : '✕'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* Rating Dialog */}
@@ -645,7 +1489,168 @@ export function Sessions({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quiz Dialog */}
+      <Dialog open={quizDialogOpen} onOpenChange={handleQuizDialogChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Claim Your Session Points</DialogTitle>
+            <DialogDescription>
+              {quizSession
+                ? `Answer a short quiz about "${quizSession.title}" to unlock your reward.`
+                : 'Answer a short quiz to unlock your reward.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {quizTotalQuestions === 0 && !quizSession && (
+            <div className="text-sm text-muted-foreground">
+              No quiz is available right now.
+            </div>
+          )}
+
+          {quizTotalQuestions > 0 && !quizCompleted && activeQuizQuestion && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline">Question {quizStep + 1} of {quizTotalQuestions}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {answeredQuizCount}/{quizTotalQuestions} answered
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {activeQuizQuestion.question}
+                </h3>
+                <RadioGroup
+                  value={activeQuizAnswer}
+                  onValueChange={handleQuizAnswerChange}
+                  className="space-y-2"
+                >
+                  {activeQuizQuestion.options.map((option, optionIndex) => {
+                    const optionId = `${activeQuizQuestion.id}-option-${optionIndex}`;
+                    const isSelected = activeQuizAnswer === option;
+                    return (
+                      <div
+                        key={optionId}
+                        className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:bg-muted/60'
+                        }`}
+                      >
+                        <RadioGroupItem value={option} id={optionId} />
+                        <Label
+                          htmlFor={optionId}
+                          className="flex-1 cursor-pointer text-sm text-foreground"
+                        >
+                          {option}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <Button variant="ghost" onClick={handleQuizBack} disabled={quizStep === 0}>
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleQuizRetake}
+                    variant="outline"
+                    disabled={quizStep === 0 && answeredQuizCount === 0}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    onClick={quizStep === quizTotalQuestions - 1 ? handleQuizSubmit : handleQuizNext}
+                    disabled={!activeQuizAnswer}
+                  >
+                    {quizStep === quizTotalQuestions - 1 ? 'Submit Quiz' : 'Next Question'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {quizTotalQuestions > 0 && quizCompleted && (
+            <div className="space-y-6">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <Badge className={quizHasPassed ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'}>
+                  {quizHasPassed ? 'Quiz passed' : 'Keep trying'}
+                </Badge>
+                <div>
+                  <p className="text-xl font-semibold text-foreground">
+                    You scored {quizScore} out of {quizTotalQuestions}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    You need at least {QUIZ_PASSING_SCORE} correct answers to unlock your reward.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {quizQuestions.map((question) => {
+                  const userAnswer = quizAnswers[question.id];
+                  const isCorrect = userAnswer === question.answer;
+                  return (
+                    <div
+                      key={question.id}
+                      className={`rounded-lg border p-3 text-sm ${
+                        isCorrect
+                          ? 'border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-900/10'
+                          : 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-900/10'
+                      }`}
+                    >
+                      <p className="font-medium text-foreground">{question.question}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Your answer: <span className={`font-medium ${isCorrect ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{userAnswer}</span>
+                      </p>
+                      {!isCorrect && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Correct answer: <span className="font-medium text-foreground">{question.answer}</span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Award className="h-4 w-4 text-primary" />
+                  <span>
+                    {quizHasPassed
+                      ? `Reward unlocked: ${quizResultPoints} points`
+                      : 'Reward locked until you pass the quiz.'}
+                  </span>
+                </div>
+
+                {quizHasPassed ? (
+                  <div className="flex flex-col gap-2 w-full md:w-auto">
+                    <Button
+                      onClick={handleQuizClaimPoints}
+                      disabled={quizPointsAlreadyClaimed}
+                      className="bg-purple-600 text-white hover:bg-purple-500"
+                    >
+                      {quizPointsAlreadyClaimed ? 'Points already claimed' : `Claim ${quizResultPoints} points`}
+                    </Button>
+                    {!quizPointsAlreadyClaimed && (
+                      <Button variant="ghost" onClick={handleQuizRetake}>
+                        Retake quiz
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button onClick={handleQuizRetake}>Try again</Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
-

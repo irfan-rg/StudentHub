@@ -21,21 +21,25 @@ export const AUTH_ENDPOINTS = {
 
 // User Endpoints
 export const USER_ENDPOINTS = {
-  PROFILE: '/users/profile',
-  UPDATE_PROFILE: '/users/profile',
-  GET_USER: '/users/:id',
-  UPDATE_SETTINGS: '/users/settings',
-  UPLOAD_AVATAR: '/users/avatar'
+  PROFILE: '/user/profile',
+  UPDATE_PROFILE: '/user/update-details',
+  GET_USER: '/user/:id',
+  UPDATE_SETTINGS: '/user/settings',
+  UPLOAD_AVATAR: '/user/avatar'
 };
 
 // Skills Endpoints
 export const SKILL_ENDPOINTS = {
-  GET_ALL: '/skills',
-  GET_BY_CATEGORY: '/skills/category/:category',
-  SEARCH: '/skills/search',
-  ADD_USER_SKILL: '/users/skills',
-  REMOVE_USER_SKILL: '/users/skills/:skillId',
-  UPDATE_SKILL_LEVEL: '/users/skills/:skillId'
+  GET_ALL: '/skill/all-skills',
+  GET_BY_CATEGORY: '/skill/category/:category',
+  SEARCH: '/skill/search',
+  ADD_USER_SKILL: '/skill/add-skill-to-learn',
+  ADD_SKILL_TO_TEACH: '/skill/add-skill-can-teach',
+  REMOVE_USER_SKILL: '/skill/delete-skill-to-learn',
+  REMOVE_SKILL_TO_TEACH: '/skill/delete-skill-can-teach',
+  UPDATE_SKILL_LEVEL: '/skill/update-skill',
+  UPDATE_SKILLS_TO_TEACH: '/skill/update-skills-to-teach',
+  UPDATE_SKILLS_TO_LEARN: '/skill/update-skills-to-learn'
 };
 
 // Matching Endpoints
@@ -43,26 +47,31 @@ export const MATCHING_ENDPOINTS = {
   FIND_MATCHES: '/matching/find',
   GET_SUGGESTIONS: '/matching/suggestions',
   SEND_CONNECTION: '/matching/connect',
-  GET_CONNECTIONS: '/users/connections'
+  GET_CONNECTIONS: '/matching/connections'
 };
 
 // Session Endpoints
 export const SESSION_ENDPOINTS = {
-  CREATE: '/sessions',
-  GET_USER_SESSIONS: '/sessions/user/:userId',
-  UPDATE_SESSION: '/sessions/:sessionId',
-  CANCEL_SESSION: '/sessions/:sessionId/cancel',
-  COMPLETE_SESSION: '/sessions/:sessionId/complete'
+  GET_SESSION_BY_ID: '/session/get-session/:sessionId',
+  GET_CREATED_SESSIONS: '/session/created-session',
+  GET_JOINED_SESSIONS: '/session/joined-session',
+  CREATE_SESSION: '/session/create-session',
+  ACCEPT_SESSION: '/session/accept-session',
+  CANCEL_SESSION: '/session/cancel-session',
+  DELETE_SESSION: '/session/delete-session',
+  RATE_SESSION: '/session/rate-session'
 };
 
 // Q&A Forum Endpoints
 export const QA_ENDPOINTS = {
-  GET_QUESTIONS: '/questions',
-  CREATE_QUESTION: '/questions',
-  GET_QUESTION: '/questions/:id',
-  ANSWER_QUESTION: '/questions/:id/answers',
-  VOTE_QUESTION: '/questions/:id/vote',
-  VOTE_ANSWER: '/answers/:id/vote'
+  GET_ALL_QUESTIONS: '/qna/all-questions',
+  GET_QUESTIONS_BY_USER: '/qna/questions-by-user',
+  ASK_QUESTION: '/qna/askQuestion',
+  ANSWER_QUESTION: '/qna/answer',
+  UPVOTE_QUESTION: '/qna/upvoteQuestion',
+  DOWNVOTE_QUESTION: '/qna/downvoteQuestion',
+  UPVOTE_ANSWER: '/qna/upvoteAnswer',
+  DOWNVOTE_ANSWER: '/qna/downvoteAnswer'
 };
 
 // Leaderboard Endpoints
@@ -75,12 +84,12 @@ export const LEADERBOARD_ENDPOINTS = {
 // Notification Endpoints
 export const NOTIFICATION_ENDPOINTS = {
   GET_NOTIFICATIONS: '/notifications',
-  MARK_AS_READ: '/notifications/:id/read',
-  MARK_ALL_READ: '/notifications/read-all',
-  DELETE_NOTIFICATION: '/notifications/:id',
-  CLEAR_ALL: '/notifications',
   GET_UNREAD_COUNT: '/notifications/unread-count',
-  UPDATE_PREFERENCES: '/notifications/preferences'
+  MARK_AS_READ: '/notifications/:notificationId/read',
+  MARK_ALL_READ: '/notifications/read-all',
+  DELETE_NOTIFICATION: '/notifications/:notificationId',
+  CLEAR_ALL: '/notifications/clear-all',
+  HANDLE_SESSION_INVITE: '/notifications/session-invite-response'
 };
 
 // Expected Data Structures for Backend Team

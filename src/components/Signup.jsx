@@ -88,15 +88,16 @@ export function Signup({ onSignup, loading, error }) {
 
   const [skillSearchTeach, setSkillSearchTeach] = useState('');
   const [skillSearchLearn, setSkillSearchLearn] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategoryTeach, setSelectedCategoryTeach] = useState('all');
+  const [selectedCategoryLearn, setSelectedCategoryLearn] = useState('all');
 
-  const filteredSkillsForTeaching = selectedCategory === 'all' 
+  const filteredSkillsForTeaching = selectedCategoryTeach === 'all' 
     ? allSkills.filter(skill => skill.toLowerCase().includes(skillSearchTeach.toLowerCase()))
-    : skillsDatabase[selectedCategory]?.filter(skill => skill.toLowerCase().includes(skillSearchTeach.toLowerCase())) || [];
+    : skillsDatabase[selectedCategoryTeach]?.filter(skill => skill.toLowerCase().includes(skillSearchTeach.toLowerCase())) || [];
 
-  const filteredSkillsForLearning = allSkills.filter(skill => 
-    skill.toLowerCase().includes(skillSearchLearn.toLowerCase())
-  );
+  const filteredSkillsForLearning = selectedCategoryLearn === 'all'
+    ? allSkills.filter(skill => skill.toLowerCase().includes(skillSearchLearn.toLowerCase()))
+    : skillsDatabase[selectedCategoryLearn]?.filter(skill => skill.toLowerCase().includes(skillSearchLearn.toLowerCase())) || [];
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -141,16 +142,20 @@ export function Signup({ onSignup, loading, error }) {
         }));
       }
     } else {
-      const exists = formData.skillsWantToLearn.includes(skill);
+      const exists = formData.skillsWantToLearn.some(s => 
+        (typeof s === 'string' ? s : s.name) === skill
+      );
       if (exists) {
         setFormData(prev => ({
           ...prev,
-          skillsWantToLearn: prev.skillsWantToLearn.filter(s => s !== skill)
+          skillsWantToLearn: prev.skillsWantToLearn.filter(s => 
+            (typeof s === 'string' ? s : s.name) !== skill
+          )
         }));
       } else {
         setFormData(prev => ({
           ...prev,
-          skillsWantToLearn: [...prev.skillsWantToLearn, skill]
+          skillsWantToLearn: [...prev.skillsWantToLearn, { name: skill, category: '' }]
         }));
       }
     }
@@ -174,10 +179,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
                 Let's get started
               </h2>
-              <p className="text-gray-600 dark:text-muted-foreground">
+              <p className="text-muted-foreground">
                 Create your account to join the knowledge sharing community
               </p>
             </div>
@@ -231,10 +236,10 @@ export function Signup({ onSignup, loading, error }) {
               <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <GraduationCap className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
                 Tell us about your education
               </h2>
-              <p className="text-gray-600 dark:text-muted-foreground">
+              <p className="text-muted-foreground">
                 Help us understand your academic background
               </p>
             </div>
@@ -291,13 +296,109 @@ export function Signup({ onSignup, loading, error }) {
         return (
           <div className="space-y-8">
             <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                What do you want to learn?
+              </h2>
+              <p className="text-muted-foreground">
+                Set your learning goals to get matched with the right mentors
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Category Filters */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedCategoryLearn === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategoryLearn('all')}
+                  disabled={loading}
+                >
+                  All Categories
+                </Button>
+                {Object.keys(skillsDatabase).map(category => (
+                  <Button
+                    key={category}
+                    variant={selectedCategoryLearn === category ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategoryLearn(category)}
+                    disabled={loading}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div>
+                <Input
+                  placeholder="Search for skills you want to learn..."
+                  value={skillSearchLearn}
+                  onChange={(e) => setSkillSearchLearn(e.target.value)}
+                  className="h-12"
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Selected Learning Goals */}
+              {formData.skillsWantToLearn.length > 0 && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-3">
+                    Learning Goals ({formData.skillsWantToLearn.length})
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.skillsWantToLearn.map((skill, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="outline" 
+                        className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
+                      >
+                        {typeof skill === 'string' ? skill : skill.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                {filteredSkillsForLearning.map((skill, index) => {
+                  const isSelected = formData.skillsWantToLearn.some(s => 
+                    (typeof s === 'string' ? s : s.name) === skill
+                  );
+                  return (
+                    <Button
+                      key={index}
+                      variant={isSelected ? 'default' : 'outline'}
+                      onClick={() => handleSkillToggle(skill, null, 'learn')}
+                      className="h-auto p-3 text-left justify-start"
+                      disabled={loading}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isSelected && <CheckCircle className="h-4 w-4" />}
+                        <span className="text-sm">{skill}</span>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
                 What can you teach?
               </h2>
-              <p className="text-gray-600 dark:text-muted-foreground">
+              <p className="text-muted-foreground">
                 Share your expertise and help other students learn
               </p>
             </div>
@@ -306,9 +407,9 @@ export function Signup({ onSignup, loading, error }) {
               {/* Category Filters */}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  variant={selectedCategoryTeach === 'all' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => setSelectedCategoryTeach('all')}
                   disabled={loading}
                 >
                   All Categories
@@ -316,9 +417,9 @@ export function Signup({ onSignup, loading, error }) {
                 {Object.keys(skillsDatabase).map(category => (
                   <Button
                     key={category}
-                    variant={selectedCategory === category ? 'default' : 'outline'}
+                    variant={selectedCategoryTeach === category ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSelectedCategory(category)}
+                    onClick={() => setSelectedCategoryTeach(category)}
                     disabled={loading}
                   >
                     {category}
@@ -350,7 +451,7 @@ export function Signup({ onSignup, loading, error }) {
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="bg-white dark:bg-card text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
+                          className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
                         >
                           {skill.name} ({levelInfo?.icon} {levelInfo?.label})
                         </Badge>
@@ -365,10 +466,10 @@ export function Signup({ onSignup, loading, error }) {
                 {filteredSkillsForTeaching.map((skill, index) => {
                   const isSelected = formData.skillsCanTeach.some(s => s.name === skill);
                   return (
-                    <div key={index} className="border border-gray-200 dark:border-border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div key={index} className="border border-border rounded-lg p-4 hover:bg-accent transition-colors">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium text-gray-900 dark:text-foreground">{skill}</span>
-                        {isSelected && <CheckCircle className="h-4 w-4 text-green-600" />}
+                        <span className="font-medium text-foreground">{skill}</span>
+                        {isSelected && <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />}
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -386,77 +487,6 @@ export function Signup({ onSignup, loading, error }) {
                         ))}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-foreground mb-2">
-                What do you want to learn?
-              </h2>
-              <p className="text-gray-600 dark:text-muted-foreground">
-                Set your learning goals to get matched with the right mentors
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              {/* Search */}
-              <div>
-                <Input
-                  placeholder="Search for skills you want to learn..."
-                  value={skillSearchLearn}
-                  onChange={(e) => setSkillSearchLearn(e.target.value)}
-                  className="h-12"
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Selected Learning Goals */}
-              {formData.skillsWantToLearn.length > 0 && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-3">
-                    Learning Goals ({formData.skillsWantToLearn.length})
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.skillsWantToLearn.map((skill, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="outline" 
-                        className="bg-white dark:bg-card text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Skills Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                {filteredSkillsForLearning.map((skill, index) => {
-                  const isSelected = formData.skillsWantToLearn.includes(skill);
-                  return (
-                    <Button
-                      key={index}
-                      variant={isSelected ? 'default' : 'outline'}
-                      onClick={() => handleSkillToggle(skill, null, 'learn')}
-                      className="h-auto p-3 text-left justify-start"
-                      disabled={loading}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isSelected && <CheckCircle className="h-4 w-4" />}
-                        <span className="text-sm">{skill}</span>
-                      </div>
-                    </Button>
                   );
                 })}
               </div>
@@ -486,7 +516,7 @@ export function Signup({ onSignup, loading, error }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background dark:bg-background">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -494,51 +524,65 @@ export function Signup({ onSignup, loading, error }) {
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
-              className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50"
+              className="p-2 hover:bg-accent"
               disabled={loading}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-foreground">
+              <h1 className="text-2xl font-semibold text-foreground">
                 Join Student Hub
               </h1>
-              <p className="text-gray-600 dark:text-muted-foreground">
+              <p className="text-muted-foreground">
                 Step {currentStep} of {totalSteps}
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 dark:text-muted-foreground">
-              {Math.round(progress)}% complete
-            </span>
-            <div className="w-32 h-2 bg-gray-200 dark:bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-              />
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {Math.round(progress)}% complete
+              </span>
+              <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
+            
+            {/* Create Account Button - Shows when on step 4 */}
+            {currentStep === 4 && (
+              <Button
+                onClick={handleSubmit}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 mt-2"
+                disabled={loading}
+              >
+                <Zap className="h-4 w-4" />
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Display error if any */}
         {error && (
           <div className="max-w-2xl mx-auto mb-6">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-red-700 dark:text-red-400">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-destructive">{error}</p>
             </div>
           </div>
         )}
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
-          <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur-sm">
+          <Card className="border shadow-xl bg-card backdrop-blur-sm">
             <CardContent className="p-8">
               {renderStep()}
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-border">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
                 <Button
                   variant="outline"
                   onClick={handlePrevious}

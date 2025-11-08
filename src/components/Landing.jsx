@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner@2.0.3';
-import { BookOpen, Users, Trophy, MessageSquare, Star, Zap, CheckCircle, ArrowRight, Play, Mail, Lock, GraduationCap } from 'lucide-react';
+import { BookOpen, Users, Trophy, MessageSquare, Star, Zap, CheckCircle, ArrowRight, Play, Mail, Lock, GraduationCap, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function Landing({ onLogin, loading, error }) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [signInModal, setSignInModal] = useState(false);
   const [signInForm, setSignInForm] = useState({ email: '', password: '' });
 
@@ -105,6 +107,32 @@ export function Landing({ onLogin, loading, error }) {
     <div className="min-h-screen bg-background dark:bg-background">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
+        {/* Theme Toggle - Rightmost Bottom Corner */}
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '2rem', 
+          right: '2rem', 
+          zIndex: 9999 
+        }}>
+          <Button
+            variant="default"
+            size="icon"
+            onClick={toggleTheme}
+            className={`h-12 w-12 backdrop-blur-md shadow-lg hover:shadow-xl rounded-full ${
+              theme === 'dark' 
+                ? 'bg-white hover:bg-gray-100 text-black border border-gray-200 hover:border-gray-300' 
+                : 'bg-black hover:bg-gray-800 text-white border border-gray-700 hover:border-gray-600'
+            }`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+
         <div className="container mx-auto px-6 py-20">
           <div className="text-center max-w-4xl mx-auto">
             <div className="flex justify-center mb-8">
@@ -399,6 +427,11 @@ export function Landing({ onLogin, loading, error }) {
                   type="password"
                   value={signInForm.password}
                   onChange={(e) => setSignInForm(prev => ({ ...prev, password: e.target.value }))}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSignInSubmit();
+                    }
+                  }}
                   placeholder="Enter your password"
                   className="pl-10"
                   disabled={loading}

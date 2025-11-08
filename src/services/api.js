@@ -225,6 +225,32 @@ export const skillsService = {
     } catch (error) {
       throw new Error('Failed to update skill level');
     }
+  },
+
+  // Bulk update skills to teach
+  updateSkillsToTeach: async (skills) => {
+    try {
+      const response = await apiRequest(SKILL_ENDPOINTS.UPDATE_SKILLS_TO_TEACH, {
+        method: 'PUT',
+        body: JSON.stringify({ skills })
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to update teaching skills');
+    }
+  },
+
+  // Bulk update skills to learn
+  updateSkillsToLearn: async (skills) => {
+    try {
+      const response = await apiRequest(SKILL_ENDPOINTS.UPDATE_SKILLS_TO_LEARN, {
+        method: 'PUT',
+        body: JSON.stringify({ skills })
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to update learning skills');
+    }
   }
 };
 
@@ -280,137 +306,196 @@ export const sessionService = {
   // Create new session
   createSession: async (sessionData) => {
     try {
-      const response = await apiRequest(SESSION_ENDPOINTS.CREATE, {
+      const response = await apiRequest(SESSION_ENDPOINTS.CREATE_SESSION, {
         method: 'POST',
         body: JSON.stringify(sessionData)
       });
-      return response.data;
+      return response.data?.session || response.data;
     } catch (error) {
       throw new Error('Failed to create session');
     }
   },
 
-  // Get user sessions
-  getUserSessions: async (userId) => {
+  // Get sessions created by the authenticated user
+  getCreatedSessions: async () => {
     try {
-      const response = await apiRequest(SESSION_ENDPOINTS.GET_USER_SESSIONS.replace(':userId', userId));
-      return response.data;
+      const response = await apiRequest(SESSION_ENDPOINTS.GET_CREATED_SESSIONS);
+      return response.data?.sessions || [];
     } catch (error) {
       throw new Error('Failed to fetch sessions');
     }
   },
 
-  // Update session
-  updateSession: async (sessionId, updates) => {
+  // Get sessions the user has joined
+  getJoinedSessions: async () => {
     try {
-      const response = await apiRequest(SESSION_ENDPOINTS.UPDATE_SESSION.replace(':sessionId', sessionId), {
-        method: 'PUT',
-        body: JSON.stringify(updates)
-      });
-      return response.data;
+      const response = await apiRequest(SESSION_ENDPOINTS.GET_JOINED_SESSIONS);
+      return response.data?.sessions || [];
     } catch (error) {
-      throw new Error('Failed to update session');
+      throw new Error('Failed to fetch joined sessions');
     }
   },
 
-  // Cancel session
-  cancelSession: async (sessionId, reason) => {
+  // Get a session by id
+  getSessionById: async (sessionId) => {
     try {
-      await apiRequest(SESSION_ENDPOINTS.CANCEL_SESSION.replace(':sessionId', sessionId), {
+      const response = await apiRequest(SESSION_ENDPOINTS.GET_SESSION_BY_ID.replace(':sessionId', sessionId));
+      return response.data?.session || response.data;
+    } catch (error) {
+      throw new Error('Failed to fetch session');
+    }
+  },
+
+  // Accept session invite
+  acceptSession: async (sessionId) => {
+    try {
+      const response = await apiRequest(SESSION_ENDPOINTS.ACCEPT_SESSION, {
         method: 'POST',
-        body: JSON.stringify({ reason })
+        body: JSON.stringify({ sessionId })
       });
+      return response.data?.session || response.data;
+    } catch (error) {
+      throw new Error('Failed to accept session');
+    }
+  },
+
+  // Cancel session participation
+  cancelSession: async (sessionId) => {
+    try {
+      const response = await apiRequest(SESSION_ENDPOINTS.CANCEL_SESSION, {
+        method: 'POST',
+        body: JSON.stringify({ sessionId })
+      });
+      return response.data?.session || response.data;
     } catch (error) {
       throw new Error('Failed to cancel session');
     }
   },
 
-  // Complete session
-  completeSession: async (sessionId, feedback) => {
+  // Delete a session created by the user
+  deleteSession: async (sessionId) => {
     try {
-      const response = await apiRequest(SESSION_ENDPOINTS.COMPLETE_SESSION.replace(':sessionId', sessionId), {
+      const response = await apiRequest(SESSION_ENDPOINTS.DELETE_SESSION, {
         method: 'POST',
-        body: JSON.stringify(feedback)
+        body: JSON.stringify({ sessionId })
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to complete session');
+      throw new Error('Failed to delete session');
+    }
+  },
+
+  // Rate a session
+  rateSession: async ({ sessionId, rating, comment }) => {
+    try {
+      const response = await apiRequest(SESSION_ENDPOINTS.RATE_SESSION, {
+        method: 'POST',
+        body: JSON.stringify({ sessionId, rating, comment })
+      });
+      return response.data?.session || response.data;
+    } catch (error) {
+      throw new Error('Failed to rate session');
     }
   }
 };
 
 // Q&A Forum Services
 export const qaService = {
-  // Get questions with pagination
-  getQuestions: async (page = 1, limit = 10, filters = {}) => {
+  // Get all questions
+  getAllQuestions: async () => {
     try {
-      const queryParams = new URLSearchParams({ page, limit, ...filters }).toString();
-      const response = await apiRequest(`${QA_ENDPOINTS.GET_QUESTIONS}?${queryParams}`);
-      return response;
+      const response = await apiRequest(QA_ENDPOINTS.GET_ALL_QUESTIONS);
+      return response.data?.outputQuestions || [];
     } catch (error) {
       throw new Error('Failed to fetch questions');
     }
   },
 
-  // Create new question
-  createQuestion: async (questionData) => {
+  // Get questions by current user
+  getMyQuestions: async () => {
     try {
-      const response = await apiRequest(QA_ENDPOINTS.CREATE_QUESTION, {
-        method: 'POST',
-        body: JSON.stringify(questionData)
-      });
-      return response.data;
+      const response = await apiRequest(QA_ENDPOINTS.GET_QUESTIONS_BY_USER);
+      return response.data?.outputQuestions || [];
     } catch (error) {
-      throw new Error('Failed to create question');
+      throw new Error('Failed to fetch your questions');
     }
   },
 
-  // Get single question with answers
-  getQuestion: async (questionId) => {
+  // Ask a new question
+  askQuestion: async (questionData) => {
     try {
-      const response = await apiRequest(QA_ENDPOINTS.GET_QUESTION.replace(':id', questionId));
-      return response.data;
+      const response = await apiRequest(QA_ENDPOINTS.ASK_QUESTION, {
+        method: 'POST',
+        body: JSON.stringify(questionData)
+      });
+      return response.data?.question || response.data;
     } catch (error) {
-      throw new Error('Failed to fetch question');
+      throw new Error('Failed to ask question');
     }
   },
 
   // Submit answer to question
-  answerQuestion: async (questionId, content) => {
+  answerQuestion: async (questionId, answer) => {
     try {
-      const response = await apiRequest(QA_ENDPOINTS.ANSWER_QUESTION.replace(':id', questionId), {
+      const response = await apiRequest(QA_ENDPOINTS.ANSWER_QUESTION, {
         method: 'POST',
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ questionId, answer })
       });
-      return response.data;
+      return response.data?.question || response.data;
     } catch (error) {
       throw new Error('Failed to submit answer');
     }
   },
 
-  // Vote on question
-  voteQuestion: async (questionId, vote) => {
+  // Upvote a question
+  upvoteQuestion: async (questionId) => {
     try {
-      const response = await apiRequest(QA_ENDPOINTS.VOTE_QUESTION.replace(':id', questionId), {
-        method: 'POST',
-        body: JSON.stringify({ vote }) // vote: 'up' or 'down'
+      const response = await apiRequest(QA_ENDPOINTS.UPVOTE_QUESTION, {
+        method: 'PUT',
+        body: JSON.stringify({ questionId })
       });
-      return response.data;
+      return response.data?.question || response.data;
     } catch (error) {
-      throw new Error('Failed to vote on question');
+      throw new Error('Failed to upvote question');
     }
   },
 
-  // Vote on answer
-  voteAnswer: async (answerId, vote) => {
+  // Downvote a question
+  downvoteQuestion: async (questionId) => {
     try {
-      const response = await apiRequest(QA_ENDPOINTS.VOTE_ANSWER.replace(':id', answerId), {
-        method: 'POST',
-        body: JSON.stringify({ vote }) // vote: 'up' or 'down'
+      const response = await apiRequest(QA_ENDPOINTS.DOWNVOTE_QUESTION, {
+        method: 'PUT',
+        body: JSON.stringify({ questionId })
       });
-      return response.data;
+      return response.data?.question || response.data;
     } catch (error) {
-      throw new Error('Failed to vote on answer');
+      throw new Error('Failed to downvote question');
+    }
+  },
+
+  // Upvote an answer
+  upvoteAnswer: async (questionId, answerId) => {
+    try {
+      const response = await apiRequest(QA_ENDPOINTS.UPVOTE_ANSWER, {
+        method: 'PUT',
+        body: JSON.stringify({ questionId, answerId })
+      });
+      return response.data?.question || response.data;
+    } catch (error) {
+      throw new Error('Failed to upvote answer');
+    }
+  },
+
+  // Downvote an answer
+  downvoteAnswer: async (questionId, answerId) => {
+    try {
+      const response = await apiRequest(QA_ENDPOINTS.DOWNVOTE_ANSWER, {
+        method: 'PUT',
+        body: JSON.stringify({ questionId, answerId })
+      });
+      return response.data?.question || response.data;
+    } catch (error) {
+      throw new Error('Failed to downvote answer');
     }
   }
 };
@@ -514,18 +599,18 @@ export const notificationService = {
     }
   },
 
-  // Update notification preferences
-  updatePreferences: async (preferences) => {
+  // Respond to session invite (accept/decline)
+  respondToSessionInvite: async (notificationId, action) => {
     try {
-      const response = await apiRequest('/notifications/preferences', {
-        method: 'PUT',
-        body: JSON.stringify(preferences)
+      const response = await apiRequest(`/notifications/${notificationId}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ action })
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to update notification preferences');
+      throw new Error('Failed to respond to session invite');
     }
-  }
+  },
 };
 
 // Utility function to handle API errors globally

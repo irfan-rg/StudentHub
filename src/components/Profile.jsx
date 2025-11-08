@@ -13,7 +13,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner@2.0.3';
-import { userService } from '../services/api';
+import { userService, skillsService } from '../services/api';
 import { 
   User, 
   Mail, 
@@ -47,6 +47,45 @@ export function Profile({ user, onUpdateUser }) {
   const [teachSkills, setTeachSkills] = useState(user.skillsCanTeach || []);
   const [learnSkills, setLearnSkills] = useState(user.skillsWantToLearn || []);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategoryTeach, setSelectedCategoryTeach] = useState('all');
+  const [selectedCategoryLearn, setSelectedCategoryLearn] = useState('all');
+
+  // Skills database organized by categories
+  const skillsDatabase = {
+    'Programming & Development': [
+      'JavaScript', 'Python', 'Java', 'C++', 'C#', 'React', 'Vue.js', 'Angular', 
+      'Node.js', 'Django', 'Flask', 'Spring Boot', 'TypeScript', 'PHP', 'Ruby', 
+      'Go', 'Rust', 'Swift', 'Kotlin', 'Flutter', 'React Native'
+    ],
+    'Data Science & Analytics': [
+      'Machine Learning', 'Deep Learning', 'Data Analysis', 'Statistics', 
+      'SQL', 'R', 'Pandas', 'NumPy', 'Scikit-learn', 'TensorFlow', 'PyTorch', 
+      'Data Visualization', 'Tableau', 'Power BI', 'Big Data', 'Hadoop', 'Spark'
+    ],
+    'Design & Creative': [
+      'UI/UX Design', 'Graphic Design', 'Figma', 'Adobe Creative Suite', 
+      'Sketch', 'Prototyping', 'User Research', 'Design Systems', 'Branding', 
+      'Illustration', 'Photography', 'Video Editing', 'Animation', '3D Modeling'
+    ],
+    'Business & Management': [
+      'Project Management', 'Digital Marketing', 'SEO', 'Content Marketing', 
+      'Social Media Marketing', 'Business Analysis', 'Finance', 'Accounting', 
+      'Entrepreneurship', 'Strategy', 'Operations', 'Product Management', 
+      'Sales', 'Customer Service'
+    ],
+    'Cloud & DevOps': [
+      'AWS', 'Azure', 'Google Cloud', 'Docker', 'Kubernetes', 'DevOps', 
+      'CI/CD', 'Infrastructure as Code', 'Terraform', 'Monitoring', 
+      'Linux', 'System Administration', 'Networking', 'Security'
+    ],
+    'Other Skills': [
+      'Writing', 'Research', 'Public Speaking', 'Teaching', 'Languages', 
+      'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Psychology', 
+      'Economics', 'Law', 'Music', 'Art History', 'Philosophy'
+    ]
+  };
+
+  const allSkills = Object.values(skillsDatabase).flat();
 
   // Avatar management state
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
@@ -63,29 +102,22 @@ export function Profile({ user, onUpdateUser }) {
     'https://avatar.iran.liara.run/public/78'
   ];
 
-  const availableSkills = [
-    'JavaScript', 'Python', 'Java', 'C++', 'React', 'Node.js', 'HTML/CSS', 'TypeScript',
-    'Angular', 'Vue.js', 'PHP', 'Ruby', 'Go', 'Rust', 'Swift', 'Kotlin',
-    'Data Science', 'Machine Learning', 'Data Analysis', 'Statistics', 'SQL', 'R Programming',
-    'Power BI', 'Tableau', 'Excel', 'Google Analytics',
-    'UI/UX Design', 'Graphic Design', 'Adobe Photoshop', 'Adobe Illustrator', 'Figma',
-    'Video Editing', 'Animation', '3D Modeling', 'Photography',
-    'Digital Marketing', 'Project Management', 'Business Analysis', 'Financial Analysis',
-    'Content Writing', 'Social Media Marketing', 'SEO', 'Public Speaking',
-    'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Psychology',
-    'History', 'Literature', 'Philosophy', 'Sociology',
-    'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean',
-    'Portuguese', 'Italian', 'Russian',
-    'DevOps', 'Cloud Computing', 'Cybersecurity', 'Blockchain', 'Game Development',
-    'Mobile Development', 'Research Skills', 'Technical Writing', 'Networking'
-  ];
-
   const levelLabels = {
     beginner: { label: 'Beginner', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', icon: '🌱' },
     intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', icon: '📚' },
     advanced: { label: 'Advanced', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300', icon: '🎯' },
-    expert: { label: 'Expert', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', icon: '⭐' }
+    expert: { label: 'Expert', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300', icon: '⭐' }
   };
+
+  // Filtered skills for teaching based on category and search
+  const filteredSkillsForTeaching = selectedCategoryTeach === 'all'
+    ? allSkills.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+    : skillsDatabase[selectedCategoryTeach]?.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+
+  // Filtered skills for learning based on category and search
+  const filteredSkillsForLearning = selectedCategoryLearn === 'all'
+    ? allSkills.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+    : skillsDatabase[selectedCategoryLearn]?.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) || [];
 
   const addTeachSkill = (name, level) => {
     if (!teachSkills.find((s) => s.name === name)) {
@@ -94,39 +126,150 @@ export function Profile({ user, onUpdateUser }) {
   };
 
   const removeTeachSkill = (name) => {
-    setTeachSkills((prev) => prev.filter((s) => s.name !== name));
+    setTeachSkills((prev) => prev.filter((s) => {
+      const skillName = typeof s === 'string' ? s : s.name;
+      return skillName !== name;
+    }));
   };
 
   const toggleLearnSkill = (name) => {
-    setLearnSkills((prev) => prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]);
+    setLearnSkills((prev) => {
+      const hasSkill = prev.some(s => {
+        const skillName = typeof s === 'string' ? s : s.name;
+        return skillName === name;
+      });
+      
+      if (hasSkill) {
+        return prev.filter((s) => {
+          const skillName = typeof s === 'string' ? s : s.name;
+          return skillName !== name;
+        });
+      } else {
+        return [...prev, name];
+      }
+    });
   };
 
   const levels = ['beginner','intermediate','advanced','expert'];
 
   const updateTeachSkillLevel = (name, newLevel) => {
-    setTeachSkills((prev) => prev.map((s) => s.name === name ? { ...s, level: newLevel } : s));
+    setTeachSkills((prev) => prev.map((s) => {
+      const skillName = typeof s === 'string' ? s : s.name;
+      if (skillName === name) {
+        return typeof s === 'object' ? { ...s, level: newLevel } : { name: s, level: newLevel };
+      }
+      return s;
+    }));
     const label = levelLabels[newLevel]?.label || newLevel;
     toast.success(`Level updated to ${label}`);
   };
 
-  const handleSaveSkills = () => {
-    if (onUpdateUser) {
-      onUpdateUser({
-        ...user,
-        skillsCanTeach: teachSkills,
-        skillsWantToLearn: learnSkills
+  const handleSaveSkills = async () => {
+    try {
+      // Prepare skills data - convert to format backend expects
+      const teachSkillsData = teachSkills
+        .map(skill => {
+          // Handle string format
+          if (typeof skill === 'string') {
+            return { name: skill, level: 'beginner', category: '' };
+          }
+          // Handle object format
+          if (typeof skill === 'object' && skill !== null) {
+            const skillName = skill.name || (typeof skill === 'string' ? skill : null);
+            if (!skillName) {
+              console.warn('Invalid teach skill:', skill);
+              return null;
+            }
+            return {
+              name: skillName,
+              level: skill.level || 'beginner',
+              category: skill.category || ''
+            };
+          }
+          console.warn('Invalid teach skill format:', skill);
+          return null;
+        })
+        .filter(skill => skill !== null && skill.name); // Remove invalid skills
+
+      const learnSkillsData = learnSkills
+        .map(skill => {
+          // Handle string format
+          if (typeof skill === 'string') {
+            return { name: skill, category: '' };
+          }
+          // Handle object format
+          if (typeof skill === 'object' && skill !== null) {
+            const skillName = skill.name || (typeof skill === 'string' ? skill : null);
+            if (!skillName) {
+              console.warn('Invalid learn skill:', skill);
+              return null;
+            }
+            return {
+              name: skillName,
+              category: skill.category || ''
+            };
+          }
+          console.warn('Invalid learn skill format:', skill);
+          return null;
+        })
+        .filter(skill => skill !== null && skill.name); // Remove invalid skills
+
+      console.log('Updating skills...', { 
+        teachSkillsData, 
+        learnSkillsData,
+        originalTeach: teachSkills,
+        originalLearn: learnSkills
       });
+
+      // Call both API endpoints separately to see which one fails
+      try {
+        const teachResult = await skillsService.updateSkillsToTeach(teachSkillsData);
+        console.log('Teach skills updated:', teachResult);
+      } catch (error) {
+        console.error('Failed to update teach skills:', error);
+        throw new Error(`Failed to update teaching skills: ${error.message}`);
+      }
+
+      try {
+        const learnResult = await skillsService.updateSkillsToLearn(learnSkillsData);
+        console.log('Learn skills updated:', learnResult);
+      } catch (error) {
+        console.error('Failed to update learn skills:', error);
+        throw new Error(`Failed to update learning skills: ${error.message}`);
+      }
+
+      // Update local state if onUpdateUser function is provided
+      if (onUpdateUser) {
+        onUpdateUser({
+          ...user,
+          skillsCanTeach: teachSkills,
+          skillsWantToLearn: learnSkills
+        });
+      }
+
+      toast.success('Skills updated successfully!');
+      setManageSkillsOpen(false);
+    } catch (error) {
+      console.error('Skills update error:', error);
+      toast.error(`Failed to update skills: ${error.message}`);
     }
-    setManageSkillsOpen(false);
   };
 
-  const handleSave = () => {
-    // Update user data if onUpdateUser function is provided
-    if (onUpdateUser) {
-      onUpdateUser({ ...user, ...formData });
+  const handleSave = async () => {
+    try {
+      // Call API to update profile in database
+      await userService.updateProfile(formData);
+
+      // Update local state if onUpdateUser function is provided
+      if (onUpdateUser) {
+        onUpdateUser({ ...user, ...formData });
+      }
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      toast.error('Failed to update profile. Please try again.');
+      console.error('Profile update error:', error);
     }
-    toast.success('Profile updated successfully!');
-    setIsEditing(false);
   };
 
   const handleSelectAvatarFromGallery = async () => {
@@ -192,13 +335,14 @@ export function Profile({ user, onUpdateUser }) {
 
   // Get top skills to display (use local state so changes reflect immediately)
   const topSkills = (teachSkills || []).slice(0, 6);
-  const expertSkills = (teachSkills || []).filter(s => s.level === 'expert').length;
-  const advancedSkills = (teachSkills || []).filter(s => s.level === 'advanced').length;
-
-  // Filter available skills based on search term
-  const filteredSkills = availableSkills.filter(skill =>
-    skill.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const expertSkills = (teachSkills || []).filter(s => {
+    const level = typeof s === 'object' ? s.level : 'beginner';
+    return level === 'expert';
+  }).length;
+  const advancedSkills = (teachSkills || []).filter(s => {
+    const level = typeof s === 'object' ? s.level : 'beginner';
+    return level === 'advanced';
+  }).length;
 
   const totalPoints = Math.max(user.points ?? 0, 0);
   const pointsGoal = Math.max(user.pointsGoal ?? 3000, totalPoints || 1);
@@ -510,7 +654,14 @@ export function Profile({ user, onUpdateUser }) {
                         key={index}
                         className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
                         >
-                        <span className="font-medium text-sm text-foreground">{skill}</span>
+                        <span className="font-medium text-sm text-foreground">
+                          {typeof skill === 'string' ? skill : skill.name}
+                        </span>
+                        {typeof skill === 'object' && skill.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {skill.category}
+                          </Badge>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -583,20 +734,27 @@ export function Profile({ user, onUpdateUser }) {
                     <div className="grid grid-cols-2 gap-3">
                       {topSkills.map((skill, index) => (
                         <div 
-                          key={index}
+                          key={skill._id || index}
                           className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
                         >
-                          <span className="font-medium text-sm text-foreground">{skill.name}</span>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-foreground">
+                              {typeof skill === 'string' ? skill : skill.name}
+                            </span>
+                            {typeof skill === 'object' && skill.category && (
+                              <span className="text-xs text-muted-foreground">{skill.category}</span>
+                            )}
+                          </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger className="outline-none">
                               <Badge variant="outline" className="text-xs capitalize cursor-pointer">
-                                {skill.level}
+                                {typeof skill === 'object' ? skill.level : 'beginner'}
                               </Badge>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {['beginner','intermediate','advanced','expert'].map((lvl) => (
-                                <DropdownMenuItem key={lvl} onClick={() => updateTeachSkillLevel(skill.name, lvl)}>
-                                  {levelLabels[lvl].icon} {levelLabels[lvl].label}
+                                <DropdownMenuItem key={lvl} onClick={() => updateTeachSkillLevel(typeof skill === 'string' ? skill : skill.name, lvl)}>
+                                  {levelLabels?.[lvl]?.label || lvl}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuContent>
@@ -654,8 +812,8 @@ export function Profile({ user, onUpdateUser }) {
       <Dialog open={manageSkillsOpen} onOpenChange={setManageSkillsOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ maxWidth: '900px', width: '900px' }}> 
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Manage Skills</DialogTitle>
-            <DialogDescription className="text-xl">Update your teaching skills and learning goals</DialogDescription>
+            <DialogTitle className="text-xl font-bold text-foreground">Manage Skills</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Update your teaching skills and learning goals</DialogDescription>
           </DialogHeader>
 
           <div className="mb-4 space-y-3">
@@ -676,14 +834,39 @@ export function Profile({ user, onUpdateUser }) {
             </TabsList>
 
             <TabsContent value="teach" className="space-y-4">
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-2 pb-2 border-b border-border">
+                <Button
+                  size="sm"
+                  variant={selectedCategoryTeach === 'all' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => setSelectedCategoryTeach('all')}
+                >
+                  All Categories
+                </Button>
+                {Object.keys(skillsDatabase).map((category) => (
+                  <Button
+                    key={category}
+                    size="sm"
+                    variant={selectedCategoryTeach === category ? 'default' : 'outline'}
+                    className="h-8"
+                    onClick={() => setSelectedCategoryTeach(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+
               {teachSkills.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {teachSkills.map((s) => {
-                    const info = levelLabels[s.level];
+                    const skillName = typeof s === 'string' ? s : s.name;
+                    const skillLevel = typeof s === 'object' ? s.level : 'beginner';
+                    const info = levelLabels[skillLevel] || levelLabels.beginner;
                     return (
-                      <span key={s.name} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${info.color}`}>
-                        {info.icon} {s.name}
-                        <button onClick={() => removeTeachSkill(s.name)} className="text-gray-500 hover:text-red-500">
+                      <span key={skillName || Math.random()} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${info.color}`}>
+                        {info.icon} {skillName}
+                        <button onClick={() => removeTeachSkill(skillName)} className="text-muted-foreground hover:text-destructive">
                           <X className="h-3 w-3" />
                         </button>
                       </span>
@@ -692,11 +875,17 @@ export function Profile({ user, onUpdateUser }) {
                 </div>
               )}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto">
-                {filteredSkills
-                  .filter((n) => !teachSkills.find((s) => s.name === n))
+                {filteredSkillsForTeaching
+                  .filter((n) => {
+                    // Check if skill already exists in teachSkills array
+                    return !teachSkills.some(s => {
+                      const skillName = typeof s === 'string' ? s : s.name;
+                      return skillName === n;
+                    });
+                  })
                   .map((name) => (
                     <div key={name} className="space-y-1">
-                      <div className="text-sm font-medium dark:text-foreground text-center mt-2">{name}</div>
+                      <div className="text-sm font-medium text-foreground text-center mt-2">{name}</div>
                       <div className="flex gap-1 justify-center">
                         {['beginner','intermediate','advanced','expert'].map((lvl) => {
                           const info = levelLabels[lvl];
@@ -705,7 +894,7 @@ export function Profile({ user, onUpdateUser }) {
                               key={lvl}
                               type="button"
                               onClick={() => addTeachSkill(name, lvl)}
-                              className={`text-xs px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 ${info.color}`}
+                              className={`text-xs px-2 py-1 rounded border hover:bg-accent ${info.color}`}
                               title={`Add ${name} as ${info.label}`}
                             >
                               {info.icon}
@@ -719,27 +908,59 @@ export function Profile({ user, onUpdateUser }) {
             </TabsContent>
 
             <TabsContent value="learn" className="space-y-4">
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-2 pb-2 border-b border-border">
+                <Button
+                  size="sm"
+                  variant={selectedCategoryLearn === 'all' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => setSelectedCategoryLearn('all')}
+                >
+                  All Categories
+                </Button>
+                {Object.keys(skillsDatabase).map((category) => (
+                  <Button
+                    key={category}
+                    size="sm"
+                    variant={selectedCategoryLearn === category ? 'default' : 'outline'}
+                    className="h-8"
+                    onClick={() => setSelectedCategoryLearn(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+
               {learnSkills.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {learnSkills.map((name) => (
-                    <span key={name} className="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
-                      {name}
-                      <button onClick={() => toggleLearnSkill(name)} className="text-gray-500 hover:text-red-500">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
+                  {learnSkills.map((skill) => {
+                    const skillName = typeof skill === 'string' ? skill : skill.name;
+                    return (
+                      <span key={skillName || Math.random()} className="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+                        {skillName}
+                        <button onClick={() => toggleLearnSkill(skillName)} className="text-muted-foreground hover:text-destructive">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               )}
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto">
-                {filteredSkills
-                  .filter((name) => !learnSkills.includes(name))
+                {filteredSkillsForLearning
+                  .filter((name) => {
+                    // Check if skill already exists in learnSkills array
+                    return !learnSkills.some(s => {
+                      const skillName = typeof s === 'string' ? s : s.name;
+                      return skillName === name;
+                    });
+                  })
                   .map((name) => (
                     <button
                       key={name}
                       type="button"
                       onClick={() => toggleLearnSkill(name)}
-                      className="text-sm p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
+                      className="text-sm p-2 border border-border rounded hover:bg-accent text-left text-foreground"
                     >
                       <Plus className="h-3 w-3 inline mr-1" />
                       {name}

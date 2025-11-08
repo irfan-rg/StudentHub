@@ -52,14 +52,27 @@ export function QAForum({ user }) {
   const itemsPerPage = 10;
 
   const questions = useQAStore(state => state.questions);
-  const addQuestion = useQAStore(state => state.addQuestion);
+  const loading = useQAStore(state => state.loading);
+  const error = useQAStore(state => state.error);
+  const loadQuestions = useQAStore(state => state.loadQuestions);
+  const askQuestion = useQAStore(state => state.askQuestion);
   const addAnswer = useQAStore(state => state.addAnswer);
   const voteQuestion = useQAStore(state => state.voteQuestion);
   const voteAnswer = useQAStore(state => state.voteAnswer);
+  const setCurrentUserId = useQAStore(state => state.setCurrentUserId);
 
   useEffect(() => {
-    // TODO: Fetch from backend e.g., api.get('/questions').then(setQuestions).catch(() => setQuestions(mocks));
-  }, []);
+    // Set current user ID for vote tracking
+    if (user?.id || user?._id) {
+      setCurrentUserId(user.id || user._id);
+    }
+
+    // Load questions from backend
+    loadQuestions().catch((error) => {
+      console.error('Failed to load questions:', error);
+      toast.error('Failed to load questions');
+    });
+  }, [user, loadQuestions, setCurrentUserId]);
 
   // Sync selectedQuestion with store when questions change
   useEffect(() => {
@@ -86,139 +99,61 @@ export function QAForum({ user }) {
     return matchesSearch && matchesTag && matchesAnswered && matchesTime;
   });
 
-  const handleVote = (questionId, voteType, isAnswer = false, answerId = null) => {
-    if (isAnswer && answerId) {
-      // Find the current answer to check existing vote
-      const question = questions.find(q => q.id === questionId);
-      const answer = question?.answerList?.find(a => a.id === answerId);
-      
-      if (answer) {
-        const currentVote = answer.userVote || 0;
-        const targetVote = voteType === 'up' ? 1 : -1;
-        
-        // Check if user is trying to vote in the same direction
-        if (currentVote === targetVote) {
-          toast.info(`You have already ${voteType === 'up' ? 'upvoted' : 'downvoted'} this answer`);
-          return;
-        }
-        
-        // Execute the vote
-        voteAnswer(questionId, answerId, voteType);
-        
-        // Show appropriate toast message based on the action
-        if (currentVote === 0) {
-          // New vote
-          toast.success(`Answer ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
-        } else {
-          // Changing from opposite vote or removing vote
-          const newVote = currentVote === targetVote ? 0 : targetVote;
-          if (newVote === 0) {
-            toast.success(`${voteType === 'up' ? 'Upvote' : 'Downvote'} removed`);
-          } else {
-            toast.success(`Answer ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
-          }
-        }
+  const handleVote = async (questionId, voteType, isAnswer = false, answerId = null) => {
+    try {
+      if (isAnswer && answerId) {
+        await voteAnswer(questionId, answerId, voteType);
+        toast.success(`Answer ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
+      } else {
+        await voteQuestion(questionId, voteType);
+        toast.success(`Question ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
       }
-    } else {
-      // Find the current question to check existing vote
-      const question = questions.find(q => q.id === questionId);
-      
-      if (question) {
-        const currentVote = question.userVote || 0;
-        const targetVote = voteType === 'up' ? 1 : -1;
-        
-        // Check if user is trying to vote in the same direction
-        if (currentVote === targetVote) {
-          toast.info(`You have already ${voteType === 'up' ? 'upvoted' : 'downvoted'} this question`);
-          return;
-        }
-        
-        // Execute the vote
-        voteQuestion(questionId, voteType);
-        
-        // Show appropriate toast message based on the action
-        if (currentVote === 0) {
-          // New vote
-          toast.success(`Question ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
-        } else {
-          // Changing from opposite vote or removing vote
-          const newVote = currentVote === targetVote ? 0 : targetVote;
-          if (newVote === 0) {
-            toast.success(`${voteType === 'up' ? 'Upvote' : 'Downvote'} removed`);
-          } else {
-            toast.success(`Question ${voteType === 'up' ? 'upvoted' : 'downvoted'}!`);
-          }
-        }
-      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to vote');
     }
   };
 
-  const handleAskQuestion = () => {
+  const handleAskQuestion = async () => {
     if (!newQuestion.title.trim() || !newQuestion.content.trim()) {
       toast.error('Please fill in both title and content');
       return;
     }
 
-    const question = {
-      id: questions.length + 1,
+    try {
+      await askQuestion({
         title: newQuestion.title,
-        content: newQuestion.content,
-      author: {
-        name: user.name,
-        avatar: user.avatar,
-        points: user.points,
-        college: user.college
-      },
-      tags: newQuestion.tags,
-      upvotes: 0,
-      answerCount: 0,
-      views: 0,
-        timeAgo: "Just now",
-      createdAt: new Date(),
-      isAnswered: false,
-        userVote: 0,
-        answerList: []
-      };
-    addQuestion(question);
+        description: newQuestion.content,
+        tags: newQuestion.tags
+      });
       setIsAskingQuestion(false);
       setNewQuestion({ title: '', content: '', tags: [] });
       toast.success('Question posted successfully!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to post question');
+    }
   };
 
   const handleAnswerChange = (e) => {
     setNewAnswer(e.target.value);
   };
 
-  const handleAddAnswer = useCallback((questionId) => {
+  const handleAddAnswer = useCallback(async (questionId) => {
     if (!newAnswer.trim()) {
       toast.error('Please enter an answer');
       return;
     }
 
-    const answer = {
-      id: Date.now(),
-      content: newAnswer,
-      author: {
-        name: user.name,
-        avatar: user.avatar,
-        points: user.points,
-        college: user.college
-      },
-      upvotes: 0,
-        timeAgo: "Just now",
-      isAccepted: false,
-        userVote: 0
-      };
-
-      addAnswer(questionId, answer);
-      if (selectedQuestion && selectedQuestion.id === questionId) {
-        const updated = { ...selectedQuestion, answerList: [answer, ...selectedQuestion.answerList], answerCount: (selectedQuestion.answerCount || 0) + 1 };
-        setSelectedQuestion(updated);
-      }
-
+    try {
+      await addAnswer(questionId, newAnswer);
       setNewAnswer('');
       toast.success('Answer posted successfully!');
-  }, [newAnswer, user]);
+      
+      // Reload questions to get updated data
+      await loadQuestions();
+    } catch (error) {
+      toast.error(error.message || 'Failed to post answer');
+    }
+  }, [newAnswer, addAnswer, loadQuestions]);
 
   const addTag = (tag) => {
     if (!newQuestion.tags.includes(tag)) {
@@ -381,6 +316,31 @@ export function QAForum({ user }) {
                               </div>
     );
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <p className="text-red-500 font-semibold">Failed to load questions</p>
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={() => loadQuestions()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

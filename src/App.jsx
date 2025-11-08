@@ -13,7 +13,7 @@ import { Contact } from './components/Contact';
 import { About } from './components/About';
 import { Blog } from './components/Blog';
 import { Sidebar } from './components/Navigation';
-import { Sessions } from './components/Sessions';
+import Sessions from './components/Sessions';
 import { Toaster } from './components/ui/sonner';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -73,16 +73,7 @@ function AppLayout() {
   const location = useLocation();
   const isLoggedIn = !!user;
   
-  // Pages that should not show sidebar
-  const noSidebarRoutes = ['/signup', '/faq', '/contact', '/about', '/blog'];
-  const showSidebar = isLoggedIn && !noSidebarRoutes.includes(location.pathname);
-
-  // Show loading state while checking authentication
-  if (loading) {
-    return <FullPageLoading text="Loading your Student Hub..." />;
-  }
-
-  // Add a small loading state for route transitions
+  // Add a small loading state for route transitions - MUST be before any early returns
   const [isRouteChanging, setIsRouteChanging] = useState(false);
   
   useEffect(() => {
@@ -90,6 +81,15 @@ function AppLayout() {
     const timer = setTimeout(() => setIsRouteChanging(false), 150);
     return () => clearTimeout(timer);
   }, [location.pathname]);
+  
+  // Pages that should not show sidebar
+  const noSidebarRoutes = ['/signup', '/faq', '/contact', '/about', '/blog'];
+  const showSidebar = isLoggedIn && !noSidebarRoutes.includes(location.pathname);
+
+  // Show loading state while checking authentication - AFTER all hooks are declared
+  if (loading) {
+    return <FullPageLoading text="Loading your Student Hub..." />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
