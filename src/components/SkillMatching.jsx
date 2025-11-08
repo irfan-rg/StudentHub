@@ -84,100 +84,6 @@ export function SkillMatching({ user }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Mock data for fallback
-  const MOCK_STUDENTS = [
-    {
-      id: 1,
-      name: "Emma Watson",
-      college: "Harvard University",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "Machine Learning", level: "expert" },
-        { name: "Python", level: "advanced" },
-        { name: "Data Science", level: "advanced" },
-        { name: "Statistics", level: "intermediate" }
-      ],
-      points: 3250,
-      sessions: 28,
-      rating: 4.9,
-      availability: "Available now",
-      matchPercentage: 95,
-      bio: "PhD student passionate about AI and machine learning. Love helping others understand complex concepts."
-    },
-    {
-      id: 2,
-      name: "David Kim",
-      college: "Stanford University",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "UI/UX Design", level: "expert" },
-        { name: "Figma", level: "advanced" },
-        { name: "Design Systems", level: "advanced" },
-        { name: "Prototyping", level: "intermediate" }
-      ],
-      points: 2890,
-      sessions: 22,
-      rating: 4.8,
-      availability: "Available today",
-      matchPercentage: 88,
-      bio: "Design student with internship experience at top tech companies. Happy to share design knowledge!"
-    },
-    {
-      id: 3,
-      name: "Sarah Chen",
-      college: "MIT",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "DevOps", level: "advanced" },
-        { name: "Docker", level: "intermediate" },
-        { name: "Kubernetes", level: "intermediate" },
-        { name: "AWS", level: "beginner" }
-      ],
-      points: 2150,
-      sessions: 15,
-      rating: 4.7,
-      availability: "Weekends only",
-      matchPercentage: 82,
-      bio: "Computer Science major with focus on cloud infrastructure and DevOps practices."
-    },
-    {
-      id: 4,
-      name: "James Wilson",
-      college: "Carnegie Mellon",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "React", level: "expert" },
-        { name: "TypeScript", level: "advanced" },
-        { name: "Node.js", level: "advanced" },
-        { name: "GraphQL", level: "intermediate" }
-      ],
-      points: 3100,
-      sessions: 31,
-      rating: 4.9,
-      availability: "Evenings preferred",
-      matchPercentage: 91,
-      bio: "Full-stack developer and teaching assistant. Love mentoring students in modern web development."
-    },
-    {
-      id: 5,
-      name: "Lisa Park",
-      college: "UC Berkeley",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face",
-      skillsCanTeach: [
-        { name: "Digital Marketing", level: "expert" },
-        { name: "Content Writing", level: "advanced" },
-        { name: "SEO", level: "intermediate" },
-        { name: "Analytics", level: "intermediate" }
-      ],
-      points: 1950,
-      sessions: 19,
-      rating: 4.6,
-      availability: "Flexible schedule",
-      matchPercentage: 76,
-      bio: "Business major with marketing internship experience. Passionate about digital strategies and content creation."
-    }
-  ];
-
   // Fetch students from API
   useEffect(() => {
     const loadStudents = async () => {
@@ -208,15 +114,15 @@ export function SkillMatching({ user }) {
         }
 
         const data = await response.json();
-        const studentsData = data.data || data || MOCK_STUDENTS;
-        setStudents(Array.isArray(studentsData) ? studentsData : MOCK_STUDENTS);
+        const studentsData = data.data || data || [];
+        setStudents(Array.isArray(studentsData) ? studentsData : []);
         setIsLoading(false);
       } catch (err) {
         console.error('Error loading students:', err);
         setError(err.message);
         setIsLoading(false);
-        // Fallback to mock data
-        setStudents(MOCK_STUDENTS);
+        // No fallback to mock data
+        setStudents([]);
       }
     };
 

@@ -1,53 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Mock data for fallback (when backend is not available)
-const MOCK_SUGGESTED_CONNECTIONS = [
-  {
-    id: 1,
-    name: 'Emma Watson',
-    college: 'Harvard University',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face',
-    skillsCanTeach: [
-      { name: 'Machine Learning', level: 'expert' },
-      { name: 'Python', level: 'advanced' }
-    ],
-    points: 3250,
-    sessions: 28,
-    matchPercentage: 95
-  },
-  {
-    id: 2,
-    name: 'David Kim',
-    college: 'Stanford University',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    skillsCanTeach: [
-      { name: 'UI/UX Design', level: 'expert' },
-      { name: 'Figma', level: 'advanced' }
-    ],
-    points: 2890,
-    sessions: 22,
-    matchPercentage: 88
-  },
-  {
-    id: 3,
-    name: 'Sarah Chen',
-    college: 'MIT',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    skillsCanTeach: [
-      { name: 'DevOps', level: 'advanced' },
-      { name: 'Docker', level: 'intermediate' }
-    ],
-    points: 2150,
-    sessions: 15,
-    matchPercentage: 82
-  }
-];
-
 export const useConnectionsStore = create(
   persist(
     (set, get) => ({
-      suggested: MOCK_SUGGESTED_CONNECTIONS,
+      suggested: [],
       connections: [],
       connectionRequests: {},
       isLoading: false,
@@ -78,9 +35,7 @@ export const useConnectionsStore = create(
         } catch (error) {
           console.error('Error loading suggested connections:', error);
           set({ error: error.message, isLoading: false });
-          // Fallback to mock data
-          set({ suggested: MOCK_SUGGESTED_CONNECTIONS });
-          return MOCK_SUGGESTED_CONNECTIONS;
+          return [];
         }
       },
 
@@ -102,12 +57,13 @@ export const useConnectionsStore = create(
           }
 
           const data = await response.json();
-          set({ connections: data.data || data, isLoading: false });
-          return data.data || data;
+          const connectionsData = data.data || data || [];
+          set({ connections: Array.isArray(connectionsData) ? connectionsData : [], isLoading: false });
+          return Array.isArray(connectionsData) ? connectionsData : [];
         } catch (error) {
           console.error('Error loading connections:', error);
-          set({ error: error.message, isLoading: false });
-          return get().connections;
+          set({ error: error.message, isLoading: false, connections: [] });
+          return [];
         }
       },
 
