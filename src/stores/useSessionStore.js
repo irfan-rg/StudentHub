@@ -50,6 +50,13 @@ const normalizeSession = (session) => {
     normalized.otherUser = otherUser
   }
 
+  // Also include createdBy (creator) if available for easier UI access
+  // creator can be named differently or be on the original/source doc
+  const creatorSource = sessionDoc.createdBy || sessionDoc.creator || session.original?.createdBy || session.raw?.createdBy || session.createdBy || session.owner || session.host;
+  if (creatorSource) {
+    normalized.creator = creatorSource
+  }
+
   return normalized
 }
 
@@ -62,6 +69,7 @@ export const useSessionStore = create(
       error: null,
 
       setSessions: (sessions) => set({ sessions }),
+      setHighlightedSessionId: (id) => set({ highlightedSessionId: id }),
 
       loadSessions: async () => {
         set({ loading: true, error: null })
@@ -81,7 +89,22 @@ export const useSessionStore = create(
         set({ loading: true, error: null })
         try {
           const data = await sessionService.getJoinedSessions()
-          const normalized = Array.isArray(data) ? data.map(normalizeSession).filter(Boolean) : []
+          let normalized = Array.isArray(data) ? data.map(normalizeSession).filter(Boolean) : []
+
+          // If any session does not have a populated createdBy (creator), try to rehydrate
+          // by fetching session details that may include the populated createdBy
+          const rehydrated = await Promise.all(normalized.map(async (session) => {
+            const hasCreator = session.creator || (session.raw && session.raw.createdBy && typeof session.raw.createdBy === 'object' && session.raw.createdBy !== null)
+            if (hasCreator) return session
+            try {
+              const full = await sessionService.getSessionById(session.id)
+              const re = normalizeSession(full)
+              return re || session
+            } catch (err) {
+              return session
+            }
+          }))
+          normalized = rehydrated
           set({ joinedSessions: normalized, loading: false })
           return normalized
         } catch (error) {
@@ -164,7 +187,7 @@ export const useSessionStore = create(
     }),
     {
       name: 'sessions-storage',
-      partialize: (state) => ({ sessions: state.sessions, joinedSessions: state.joinedSessions })
+      partialize: (state) => ({ sessions: state.sessions, joinedSessions: state.joinedSessions, highlightedSessionId: state.highlightedSessionId })
     }
   )
 )

@@ -213,6 +213,8 @@ export function Sessions({ user }) {
   const [quizScore, setQuizScore] = useState(null);
   const [quizResultPoints, setQuizResultPoints] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const highlightedSessionId = useSessionStore((state) => state.highlightedSessionId);
+  const setHighlightedSessionId = useSessionStore((state) => state.setHighlightedSessionId);
 
   const currentUserId = user?._id || user?.id;
 
@@ -223,8 +225,25 @@ export function Sessions({ user }) {
     try {
       const response = await notificationService.getNotifications(1, 50);
       const notifications = response?.data?.notifications || [];
-      const invites = notifications.filter((item) => item.type === 'session_invite');
-      setSessionInvites(invites);
+      const invites = notifications.filter((item) => item.type === 'session_invite' && !item.isRead);
+
+      // Hydrate session metadata if it's an id string (backend may not always populate session data)
+      const hydrated = await Promise.all(invites.map(async (invite) => {
+        const sessionId = invite?.metadata?.sessionId;
+        if (!sessionId) return invite;
+        if (typeof sessionId === 'string') {
+          try {
+            const session = await sessionService.getSessionById(sessionId);
+            return { ...invite, metadata: { ...invite.metadata, sessionId: session } };
+          } catch (err) {
+            return invite;
+          }
+        }
+        // already an object
+        return invite;
+      }));
+
+      setSessionInvites(hydrated);
     } catch (error) {
       setInvitesError(error.message || 'Failed to load session invites');
     } finally {
@@ -241,6 +260,18 @@ export function Sessions({ user }) {
     };
     loadAll();
   }, [currentUserId, loadSessions, loadJoinedSessions, fetchSessionInvites]);
+
+  // Scroll to and highlight accepted session when it's added
+  useEffect(() => {
+    if (!highlightedSessionId) return;
+    if (activeTab !== 'manage') return;
+    const el = document.getElementById(`session-card-${highlightedSessionId}`);
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+    }
+  }, [highlightedSessionId, activeTab]);
 
   const resetQuizState = useCallback(() => {
     setQuizSession(null);
@@ -427,7 +458,7 @@ export function Sessions({ user }) {
           ? 'completed'
           : 'upcoming';
 
-      const hostSource = session.otherUser || session.original?.otherUser || session.raw?.createdBy || session.raw?.owner || session.raw?.host;
+      const hostSource = session.creator || session.otherUser || session.original?.otherUser || session.raw?.createdBy || session.raw?.owner || session.raw?.host;
       const creator = formatUserInfo(hostSource);
 
       return {
@@ -707,10 +738,13 @@ export function Sessions({ user }) {
       await notificationService.respondToSessionInvite(inviteId, action);
 
       if (action === 'accept' && sessionId) {
-        await sessionService.acceptSession(sessionId);
+        // Backend will accept the session as part of responding to invitation
         await loadJoinedSessions();
         // Switch to My Sessions tab after accepting
         setActiveTab('manage');
+        // Flash highlight on the newly accepted session in Manage tab
+        setHighlightedSessionId(sessionId);
+        setTimeout(() => setHighlightedSessionId(null), 2000);
       }
 
       setSessionInvites((prev) => prev.filter((item) => item._id !== inviteId));
@@ -1212,7 +1246,10 @@ export function Sessions({ user }) {
                           }
 
                           return (
-                            <div key={session.id} className="p-4 rounded-lg border bg-muted/40">
+                            <div
+                              key={session.id}
+                              id={`session-card-${sessionId}`}
+                              className={`p-4 rounded-lg border bg-muted/40 transition-shadow duration-100 transform ${sessionId === highlightedSessionId ? 'ring-2 ring-green-300/40 bg-green-50 shadow-lg scale-105 transition-transform transition-opacity duration-200 ease-out' : 'scale-100'}`}>
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
@@ -1321,6 +1358,24 @@ export function Sessions({ user }) {
                                     {session.dateLabel}
                                     {session.timeLabel && <span>&nbsp;at {session.timeLabel}</span>}
                                   </div>
+                                  {/* Move rating below date/time as requested */}
+                                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Star className="h-4 w-4 text-yellow-400" />
+                                    <span className="text-base font-semibold text-foreground">
+                                      {session.averageRating > 0 ? `${session.averageRating.toFixed(1)}/5` : 'No ratings yet'}
+                                    </span>
+                                    <Button
+                                      variant="link"
+                                      onClick={() => openRatingDialog(session)}
+                                      disabled={ratingLoading}
+                                      className="h-auto p-0 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                                    >
+                                      {ratingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : userHasRating ? 'Rate' : 'Rate session'}
+                                    </Button>
+                                    {/* {userHasRating && (
+                                      <span className="block text-xs text-muted-foreground">Your rating: {userRatingValue}/5</span>
+                                    )} */}
+                                  </div>
                                 </div>
                                 <div className="flex flex-col items-center gap-2 min-w-[140px]">
                                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 mb-1 flex items-center gap-1">
@@ -1328,32 +1383,13 @@ export function Sessions({ user }) {
                                     Completed
                                   </Badge>
                                 <div className="text-center space-y-3">
-                                  <div className="text-sm text-muted-foreground">
-                                    <span className="text-base font-semibold text-foreground flex items-center justify-center gap-1">
-                                      <Star className="h-4 w-4 text-yellow-400" />
-                                      {session.averageRating > 0 ? `${session.averageRating.toFixed(1)}/5` : 'No ratings yet'}
-                                    </span>
-                                    {userHasRating ? (
-                                      <span className="block text-xs">Your rating: {userRatingValue}/5</span>
-                                    ) : (
-                                      <span className="block text-xs">You haven't rated this session.</span>
-                                    )}
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Button
-                                      variant="link"
-                                      onClick={() => openRatingDialog(session)}
-                                      disabled={ratingLoading}
-                                      className="h-auto p-0 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-                                    >
-                                      {ratingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : userHasRating ? 'Update rating' : 'Rate session'}
-                                    </Button>
-                                    <div className="flex flex-col items-center gap-1">
+                                  {/* Move claim points up above the rating update link */}
+                                  <div className="flex flex-col items-center gap-1">
                                       <Button
                                         size="sm"
                                         onClick={() => openQuizDialogForSession(session)}
                                         disabled={Boolean(claimedPoints[sessionId])}
-                                        className={`h-8 px-3 text-xs font-medium ${
+                                        className={`h-8 px-3 mt-8 text-xs font-medium ${
                                           claimedPoints[sessionId]
                                             ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
                                             : 'bg-purple-600 text-white hover:bg-purple-500'
@@ -1379,6 +1415,8 @@ export function Sessions({ user }) {
                                           : 'Answer a quick quiz to unlock points.'}
                                       </p>
                                     </div>
+                                  <div className="space-y-2">
+                                    
                                   </div>
                                 </div>
                                 </div>

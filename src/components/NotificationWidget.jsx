@@ -14,7 +14,8 @@ import {
   Check,
   X as XIcon
 } from 'lucide-react';
-import { notificationService } from '../services/api';
+import { notificationService, sessionService } from '../services/api';
+import { useSessionStore } from '../stores/useSessionStore';
 import { toast } from 'sonner@2.0.3';
 
 // Mock notification data - focused on 3 main categories
@@ -219,10 +220,26 @@ export default function NotificationWidget({ user }) {
   // Handle session invite response
   const handleSessionInviteResponse = async (notificationId, action) => {
     try {
+      // Find the notification object locally so we can get the sessionId
+      const found = notifications.find(n => n._id === notificationId);
+      const sessionId = found?.metadata?.sessionId?._id || found?.metadata?.sessionId;
+
       await notificationService.respondToSessionInvite(notificationId, action);
       
       // Remove the notification from the list since it's been responded to
       setNotifications(prev => prev.filter(n => n._id !== notificationId));
+
+      if (action === 'accept' && sessionId) {
+        // Reload joined sessions in the store and highlight (backend handled accept)
+        try {
+          await useSessionStore.getState().loadJoinedSessions();
+          useSessionStore.getState().setHighlightedSessionId(sessionId);
+          setTimeout(() => useSessionStore.getState().setHighlightedSessionId(null), 2000);
+        } catch (err) {
+          console.error('Failed to reload joined sessions:', err);
+        }
+        navigate('/sessions?tab=manage');
+      }
       
       // Show success message
       if (action === 'accept') {
@@ -233,6 +250,47 @@ export default function NotificationWidget({ user }) {
     } catch (error) {
       console.error('Failed to respond to session invite:', error);
       toast.error('Failed to respond to invitation. Please try again.');
+    }
+  };
+
+  // Handle connection request response
+  const handleConnectionRequestResponse = async (notificationId, action) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const endpoint = action === 'accept' 
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/accept-request`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/decline-request`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
+        body: JSON.stringify({ notificationId })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to respond to connection request');
+      }
+      
+      // Remove the notification from the list
+      setNotifications(prev => prev.filter(n => n._id !== notificationId));
+      
+      // Show success message
+      if (action === 'accept') {
+        toast.success('Connection request accepted!');
+      } else {
+        toast.success('Connection request declined.');
+      }
+      
+      // Refresh the page to update connections if accepted
+      if (action === 'accept') {
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (error) {
+      console.error('Failed to respond to connection request:', error);
+      toast.error('Failed to respond. Please try again.');
     }
   };
 
@@ -515,6 +573,35 @@ export default function NotificationWidget({ user }) {
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSessionInviteResponse(notification._id, 'decline');
+                                          }}
+                                          className="h-7 px-3 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                                        >
+                                          <XIcon className="h-3 w-3 mr-1" />
+                                          Decline
+                                        </Button>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Accept/Decline buttons for connection requests */}
+                                    {notification.type === 'connection_request' && !notification.isRead && (
+                                      <div className="flex gap-2 mt-3">
+                                        <Button
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleConnectionRequestResponse(notification._id, 'accept');
+                                          }}
+                                          className="h-7 px-3 text-xs bg-green-600 hover:bg-green-700"
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleConnectionRequestResponse(notification._id, 'decline');
                                           }}
                                           className="h-7 px-3 text-xs border-red-300 text-red-600 hover:bg-red-50"
                                         >

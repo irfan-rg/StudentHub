@@ -22,7 +22,8 @@ import {
   Mail,
   TrendingUp,
   Target,
-  BookOpen
+  BookOpen,
+  Trash
 } from 'lucide-react';
 import { useConnectionsStore } from '../stores/useConnectionsStore';
 
@@ -73,98 +74,117 @@ export function SkillMatching({ user }) {
     meetingAddress: ''
   });
 
-  // Connections store
+  // Connections + suggestions store
   const connectionsRaw = useConnectionsStore(state => state.connections);
   const connections = Array.isArray(connectionsRaw) ? connectionsRaw : [];
   const connectionRequests = useConnectionsStore(state => state.connectionRequests);
+  const suggestedRaw = useConnectionsStore(state => state.suggested);
+  const suggested = Array.isArray(suggestedRaw) ? suggestedRaw : [];
   const sendConnectionRequest = useConnectionsStore(state => state.sendConnectionRequest);
+  const loadConnections = useConnectionsStore(state => state.loadConnections);
+  const loadSuggestedConnections = useConnectionsStore(state => state.loadSuggestedConnections);
+  const deleteConnection = useConnectionsStore(state => state.deleteConnection);
 
-  // State for students data
+  // State for students data (driven by ML suggestions)
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch students from API
+  // Load connections + suggestions on mount
   useEffect(() => {
-    const loadStudents = async () => {
-      setIsLoading(true);
-      setError(null);
+    const loadInitial = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const queryParams = new URLSearchParams({
-          skill: selectedSkill !== 'all' ? selectedSkill : '',
-          university: selectedUniversity !== 'all' ? selectedUniversity : '',
-          level: selectedLevel !== 'all' ? selectedLevel : '',
-          search: searchTerm
-        });
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/find?${queryParams}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { Authorization: `Bearer ${token}` })
-            }
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch students');
-        }
-
-        const data = await response.json();
-        const studentsData = data.data || data || [];
-        setStudents(Array.isArray(studentsData) ? studentsData : []);
+        setIsLoading(true);
+        await Promise.all([
+          loadConnections(),
+          loadSuggestedConnections()
+        ]);
+      } catch (e) {
+        console.error('Error loading matching data:', e);
+        setError(e.message);
+      } finally {
         setIsLoading(false);
-      } catch (err) {
-        console.error('Error loading students:', err);
-        setError(err.message);
-        setIsLoading(false);
-        // No fallback to mock data
-        setStudents([]);
       }
     };
+    loadInitial();
 
-    loadStudents();
-  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
+    // Poll connections in the background to pick up accept/decline updates from other users
+    const interval = setInterval(() => {
+      loadConnections();
+      // keep suggested updated in case ML suggestions change
+      loadSuggestedConnections();
+    }, 10000); // every 10s
+    return () => clearInterval(interval);
+  }, [loadConnections, loadSuggestedConnections]);
 
-  // Get unique skills for filter
+  // Whenever suggestions change, apply current filters/search on top
+  useEffect(() => {
+    // Build filtered list from ML suggestions
+    let base = Array.isArray(suggested) ? [...suggested] : [];
+
+    // Apply search
+    if (searchTerm && searchTerm.trim() !== '') {
+      const term = searchTerm.trim().toLowerCase();
+      base = base.filter((s) =>
+        s.name?.toLowerCase().includes(term) ||
+        s.college?.toLowerCase().includes(term) ||
+        s.skillsCanTeach?.some((sk) => sk.name?.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply skill filter
+    if (selectedSkill && selectedSkill !== 'all') {
+      base = base.filter((s) =>
+        s.skillsCanTeach?.some((sk) => sk.name === selectedSkill)
+      );
+    }
+
+    // Apply university filter
+    if (selectedUniversity && selectedUniversity !== 'all') {
+      base = base.filter((s) => s.college === selectedUniversity);
+    }
+
+    // Apply level filter
+    if (selectedLevel && selectedLevel !== 'all') {
+      base = base.filter((s) =>
+        s.skillsCanTeach?.some((sk) => sk.level === selectedLevel)
+      );
+    }
+
+    setStudents(base);
+  }, [suggested, searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
+
+  // Get unique skills for filter (from suggestions)
   const allSkills = useMemo(() => {
-    if (!Array.isArray(students)) return [];
-    return [...new Set(students.flatMap(s => s.skillsCanTeach?.map(skill => skill.name) || []))];
-  }, [students]);
+    const source = Array.isArray(suggested) ? suggested : [];
+    return [...new Set(source.flatMap(s => s.skillsCanTeach?.map(skill => skill.name) || []))];
+  }, [suggested]);
   
   const universities = useMemo(() => {
-    if (!Array.isArray(students)) return [];
-    return [...new Set(students.map(s => s.college || s.university))];
-  }, [students]);
+    const source = Array.isArray(suggested) ? suggested : [];
+    return [...new Set(source.map(s => s.college || s.university).filter(Boolean))];
+  }, [suggested]);
 
-  // Filter students with useMemo for better performance
+  // Exclude connected users from discovery list and add a temporary random match%
   const filteredStudents = useMemo(() => {
     if (!Array.isArray(students)) return [];
-    
-    return students.filter(student => {
-      const matchesSearch = searchTerm === '' || 
-        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.college?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.skillsCanTeach?.some(skill => skill.name?.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesSkill = selectedSkill === 'all' || 
-        student.skillsCanTeach?.some(skill => skill.name === selectedSkill);
-      
-      const matchesUniversity = selectedUniversity === 'all' || 
-        student.college === selectedUniversity;
-      
-      const matchesLevel = selectedLevel === 'all' || 
-        student.skillsCanTeach?.some(skill => skill.level === selectedLevel);
-      
-      // Exclude already connected users from discovery results
-      const isNotConnected = !connections.some(conn => conn.id === student.id);
-      
-      return matchesSearch && matchesSkill && matchesUniversity && matchesLevel && isNotConnected;
+
+    const base = !Array.isArray(connections) || connections.length === 0
+      ? students
+      : students.filter(student => {
+          const isNotConnected = !connections.some(conn => 
+            (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())
+          );
+          return isNotConnected;
+        });
+
+    // Add a stable random-looking percentage if none provided
+    return base.map((student, index) => {
+      if (typeof student.matchPercentage === 'number' && student.matchPercentage > 0) return student;
+      const pseudoRandom = ((index * 37) % 41) + 60; // 60–100 range
+      return { ...student, matchPercentage: pseudoRandom };
     });
-  }, [searchTerm, selectedSkill, selectedUniversity, selectedLevel, connections]);
+  }, [students, connections]);
 
   const handleConnect = (student) => {
     setConnectionModal({ isOpen: true, student });
@@ -413,7 +433,7 @@ export function SkillMatching({ user }) {
                     );
                   })}
                   
-                  {student.skillsCanTeach.length > 3 && (
+                  {student.skillsCanTeach?.length > 3 && (
                     <div className="text-center text-xs text-muted-foreground py-1">
                       +{student.skillsCanTeach.length - 3} more skills
                     </div>
@@ -452,10 +472,10 @@ export function SkillMatching({ user }) {
                 variant="outline" 
                 className="w-full"
                 onClick={() => handleConnect(student)}
-                disabled={!!connectionRequests[student.id] || connections.some(conn => conn.id === student.id)}
+                disabled={connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())) || !!connectionRequests[student.id]}
               >
                 <UserPlus className="h-4 w-4 mr-1" />
-                {connectionRequests[student.id] ? 'Pending' : connections.some(conn => conn.id === student.id) ? 'Connected' : 'Connect'}
+                {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())) ? 'Connected' : connectionRequests[student.id] ? 'Pending' : 'Connect'}
               </Button>
             </CardContent>
           </Card>
@@ -498,8 +518,9 @@ export function SkillMatching({ user }) {
           {/* Connected Users Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {connections.map((student) => {
-              // Get full student data from students array for additional info
+              // Get full student data from suggestions if available and merge with connection
               const fullStudentData = Array.isArray(students) ? students.find(s => s.id === student.id) : null;
+              const details = { ...(fullStudentData || {}), ...(student || {}) };
               return (
                 <Card key={student.id} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
                   <CardContent className="p-6">
@@ -518,22 +539,34 @@ export function SkillMatching({ user }) {
                           <p className="text-sm text-muted-foreground">{student.college}</p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">Connected</Badge>
+                      <div className="flex flex-col items-center gap-2">
+                        <Badge variant="secondary" className="text-xs mb-2">Connected</Badge>
+                        <Button size="s" variant="destructive" className="px-2 py-2" onClick={() => {
+                          if (!window.confirm('Remove this connection?')) return;
+                          const idToDelete = student.id?.toString() || student._id?.toString();
+                          deleteConnection(idToDelete).then(() => {
+                            toast.success('Connection removed');
+                          }).catch(e => {
+                            console.error('Error removing connection:', e);
+                            toast.error('Failed to remove connection');
+                          });
+                        }}>Remove</Button>
+                      </div>
                     </div>
 
                     {/* Skills */}
-                    {fullStudentData?.skillsCanTeach && (
+                    {details?.skillsCanTeach && (
                       <div className="mb-3">
                         <p className="text-xs font-semibold text-muted-foreground mb-2">Can teach</p>
                         <div className="flex flex-wrap gap-1">
-                          {fullStudentData?.skillsCanTeach?.slice(0, 3)?.map((skill) => (
+                          {details?.skillsCanTeach?.slice(0, 3)?.map((skill) => (
                             <Badge key={skill.name} variant="outline" className="text-xs">
                               {skill.name}
                             </Badge>
                           )) || []}
-                          {fullStudentData?.skillsCanTeach?.length > 3 && (
+                          {details?.skillsCanTeach?.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{fullStudentData.skillsCanTeach.length - 3}
+                              +{details.skillsCanTeach.length - 3}
                             </Badge>
                           )}
                         </div>
@@ -541,17 +574,20 @@ export function SkillMatching({ user }) {
                     )}
 
                     {/* Rating & Availability */}
-                    {fullStudentData && (
+                    {details && (
                       <div className="flex items-center gap-2 mb-4 text-sm">
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold text-foreground">{fullStudentData.rating?.average || 'N/A'}</span>
-                          <span className="text-muted-foreground">({fullStudentData.rating?.count || 0})</span>
+                          <span className="font-semibold text-foreground">{details.rating?.average || 'N/A'}</span>
+                          <span className="text-muted-foreground">({details.rating?.count || 0})</span>
                         </div>
                         <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">{fullStudentData.availability}</span>
+                        <span className="text-muted-foreground">{details.availability}</span>
                       </div>
                     )}
+
+                    {/* Remove link */}
+                    {/* removed bottom-right Remove button (moved to header) */}
                   </CardContent>
                 </Card>
               );

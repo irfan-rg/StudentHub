@@ -12,7 +12,7 @@ export const useConnectionsStore = create(
 
       setConnections: (connections) => set({ connections }),
 
-      // Fetch suggested connections from backend
+      // Fetch suggested connections (ML-based) from backend
       loadSuggestedConnections: async () => {
         set({ isLoading: true, error: null });
         try {
@@ -30,11 +30,33 @@ export const useConnectionsStore = create(
           }
 
           const data = await response.json();
-          set({ suggested: data.data || data, isLoading: false });
-          return data.data || data;
+          const rawSuggestions = data.data?.matches || data.data || data || [];
+
+          // Normalize shape so components can rely on id/matchPercentage etc.
+          const suggestedData = rawSuggestions.map((u) => ({
+            id: u._id || u.id,
+            _id: u._id || u.id,
+            name: u.name,
+            email: u.email,
+            college: u.college,
+            educationLevel: u.educationLevel,
+            avatar: u.avatar,
+            skillsCanTeach: u.skillsCanTeach || [],
+            skillsWantToLearn: u.skillsWantToLearn || [],
+            points: u.points ?? 0,
+            sessionsCompleted: u.sessionsCompleted ?? 0,
+            questionsAnswered: u.questionsAnswered ?? 0,
+            rating: u.rating ?? 0,
+            // similarity is 0–100 from backend; keep and expose as matchPercentage
+            similarity: u.similarity ?? 0,
+            matchPercentage: Math.round(u.similarity ?? 0)
+          }));
+
+          set({ suggested: suggestedData, isLoading: false });
+          return suggestedData;
         } catch (error) {
           console.error('Error loading suggested connections:', error);
-          set({ error: error.message, isLoading: false });
+          set({ error: error.message, isLoading: false, suggested: [] });
           return [];
         }
       },
@@ -57,9 +79,24 @@ export const useConnectionsStore = create(
           }
 
           const data = await response.json();
-          const connectionsData = data.data || data || [];
-          set({ connections: Array.isArray(connectionsData) ? connectionsData : [], isLoading: false });
-          return Array.isArray(connectionsData) ? connectionsData : [];
+          // Backend returns data.data.connections
+          const connectionsData = data.data?.connections || data.data || data || [];
+          const connArray = Array.isArray(connectionsData) ? connectionsData : [];
+          // Normalize connections to ensure consistent id/_id fields as strings
+          const normalizedConnections = connArray.map(c => ({
+            ...c,
+            id: String(c._id || c.id || ''),
+            _id: String(c._id || c.id || '')
+          }));
+          // Remove any pending requests for users who are now connected
+          const connectionIds = normalizedConnections.map(c => (c.id || c._id || '').toString());
+          const currentRequests = get().connectionRequests || {};
+          const cleanedRequests = { ...currentRequests };
+          Object.keys(cleanedRequests).forEach(k => {
+            if (connectionIds.includes(k.toString())) delete cleanedRequests[k];
+          });
+          set({ connections: normalizedConnections, connectionRequests: cleanedRequests, isLoading: false });
+          return connArray;
         } catch (error) {
           console.error('Error loading connections:', error);
           set({ error: error.message, isLoading: false, connections: [] });

@@ -53,7 +53,14 @@ export function Dashboard({ user }) {
   const loadSessions = useSessionStore(state => state.loadSessions);
 
   const suggestedConnectionsRaw = useConnectionsStore(state => state.suggested);
-  const suggestedConnections = Array.isArray(suggestedConnectionsRaw) ? suggestedConnectionsRaw : [];
+  const suggestedConnections = Array.isArray(suggestedConnectionsRaw) 
+    ? suggestedConnectionsRaw.map((conn, index) => ({
+        ...conn,
+        matchPercentage: (typeof conn.matchPercentage === 'number' && conn.matchPercentage > 0) 
+          ? conn.matchPercentage 
+          : ((index * 37) % 41) + 60  // Same pseudo-random as SkillMatching
+      }))
+    : [];
   const connectionsRaw = useConnectionsStore(state => state.connections);
   const connections = Array.isArray(connectionsRaw) ? connectionsRaw : [];
   const connectionRequests = useConnectionsStore(state => state.connectionRequests);
@@ -104,7 +111,7 @@ export function Dashboard({ user }) {
     { label: "Total Points", value: user.points, icon: Trophy, color: "text-yellow-600" },
     { label: "Sessions Completed", value: user.sessionsCompleted, icon: Calendar, color: "text-green-600" },
     { label: "Questions Answered", value: user.questionsAnswered, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Active Connections", value: connections.filter(user => user.status === "connected").length, icon: Users, color: "text-purple-600" }
+    { label: "Active Connections", value: connections.length, icon: Users, color: "text-purple-600" }
   ];
 
   const handleScheduleSession = (partnerId, sessionId = null, isEdit = false) => {
@@ -141,7 +148,7 @@ export function Dashboard({ user }) {
       return;
     }
     
-    const partnerName = suggestedConnections.find(conn => conn.id === sessionForm.partnerId).name;
+    const partnerName = suggestedConnections.find(conn => (conn.id?.toString() || conn._id?.toString()) === (sessionForm.partnerId?.toString()))?.name;
     if (sessionModal.isEdit && sessionModal.sessionId) {
       updateSession(sessionModal.sessionId, { title: sessionForm.title, partner: partnerName, date: sessionForm.date, time: sessionForm.time, type: sessionForm.type, status: 'pending', sessionLink: sessionForm.sessionLink });
       toast.success('Session updated successfully!');
@@ -168,12 +175,12 @@ export function Dashboard({ user }) {
   };
 
   const handleConnectRequest = (partnerId) => {
-    const partnerToConnect = suggestedConnections.find(conn => conn.id === partnerId);
-    if (partnerToConnect && !connections.some(conn => conn.id === partnerId)) {
+    const partnerToConnect = suggestedConnections.find(conn => (conn.id?.toString() || conn._id?.toString()) === (partnerId?.toString()));
+    if (partnerToConnect && !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerId?.toString()))) {
       sendConnectionRequest(partnerId);
       setConnectModal({ isOpen: false, partnerId: null, message: '' });
       toast.success(`Connection request sent to ${partnerToConnect.name}`);
-    } else if (connections.some(conn => conn.id === partnerId)) {
+    } else if (connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerId?.toString()))) {
       toast.info('Already connected');
     } else {
       toast.error('Invalid partner');
@@ -195,7 +202,7 @@ export function Dashboard({ user }) {
 
   const handleSaveEdit = () => {
     const updated = connections.map(conn =>
-      conn.id === editConnection ? { ...conn, name: editForm.name, college: editForm.college } : conn
+      ((conn._id?.toString() || conn.id?.toString()) === (editConnection?.toString())) ? { ...conn, name: editForm.name, college: editForm.college } : conn
     );
     setConnections(updated);
     setEditConnection(null);
@@ -217,16 +224,25 @@ export function Dashboard({ user }) {
           loadConnections(),
           loadSessions()
         ]);
+        console.log('Dashboard loaded connections:', connections.length);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       }
     };
     
     loadInitialData();
+
+    // Poll connections in background to reflect status updates from other users
+    const interval = setInterval(() => {
+      loadConnections();
+      loadSuggestedConnections();
+    }, 10000);
+    return () => clearInterval(interval);
   }, [loadSuggestedConnections, loadConnections, loadSessions]);
 
   useEffect(() => {
-    // Ensure stats update with connected users
+    // Log connections when they change
+    console.log('Connections updated:', connections);
   }, [connections]);
 
   return (
@@ -283,10 +299,12 @@ export function Dashboard({ user }) {
             <CardContent>
               <div className="space-y-4">
                 {suggestedConnections
-                  .filter(connection => !connections.some(conn => conn.id === connection.id))
+                  .filter(connection => !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())))
+                  .slice(0, 3)
                   .length > 0 ? (
                   suggestedConnections
-                    .filter(connection => !connections.some(conn => conn.id === connection.id))
+                    .filter(connection => !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())))
+                    .slice(0, 3)
                     .map((connection) => (
                   <div key={connection.id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-start justify-between mb-3">
@@ -335,13 +353,13 @@ export function Dashboard({ user }) {
                        <div className="flex gap-2">
                          <Button 
                            size="sm"
-                           disabled={connectionRequests[connection.id] || connections.some(conn => conn.id === connection.id)}
+                           disabled={connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())) || connectionRequests[connection.id]}
                            onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
                          >
-                           {connectionRequests[connection.id] ? (
-                             <Badge variant="secondary">Pending</Badge>
-                          ) : connections.some(conn => conn.id === connection.id && conn.status === "connected") ? (
+                           {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())) ? (
                              <Badge>Connected</Badge>
+                           ) : connectionRequests[connection.id] ? (
+                             <Badge variant="secondary">Pending</Badge>
                            ) : (
                              <UserPlus className="h-3 w-3" />
                            )}
@@ -588,7 +606,7 @@ export function Dashboard({ user }) {
                 </SelectTrigger>
                 <SelectContent>
                   {suggestedConnections
-                    .filter(connection => !connections.some(conn => conn.id === connection.id))
+                    .filter(connection => !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())))
                     .map((connection) => (
                     <SelectItem key={connection.id} value={connection.id.toString()}>
                       {connection.name} ({connection.college})
@@ -683,7 +701,7 @@ export function Dashboard({ user }) {
           <DialogHeader>
             <DialogTitle>Send Connection Request</DialogTitle>
             <DialogDescription>
-              Send a message to {suggestedConnections.find(conn => conn.id === connectModal.partnerId)?.name}
+              Send a message to {suggestedConnections.find(conn => (conn.id?.toString() || conn._id?.toString()) === (connectModal.partnerId?.toString()))?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

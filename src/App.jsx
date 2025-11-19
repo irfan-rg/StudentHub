@@ -117,6 +117,7 @@ function AppLayout() {
                 handleLogin={(creds, redirectPath) => {
                   login(creds).then(() => {
                     const safePath = typeof redirectPath === 'string' && redirectPath.startsWith('/') ? redirectPath : '/dashboard';
+                    console.log('Login successful, redirecting to:', safePath);
                     navigate(safePath, { replace: true });
                   }).catch(() => {});
                 }}
