@@ -215,7 +215,7 @@ export function Leaderboard({ user }) {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2 text-foreground">🏆 Leaderboard</h1>

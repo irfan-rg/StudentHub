@@ -169,14 +169,35 @@ export const useQAStore = create(
           throw new Error('Must be logged in to vote');
         }
 
+        // Determine if this is a no-op (prevent toggling/unvoting)
+        const targetQuestion = get().questions.find(q => q.id === questionId);
+        const targetCurrentVote = targetQuestion?.userVote || 0;
+        let desiredVote;
+        if (direction === 'up') desiredVote = targetCurrentVote === 1 ? targetCurrentVote : 1;
+        else desiredVote = targetCurrentVote === -1 ? targetCurrentVote : -1;
+        if (desiredVote === targetCurrentVote) {
+          // No change required (already voted this way)
+          throw new Error(direction === 'up' ? 'Already upvoted' : 'Already downvoted');
+        }
+
         // Optimistic update
         const originalQuestions = get().questions;
         set({
           questions: get().questions.map(q => {
             if (q.id === questionId) {
               const currentVote = q.userVote || 0;
-              const newVote = direction === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
+              // Prevent toggling/unvoting: if same vote chosen, do nothing
+              let newVote;
+              if (direction === 'up') {
+                if (currentVote === 1) newVote = currentVote; // already upvoted, no change
+                else newVote = 1;
+              } else {
+                if (currentVote === -1) newVote = currentVote; // already downvoted, no change
+                else newVote = -1;
+              }
               const voteDiff = newVote - currentVote;
+              // If no change, exit optimistic update
+              if (voteDiff === 0) return q;
               return { ...q, upvotes: Math.max(0, (q.upvotes || 0) + voteDiff), userVote: newVote };
             }
             return q;
@@ -209,6 +230,16 @@ export const useQAStore = create(
         if (!currentUserId) {
           throw new Error('Must be logged in to vote');
         }
+        // Prevent toggling/unvoting: find current vote for the answer
+        const questionForAnswer = get().questions.find(q => q.id === questionId);
+        const answerForVote = questionForAnswer?.answerList?.find(a => a.id === answerId);
+        const currentVote = answerForVote?.userVote || 0;
+        let desiredVote;
+        if (direction === 'up') desiredVote = currentVote === 1 ? currentVote : 1;
+        else desiredVote = currentVote === -1 ? currentVote : -1;
+        if (desiredVote === currentVote) {
+          throw new Error(direction === 'up' ? 'Already upvoted' : 'Already downvoted');
+        }
 
         // Optimistic update
         const originalQuestions = get().questions;
@@ -220,8 +251,16 @@ export const useQAStore = create(
                 answerList: q.answerList.map(a => {
                   if (a.id === answerId) {
                     const currentVote = a.userVote || 0;
-                    const newVote = direction === 'up' ? (currentVote === 1 ? 0 : 1) : (currentVote === -1 ? 0 : -1);
+                    let newVote;
+                    if (direction === 'up') {
+                      if (currentVote === 1) newVote = currentVote;
+                      else newVote = 1;
+                    } else {
+                      if (currentVote === -1) newVote = currentVote;
+                      else newVote = -1;
+                    }
                     const voteDiff = newVote - currentVote;
+                    if (voteDiff === 0) return a;
                     return { ...a, upvotes: Math.max(0, (a.upvotes || 0) + voteDiff), userVote: newVote };
                   }
                   return a;

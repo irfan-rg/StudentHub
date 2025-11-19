@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { notificationService, sessionService } from '../services/api';
 import { useSessionStore } from '../stores/useSessionStore';
+import { useQAStore } from '../stores/useQAStore';
 import { toast } from 'sonner@2.0.3';
 
 // Mock notification data - focused on 3 main categories
@@ -149,7 +150,19 @@ export default function NotificationWidget({ user }) {
   const fetchNotifications = async () => {
     try {
       const response = await notificationService.getNotifications();
-      setNotifications(response.data.notifications || []);
+      const fetched = response.data.notifications || [];
+      setNotifications(fetched);
+
+      // If any new QA activity notification arrived since last fetch, reload questions
+      try {
+        const hasNewQA = fetched.some(n => n.type === 'qa_activity' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+        if (hasNewQA) {
+          await useQAStore.getState().loadQuestions();
+        }
+      } catch (err) {
+        console.error('Failed to reload questions from notification:', err);
+      }
+
       setLastFetch(Date.now());
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -309,6 +322,11 @@ export default function NotificationWidget({ user }) {
     if (notification.metadata?.actionUrl) {
       navigate(notification.metadata.actionUrl);
       setOpen(false);
+
+      // If the notification is QA related, ensure the QA feed is refreshed
+      if (notification.type === 'qa_activity') {
+        useQAStore.getState().loadQuestions().catch(err => console.error('Failed to reload questions on notification click', err));
+      }
     }
   };
 

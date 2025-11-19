@@ -203,6 +203,7 @@ function AppLayout() {
           } />
         </Routes>
       </main>
+      {/* Notification widget is intentionally only shown on Dashboard */}
       <Toaster position="bottom-right" />
     </div>
   );

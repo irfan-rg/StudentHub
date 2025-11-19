@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -38,6 +39,8 @@ export function QAForum({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [tagInput, setTagInput] = useState('');
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [newQuestion, setNewQuestion] = useState({ title: '', content: '', tags: [] });
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [newAnswer, setNewAnswer] = useState('');
@@ -61,6 +64,8 @@ export function QAForum({ user }) {
   const voteAnswer = useQAStore(state => state.voteAnswer);
   const setCurrentUserId = useQAStore(state => state.setCurrentUserId);
 
+  const location = useLocation();
+
   useEffect(() => {
     // Set current user ID for vote tracking
     if (user?.id || user?._id) {
@@ -68,7 +73,26 @@ export function QAForum({ user }) {
     }
 
     // Load questions from backend
-    loadQuestions().catch((error) => {
+    loadQuestions().then(() => {
+      // If URL has questionId param, open that thread and scroll into view
+      try {
+        const query = new URLSearchParams(location.search);
+        const qid = query.get('questionId');
+        if (qid) {
+          const found = useQAStore.getState().questions.find(q => String(q.id) === String(qid));
+          if (found) {
+            setSelectedQuestion(found);
+            setIsThreadModalOpen(true);
+            setTimeout(() => {
+              const el = document.getElementById(`question-${found.id}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to open question from URL param', err);
+      }
+    }).catch((error) => {
       console.error('Failed to load questions:', error);
       toast.error('Failed to load questions');
     });
@@ -85,6 +109,8 @@ export function QAForum({ user }) {
   }, [questions, selectedQuestion]);
 
   const popularTags = ["React", "JavaScript", "Python", "Machine Learning", "CSS", "Node.js", "Database", "Algorithm"];
+  const TITLE_MAX = 120;
+  const BODY_MAX = 1000;
 
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,6 +142,10 @@ export function QAForum({ user }) {
   const handleAskQuestion = async () => {
     if (!newQuestion.title.trim() || !newQuestion.content.trim()) {
       toast.error('Please fill in both title and content');
+      return;
+    }
+    if (newQuestion.title.length > TITLE_MAX || newQuestion.content.length > BODY_MAX) {
+      toast.error('Character limits exceeded. Please shorten your title or content to post.');
       return;
     }
 
@@ -156,9 +186,15 @@ export function QAForum({ user }) {
   }, [newAnswer, addAnswer, loadQuestions]);
 
   const addTag = (tag) => {
-    if (!newQuestion.tags.includes(tag)) {
-      setNewQuestion(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+    if (!tag) return;
+    const normalized = tag.trim();
+    if (!normalized) return;
+    const duplicate = newQuestion.tags.some(t => String(t).toLowerCase() === normalized.toLowerCase());
+    if (!duplicate) {
+      setNewQuestion(prev => ({ ...prev, tags: [...prev.tags, normalized] }));
     }
+    setTagInput('');
+    setShowTagSuggestions(false);
   };
 
   const removeTag = (tagToRemove) => {
@@ -168,15 +204,35 @@ export function QAForum({ user }) {
     }));
   };
 
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = tagInput.trim();
+      if (!val) return;
+      addTag(val);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setShowTagSuggestions(true);
+    }
+  };
+
+  const suggestions = (() => {
+    const q = tagInput.trim().toLowerCase();
+    if (!q) return [];
+    const matched = popularTags.filter(t => t.toLowerCase().includes(q) && !newQuestion.tags.includes(t));
+    const customSuggestion = (!popularTags.some(t => t.toLowerCase() === q) && !newQuestion.tags.includes(tagInput.trim())) ? [tagInput.trim()] : [];
+    return [...customSuggestion, ...matched].slice(0, 8);
+  })();
+
   const QuestionCard = ({ question }) => (
-    <Card className="hover:shadow-md transition-shadow bg-card border-border cursor-pointer" onClick={() => {
+    <Card id={`question-${question.id}`} className="w-full hover:shadow-md transition-shadow bg-card border-border cursor-pointer" onClick={() => {
       setSelectedQuestion(question);
       setIsThreadModalOpen(true);
     }}>
       <CardContent className="p-6">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 min-w-[60px]">
-            <Button 
+              <Button 
               variant="ghost" 
               size="sm" 
               className={`p-1 hover:bg-blue-50 ${question.userVote === 1 ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground hover:text-blue-600'}`}
@@ -189,7 +245,7 @@ export function QAForum({ user }) {
               <ChevronUp className="h-5 w-5" />
             </Button>
             <span className="font-medium text-lg text-foreground">{question.upvotes}</span>
-            <Button 
+              <Button 
               variant="ghost" 
               size="sm" 
               className={`p-1 hover:bg-red-50 ${question.userVote === -1 ? 'text-red-600 bg-red-50' : 'text-muted-foreground hover:text-red-600'}`}
@@ -343,10 +399,10 @@ export function QAForum({ user }) {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-foreground">💬 Q&A Forum</h1>
+        <h1 className="text-3xl font-bold mb-2 text-foreground">Q&A Forum</h1>
         <p className="text-muted-foreground">Ask questions, share knowledge, and learn from peers</p>
         </div>
 
@@ -356,55 +412,88 @@ export function QAForum({ user }) {
             onClick={() => setIsAskingQuestion(true)}
           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
             Ask a Question
           </Button>
         </div>
 
       {/* Ask Question Dialog */}
       <Dialog open={isAskingQuestion} onOpenChange={setIsAskingQuestion}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-none w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] rounded-lg border border-border bg-card p-6 shadow-lg" style={{ maxWidth: '900px' }}>
           <DialogHeader>
             <DialogTitle>Ask a Question</DialogTitle>
             <DialogDescription>
               Share your question with the community. Be specific and include relevant tags.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
+          <form onSubmit={(e) => { e.preventDefault(); handleAskQuestion(); }} className=" py-4">
+            <div className='space-y-3'>
               <Label htmlFor="title">Question Title</Label>
-              <Input
-                id="title"
-                placeholder="What's your question? Be specific..."
-                value={newQuestion.title}
-                onChange={(e) => setNewQuestion(prev => ({ ...prev, title: e.target.value }))}
-                className="mt-1"
-              />
+              <div>
+                <Input
+                  id="title"
+                  placeholder="What's your question? Be specific..."
+                  value={newQuestion.title}
+                  onChange={(e) => setNewQuestion(prev => ({ ...prev, title: e.target.value }))}
+                  className="mt-1 w-full"
+                  maxLength={TITLE_MAX}
+                />
+              </div>
+              <div className={`text-sm text-right mt-1 ${newQuestion.title.length > TITLE_MAX ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {`${(newQuestion.title || '').length}/${TITLE_MAX}`}
+              </div>
             </div>
-            <div>
+            <div className="space-y-3">
               <Label htmlFor="content">Question Details</Label>
-              <Textarea
-                id="content"
-                placeholder="Provide more context, code examples, or specific details..."
-                value={newQuestion.content}
-                onChange={(e) => setNewQuestion(prev => ({ ...prev, content: e.target.value }))}
-                rows={6}
-                className="mt-1"
-              />
+              <div>
+                <Textarea
+                  id="content"
+                  placeholder="Provide more context, code examples, or specific details..."
+                  value={newQuestion.content}
+                  onChange={(e) => setNewQuestion(prev => ({ ...prev, content: e.target.value }))}
+                  rows={8}
+                  className="mt-1 w-full"
+                  maxLength={BODY_MAX}
+                />
+              </div>
+              <div className={`text-sm text-right mt-1 ${newQuestion.content.length > BODY_MAX ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {`${(newQuestion.content || '').length}/${BODY_MAX}`}
+              </div>
             </div>
-            <div>
+            <div className="space-y-3">
               <Label>Tags</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {popularTags.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant={newQuestion.tags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => addTag(tag)}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+              <div className="mt-2">
+                <div className="relative">
+                  <Input
+                    id="tag-input"
+                    placeholder="Add tags (press Enter)"
+                    value={tagInput}
+                    onChange={(e) => { setTagInput(e.target.value); setShowTagSuggestions(true); }}
+                    onKeyDown={handleTagInputKeyDown}
+                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
+                    onFocus={() => setShowTagSuggestions(true)}
+                    className="mt-1 w-full"
+                  />
+                  {showTagSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-50 left-0 right-0 bg-card border border-border mt-1 rounded-md shadow-lg max-h-44 overflow-auto">
+                      {suggestions.map(s => (
+                        <li key={s} className="px-3 py-2 hover:bg-muted/30 cursor-pointer" onMouseDown={(e) => { e.preventDefault(); addTag(s); }}>{s}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {popularTags.map(tag => (
+                    <Badge
+                      key={tag}
+                      variant={newQuestion.tags.includes(tag) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => addTag(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {newQuestion.tags.map(tag => (
@@ -419,15 +508,19 @@ export function QAForum({ user }) {
                 ))}
               </div>
             </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsAskingQuestion(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAskQuestion}>
-              Post Question
-            </Button>
-          </div>
+            <div className="flex justify-between items-center gap-3">
+              <div className="text-sm text-muted-foreground">Be concise and add tags to help others find your question</div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" onClick={() => setIsAskingQuestion(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!(newQuestion.title.trim() && newQuestion.content.trim()) || newQuestion.title.length > TITLE_MAX || newQuestion.content.length > BODY_MAX} className={`bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 ${!(newQuestion.title.trim() && newQuestion.content.trim()) || newQuestion.title.length > TITLE_MAX || newQuestion.content.length > BODY_MAX ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Post Question
+                </Button>
+              </div>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -523,9 +616,13 @@ export function QAForum({ user }) {
         </TabsList>
 
         <TabsContent value="recent" className="space-y-4">
-            {filteredQuestions.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((question) => (
-                <QuestionCard key={question.id} question={question} />
-            ))}
+          {filteredQuestions
+            .slice()
+            .sort((a, b) => (new Date(b.createdAt)).getTime() - (new Date(a.createdAt)).getTime())
+            .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+            .map((question) => (
+            <QuestionCard key={question.id} question={question} />
+          ))}
           {filteredQuestions.length > 0 && (
             <Pagination
               currentPage={currentPage}
@@ -538,6 +635,7 @@ export function QAForum({ user }) {
 
         <TabsContent value="popular" className="space-y-4">
             {filteredQuestions
+              .slice()
               .sort((a, b) => b.upvotes - a.upvotes)
               .slice(popularPage * itemsPerPage, (popularPage + 1) * itemsPerPage)
               .map((question) => (
@@ -555,9 +653,11 @@ export function QAForum({ user }) {
         </TabsContent>
 
         <TabsContent value="my-questions" className="space-y-4">
-                {filteredQuestions
-                  .filter(q => q.author.name === user.name)
-                  .slice(myQuestionsPage * itemsPerPage, (myQuestionsPage + 1) * itemsPerPage)
+          {filteredQuestions
+            .slice()
+            .filter(q => q.author.name === user.name)
+            .sort((a, b) => (new Date(b.createdAt)).getTime() - (new Date(a.createdAt)).getTime())
+            .slice(myQuestionsPage * itemsPerPage, (myQuestionsPage + 1) * itemsPerPage)
                   .map((question) => (
                     <QuestionCard key={question.id} question={question} />
                   ))
