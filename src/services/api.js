@@ -1,7 +1,7 @@
 // API Service Functions for Frontend-Backend Communication
 // This file contains all the API calls that the frontend components will use
 
-import { API_CONFIG, AUTH_ENDPOINTS, USER_ENDPOINTS, SKILL_ENDPOINTS, MATCHING_ENDPOINTS, SESSION_ENDPOINTS, QA_ENDPOINTS, LEADERBOARD_ENDPOINTS } from '../config/api.js';
+import { API_CONFIG, AUTH_ENDPOINTS, USER_ENDPOINTS, SKILL_ENDPOINTS, MATCHING_ENDPOINTS, SESSION_ENDPOINTS, QA_ENDPOINTS, LEADERBOARD_ENDPOINTS, POINTS_ENDPOINTS } from '../config/api.js';
 
 // Helper function to make HTTP requests
 const apiRequest = async (endpoint, options = {}) => {
@@ -515,23 +515,14 @@ export const qaService = {
 
 // Leaderboard Services
 export const leaderboardService = {
-  // Get top users
-  getTopUsers: async (limit = 50) => {
+  // Get leaderboard by filter (points, sessionsCompleted, questionsAnswered)
+  getLeaderboard: async (filter = 'points', limit = 50) => {
     try {
-      const response = await apiRequest(`${LEADERBOARD_ENDPOINTS.GET_TOP_USERS}?limit=${limit}`);
+      const endpoint = LEADERBOARD_ENDPOINTS.GET_LEADERBOARD.replace(':filter', filter);
+      const response = await apiRequest(`${endpoint}?limit=${limit}`);
       return response.data;
     } catch (error) {
       throw new Error('Failed to fetch leaderboard');
-    }
-  },
-
-  // Get top mentors
-  getTopMentors: async (limit = 50) => {
-    try {
-      const response = await apiRequest(`${LEADERBOARD_ENDPOINTS.GET_TOP_MENTORS}?limit=${limit}`);
-      return response.data;
-    } catch (error) {
-      throw new Error('Failed to fetch top mentors');
     }
   },
 
@@ -542,6 +533,32 @@ export const leaderboardService = {
       return response.data;
     } catch (error) {
       throw new Error('Failed to fetch user rank');
+    }
+  }
+};
+
+// Points Services
+export const pointsService = {
+  // Submit quiz completion for points
+  submitQuizCompletion: async (sessionId, score, totalQuestions) => {
+    try {
+      const response = await apiRequest(POINTS_ENDPOINTS.QUIZ_COMPLETE, {
+        method: 'POST',
+        body: JSON.stringify({ sessionId, score, totalQuestions })
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to submit quiz completion');
+    }
+  },
+
+  // Get points configuration
+  getPointsConfig: async () => {
+    try {
+      const response = await apiRequest(POINTS_ENDPOINTS.GET_CONFIG);
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to fetch points configuration');
     }
   }
 };

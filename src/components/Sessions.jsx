@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { useSessionStore } from '../stores/useSessionStore.js';
 import { notificationService, sessionService } from '../services/api.js';
+import { pdfService } from '../services/pdfService.js';
 
 const DEFAULT_HOST_NAME = 'Session host';
 
@@ -213,6 +214,8 @@ export function Sessions({ user }) {
   const [quizScore, setQuizScore] = useState(null);
   const [quizResultPoints, setQuizResultPoints] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState(null);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const highlightedSessionId = useSessionStore((state) => state.highlightedSessionId);
   const setHighlightedSessionId = useSessionStore((state) => state.setHighlightedSessionId);
 
@@ -287,15 +290,20 @@ export function Sessions({ user }) {
     if (!session) return;
 
     resetQuizState();
-    const questions = createQuizQuestions(session);
-
-    if (!questions.length) {
-      toast.error('No quiz questions available yet.');
+    
+    // Check if session has AI-generated questions stored
+    const aiQuestions = session?.quizQuestions || session?.raw?.quizQuestions;
+    
+    if (!aiQuestions || aiQuestions.length === 0) {
+      // No quiz available for this session
+      toast.error('This session does not have a quiz. The creator did not upload a PDF document for quiz generation.');
       return;
     }
 
+    // Use AI-generated questions from the session
+    toast.success('Loading AI-generated quiz from session document');
     setQuizSession(session);
-    setQuizQuestions(questions);
+    setQuizQuestions(aiQuestions);
     setQuizDialogOpen(true);
   };
 
@@ -353,7 +361,7 @@ export function Sessions({ user }) {
     setQuizCompleted(false);
   };
 
-  const handleQuizClaimPoints = () => {
+  const handleQuizClaimPoints = async () => {
     if (!quizSession) return;
 
     const sessionId = quizSession?.raw?._id || quizSession?.id;
@@ -363,14 +371,47 @@ export function Sessions({ user }) {
       return;
     }
 
-    setClaimedPoints((prev) => ({
-      ...prev,
-      [sessionId]: true
-    }));
+    if (quizScore === null || quizScore === undefined) {
+      toast.error('Please complete the quiz first.');
+      return;
+    }
 
-    toast.success('Points claimed successfully!');
-    setQuizDialogOpen(false);
-    resetQuizState();
+    try {
+      // Import pointsService
+      const { pointsService } = await import('../services/api.js');
+      
+      // Submit quiz completion to backend
+      const result = await pointsService.submitQuizCompletion(
+        sessionId,
+        quizScore,
+        quizQuestions.length
+      );
+
+      if (result.passed) {
+        setClaimedPoints((prev) => ({
+          ...prev,
+          [sessionId]: true
+        }));
+
+        toast.success(`🎉 Quiz passed! You earned ${result.pointsAwarded} points!`);
+        
+        // Show new badges if any
+        if (result.newBadges && result.newBadges.length > 0) {
+          toast.success(`🏆 New badge${result.newBadges.length > 1 ? 's' : ''}: ${result.newBadges.join(', ')}`);
+        }
+        
+        setQuizDialogOpen(false);
+        resetQuizState();
+        
+        // Reload user data to show updated points
+        window.location.reload();
+      } else {
+        toast.error(`Quiz score too low. You need ${result.passingScore}/${result.totalQuestions} to pass.`);
+      }
+    } catch (error) {
+      console.error('Error claiming points:', error);
+      toast.error('Failed to claim points. Please try again.');
+    }
   };
 
   const currentUserIdStr = currentUserId ? String(currentUserId) : null;
@@ -532,6 +573,44 @@ export function Sessions({ user }) {
     return 'completed';
   }, []);
 
+  // Generate quiz questions from uploaded PDF
+  const handleGenerateQuestionsFromPDF = async (pdfFile) => {
+    if (!pdfFile || pdfFile.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file to generate quiz questions');
+      throw new Error('Invalid file type');
+    }
+
+    try {
+      setGeneratingQuestions(true);
+      toast.info('Generating quiz questions from PDF... This may take a moment.');
+      
+      const questions = await pdfService.generateQuestionsFromPDF(pdfFile);
+      
+      if (questions && questions.length > 0) {
+        // Format questions to match our quiz structure
+        const formattedQuestions = questions.slice(0, 6).map((q, index) => ({
+          id: `pdf-quiz-${index + 1}`,
+          question: q.question,
+          options: q.options || [],
+          answer: q.answer
+        }));
+        
+        setGeneratedQuestions(formattedQuestions);
+        toast.success(`Generated ${formattedQuestions.length} quiz questions from PDF!`);
+        return formattedQuestions;
+      } else {
+        toast.error('No questions could be generated from this PDF');
+        throw new Error('No questions generated');
+      }
+    } catch (error) {
+      console.error('Error generating questions from PDF:', error);
+      toast.error('Failed to generate quiz questions. Make sure Python backend is running.');
+      throw error;
+    } finally {
+      setGeneratingQuestions(false);
+    }
+  };
+
   const handleCreateSession = async () => {
     if (!sessionForm.title.trim()) {
       toast.error('Please provide a session title');
@@ -580,6 +659,11 @@ export function Sessions({ user }) {
       sessionOn: baseDate.toISOString()
     };
 
+    // Include AI-generated quiz questions if available
+    if (generatedQuestions && generatedQuestions.length > 0) {
+      payload.quizQuestions = generatedQuestions;
+    }
+
     if (sessionForm.type === 'video') {
       payload.link = sessionForm.meetingLink.trim();
     } else {
@@ -610,6 +694,7 @@ export function Sessions({ user }) {
         }
 
         toast.success('Session created with documents');
+        setGeneratedQuestions(null); // Reset generated questions
         setSessionForm({
           title: '',
           description: '',
@@ -633,6 +718,7 @@ export function Sessions({ user }) {
       try {
         await createSessionStore(payload);
         toast.success('Session created');
+        setGeneratedQuestions(null); // Reset generated questions
         setSessionForm({
           title: '',
           description: '',
@@ -1041,19 +1127,45 @@ export function Sessions({ user }) {
 
                    {/* Document Upload Section */}
                    <div className="space-y-3 border-t border-border pt-4">
-                     <Label htmlFor="session-documents">Attach Document</Label>
+                     <div className="flex items-center justify-between">
+                       <Label htmlFor="session-documents">Attach Document (PDF for Quiz Generation)</Label>
+                       {generatingQuestions && (
+                         <div className="flex items-center gap-2 text-sm text-blue-600">
+                           <Loader2 className="h-4 w-4 animate-spin" />
+                           Generating questions...
+                         </div>
+                       )}
+                     </div>
                      <div className="flex items-center gap-2">
                        <input
                          id="session-documents"
                          type="file"
-                         multiple
                          accept=".pdf,.doc,.docx,.txt,.pptx,.xlsx"
-                         onChange={(e) => {
+                         onChange={async (e) => {
                            const files = Array.from(e.target.files || []);
-                           setSessionForm(prev => ({
-                             ...prev,
-                             documents: [...prev.documents, ...files]
-                           }));
+                           if (files.length > 0) {
+                             // Auto-generate quiz if PDF is uploaded
+                             const pdfFile = files.find(f => f.type === 'application/pdf');
+                             if (pdfFile) {
+                               try {
+                                 await handleGenerateQuestionsFromPDF(pdfFile);
+                                 // Only add document if generation succeeded
+                                 setSessionForm(prev => ({
+                                   ...prev,
+                                   documents: [...prev.documents, ...files]
+                                 }));
+                               } catch (error) {
+                                 // Don't add the document if generation failed
+                                 toast.error('Document not uploaded. Quiz generation failed.');
+                               }
+                             } else {
+                               // Non-PDF files can be added without quiz generation
+                               setSessionForm(prev => ({
+                                 ...prev,
+                                 documents: [...prev.documents, ...files]
+                               }));
+                             }
+                           }
                            e.target.value = ''; // Reset input
                          }}
                          className="hidden"
@@ -1063,10 +1175,33 @@ export function Sessions({ user }) {
                          variant="outline"
                          onClick={() => document.getElementById('session-documents').click()}
                          className="flex-1"
+                         disabled={generatingQuestions}
                        >
-                         📎 Add Documents
+                         {generatingQuestions ? (
+                           <>
+                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                             Processing PDF...
+                           </>
+                         ) : (
+                           <>📎 Add Documents (PDF for Quiz)</>
+                         )}
                        </Button>
                      </div>
+                     
+                     {/* Show generated questions info */}
+                     {generatedQuestions && generatedQuestions.length > 0 && (
+                       <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                         <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                           <CheckCircle className="h-4 w-4" />
+                           <span className="font-medium">
+                             {generatedQuestions.length} quiz questions generated from PDF!
+                           </span>
+                         </div>
+                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                           Participants will take this quiz after the session
+                         </p>
+                       </div>
+                     )}
                      
                      {/* Display uploaded documents */}
                      {sessionForm.documents.length > 0 && (

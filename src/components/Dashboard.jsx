@@ -174,10 +174,15 @@ export function Dashboard({ user }) {
     toast.success('Session deleted successfully!');
   };
 
-  const handleConnectRequest = (partnerId) => {
+  const handleConnectRequest = async (partnerId) => {
     const partnerToConnect = suggestedConnections.find(conn => (conn.id?.toString() || conn._id?.toString()) === (partnerId?.toString()));
     if (partnerToConnect && !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerId?.toString()))) {
-      sendConnectionRequest(partnerId);
+      try {
+        await sendConnectionRequest(partnerId);
+      } catch (err) {
+        toast.error(err.message || 'Failed to send connection request');
+        return;
+      }
       setConnectModal({ isOpen: false, partnerId: null, message: '' });
       toast.success(`Connection request sent to ${partnerToConnect.name}`);
     } else if (connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerId?.toString()))) {

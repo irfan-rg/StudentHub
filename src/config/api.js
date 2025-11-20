@@ -76,9 +76,14 @@ export const QA_ENDPOINTS = {
 
 // Leaderboard Endpoints
 export const LEADERBOARD_ENDPOINTS = {
-  GET_TOP_USERS: '/leaderboard/users',
-  GET_TOP_MENTORS: '/leaderboard/mentors',
-  GET_USER_RANK: '/leaderboard/rank/:userId'
+  GET_LEADERBOARD: '/user/leaderboard/:filter',
+  GET_USER_RANK: '/user/leaderboard/rank/:userId'
+};
+
+// Points Endpoints
+export const POINTS_ENDPOINTS = {
+  QUIZ_COMPLETE: '/points/quiz-complete',
+  GET_CONFIG: '/points/config'
 };
 
 // Notification Endpoints

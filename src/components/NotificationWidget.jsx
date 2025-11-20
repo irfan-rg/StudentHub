@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { notificationService, sessionService } from '../services/api';
 import { useSessionStore } from '../stores/useSessionStore';
+import { useConnectionsStore } from '../stores/useConnectionsStore';
 import { useQAStore } from '../stores/useQAStore';
 import { toast } from 'sonner@2.0.3';
 
@@ -106,6 +107,13 @@ const notificationConfig = {
     priority: 'medium',
     label: 'Connection'
   },
+  question_answered: {
+    icon: MessageCircle,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/50',
+    priority: 'medium',
+    label: 'Answered'
+  },
   qa_activity: {
     icon: MessageCircle,
     color: 'text-purple-600',
@@ -144,6 +152,10 @@ export default function NotificationWidget({ user }) {
   // Filter notifications based on active tab
   const filteredNotifications = activeTab === 'all' 
     ? notifications 
+    : activeTab === 'sessions'
+    ? notifications.filter(n => n.type === 'session_invite' || n.type === 'session_reminder')
+    : activeTab === 'qa_activity'
+    ? notifications.filter(n => n.type === 'qa_activity' || n.type === 'question_answered')
     : notifications.filter(n => n.type === activeTab);
 
   // Fetch notifications from API
@@ -155,12 +167,37 @@ export default function NotificationWidget({ user }) {
 
       // If any new QA activity notification arrived since last fetch, reload questions
       try {
-        const hasNewQA = fetched.some(n => n.type === 'qa_activity' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+        const hasNewQA = fetched.some(n => (n.type === 'qa_activity' || n.type === 'question_answered') && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
         if (hasNewQA) {
           await useQAStore.getState().loadQuestions();
         }
       } catch (err) {
         console.error('Failed to reload questions from notification:', err);
+      }
+
+      // If any connection responses arrived, refresh connection requests and connections
+      try {
+        const hasConnectionAccepted = fetched.some(n => n.type === 'connection_accepted' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+        const hasConnectionDeclined = fetched.some(n => n.type === 'connection_declined' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+        
+        // For declined notifications, clear the pending state immediately
+        if (hasConnectionDeclined) {
+          const declinedNotifications = fetched.filter(n => n.type === 'connection_declined' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+          declinedNotifications.forEach(notif => {
+            const declinerId = notif.sender?._id || notif.sender?.id || notif.sender;
+            if (declinerId) {
+              useConnectionsStore.getState().clearConnectionRequest(declinerId);
+            }
+          });
+        }
+        
+        // Always reload requests when we get connection response notifications
+        if (hasConnectionDeclined || hasConnectionAccepted) {
+          await useConnectionsStore.getState().loadConnectionRequests();
+          await useConnectionsStore.getState().loadConnections();
+        }
+      } catch (err) {
+        console.error('Failed to reload connections from notification:', err);
       }
 
       setLastFetch(Date.now());
@@ -284,7 +321,8 @@ export default function NotificationWidget({ user }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to respond to connection request');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to respond to connection request');
       }
       
       // Remove the notification from the list
@@ -297,13 +335,21 @@ export default function NotificationWidget({ user }) {
         toast.success('Connection request declined.');
       }
       
-      // Refresh the page to update connections if accepted
-      if (action === 'accept') {
-        setTimeout(() => window.location.reload(), 1000);
+      // Update connection requests map and connections
+      try {
+        await useConnectionsStore.getState().loadConnectionRequests();
+        if (action === 'accept') {
+          await useConnectionsStore.getState().loadConnections();
+        } else {
+          // On decline, also reload connections to ensure UI is updated
+          await useConnectionsStore.getState().loadConnections();
+        }
+      } catch (err) {
+        console.error('Failed to refresh connections after action', err);
       }
     } catch (error) {
       console.error('Failed to respond to connection request:', error);
-      toast.error('Failed to respond. Please try again.');
+      toast.error(error.message || 'Failed to respond. Please try again.');
     }
   };
 
@@ -319,12 +365,12 @@ export default function NotificationWidget({ user }) {
     }
     
     // Handle other notification types
-    if (notification.metadata?.actionUrl) {
+      if (notification.metadata?.actionUrl) {
       navigate(notification.metadata.actionUrl);
       setOpen(false);
 
       // If the notification is QA related, ensure the QA feed is refreshed
-      if (notification.type === 'qa_activity') {
+        if (notification.type === 'qa_activity' || notification.type === 'question_answered') {
         useQAStore.getState().loadQuestions().catch(err => console.error('Failed to reload questions on notification click', err));
       }
     }
@@ -481,7 +527,7 @@ export default function NotificationWidget({ user }) {
                   <div className="flex justify-between mt-3 p-1 bg-muted rounded-lg">
                     <button
                       onClick={() => setActiveTab('all')}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
                         activeTab === 'all' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
@@ -491,9 +537,9 @@ export default function NotificationWidget({ user }) {
                       All
                     </button>
                     <button
-                      onClick={() => setActiveTab('session_invite')}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
-                        activeTab === 'session_invite' 
+                      onClick={() => setActiveTab('connection_request')}
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                        activeTab === 'connection_request' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
@@ -502,9 +548,9 @@ export default function NotificationWidget({ user }) {
                       Invites
                     </button>
                     <button
-                      onClick={() => setActiveTab('session_reminder')}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
-                        activeTab === 'session_reminder' 
+                      onClick={() => setActiveTab('sessions')}
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                        activeTab === 'sessions' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
@@ -514,7 +560,7 @@ export default function NotificationWidget({ user }) {
                     </button>
                     <button
                       onClick={() => setActiveTab('qa_activity')}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
                         activeTab === 'qa_activity' 
                           ? 'bg-background text-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'

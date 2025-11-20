@@ -194,13 +194,18 @@ export function SkillMatching({ user }) {
     setSessionModal({ isOpen: true, student });
   };
 
-  const handleSendConnection = () => {
+  const handleSendConnection = async () => {
     if (!connectionMessage.trim()) {
       toast.error('Please write a message');
       return;
     }
     if (connectionModal.student?.id) {
-      sendConnectionRequest(connectionModal.student.id);
+      try {
+        await sendConnectionRequest(connectionModal.student.id);
+      } catch (err) {
+        toast.error(err.message || 'Failed to send connection request');
+        return;
+      }
     }
     toast.success(`Connection request sent to ${connectionModal.student?.name}!`);
     setConnectionModal({ isOpen: false, student: null });

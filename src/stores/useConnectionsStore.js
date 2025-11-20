@@ -122,9 +122,18 @@ export const useConnectionsStore = create(
 
           const data = await response.json();
           const requestsMap = {};
-          if (Array.isArray(data.data)) {
-            data.data.forEach(req => {
-              requestsMap[req.userId] = req.status === 'pending';
+          // Process received requests (we received these)
+          if (Array.isArray(data.data.requests)) {
+            data.data.requests.forEach(req => {
+              const userId = req.sender?._id || req.sender?.id || req.sender;
+              if (userId) requestsMap[userId] = 'received';
+            });
+          }
+          // Process sent requests (we sent these - show as pending)
+          if (Array.isArray(data.data.sentRequests)) {
+            data.data.sentRequests.forEach(req => {
+              const userId = req.recipient?._id || req.recipient?.id || req.recipient;
+              if (userId) requestsMap[userId] = 'pending';
             });
           }
           set({ connectionRequests: requestsMap });
@@ -159,7 +168,7 @@ export const useConnectionsStore = create(
           set({
             connectionRequests: {
               ...get().connectionRequests,
-              [partnerId]: true
+              [partnerId]: 'pending'
             }
           });
 
@@ -236,7 +245,7 @@ export const useConnectionsStore = create(
       rejectConnectionRequest: async (requesterId) => {
         try {
           const token = localStorage.getItem('authToken');
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/reject-request`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/decline-request`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -259,6 +268,13 @@ export const useConnectionsStore = create(
           console.error('Error rejecting connection request:', error);
           throw error;
         }
+      },
+
+      // Clear a specific user from connection requests (used when declined notification received)
+      clearConnectionRequest: (userId) => {
+        const newRequests = { ...get().connectionRequests };
+        delete newRequests[userId];
+        set({ connectionRequests: newRequests });
       }
     }),
     {
