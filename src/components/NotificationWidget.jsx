@@ -87,7 +87,8 @@ const mockNotifications = [
 // Notification type configurations - 3 main categories
 const notificationConfig = {
   session_invite: {
-    icon: UserPlus,
+    // session invites belong to the Sessions category, use clock to match Sessions tab
+    icon: Clock,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 dark:bg-blue-950/50',
     priority: 'high',
@@ -214,6 +215,13 @@ export default function NotificationWidget({ user }) {
     
     const interval = setInterval(fetchNotifications, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for external events that ask to refresh notifications (e.g., after creating session)
+  useEffect(() => {
+    const onUpdate = () => fetchNotifications();
+    window.addEventListener('notificationsUpdated', onUpdate);
+    return () => window.removeEventListener('notificationsUpdated', onUpdate);
   }, []);
 
   // WebSocket connection for real-time notifications (structure for future implementation)

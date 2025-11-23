@@ -15,10 +15,12 @@ import { Blog } from './components/Blog';
 import { Sidebar } from './components/Navigation';
 import {Sessions} from './components/Sessions';
 import { Toaster } from './components/ui/sonner';
+import { Button } from './components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
+import { useAuthStore } from './stores/useAuthStore';
 import { FullPageLoading, LoadingSpinner } from './components/ui/loading';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './contexts/ThemeContext';
-import { useAuthStore } from './stores/useAuthStore';
 
 // Using Zustand store for auth, no inline API mocks here
 
@@ -64,6 +66,8 @@ function AppLayout() {
   const login = useAuthStore(state => state.login);
   const signup = useAuthStore(state => state.signup);
   const logout = useAuthStore(state => state.logout);
+  const sessionExpired = useAuthStore(state => state.sessionExpired);
+  const setSessionExpired = useAuthStore(state => state.setSessionExpired);
   const updateUser = useAuthStore(state => state.updateUser);
 
   // Initialize persisted store once
@@ -205,6 +209,30 @@ function AppLayout() {
       </main>
       {/* Notification widget is intentionally only shown on Dashboard */}
       <Toaster position="bottom-right" />
+      {/* Global session expired modal */}
+      <Dialog open={sessionExpired} onOpenChange={(open) => { if (!open) setSessionExpired(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Your session has expired</DialogTitle>
+            <DialogDescription>
+              For your security, we have logged you out. Please log in again to continue using the platform.
+            </DialogDescription>
+          </DialogHeader>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => { setSessionExpired(false); }}>
+                  Close
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={async () => {
+                    await logout();
+                    setSessionExpired(false);
+                    navigate('/', { replace: true });
+                  }}
+                >Log in to continue</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

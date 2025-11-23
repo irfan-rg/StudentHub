@@ -18,7 +18,15 @@ export const pdfService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate questions from PDF');
+        // Try to parse server error message
+        let errMsg = 'Failed to generate questions from PDF';
+        try {
+          const errData = await response.json();
+          errMsg = errData?.error || errData?.details || errMsg;
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errMsg);
       }
 
       const data = await response.json();

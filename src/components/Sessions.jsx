@@ -17,7 +17,7 @@ import { Calendar as CalendarComponent } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { useSessionStore } from '../stores/useSessionStore.js';
-import { notificationService, sessionService } from '../services/api.js';
+import { notificationService, sessionService, authService } from '../services/api.js';
 import { pdfService } from '../services/pdfService.js';
 
 const DEFAULT_HOST_NAME = 'Session host';
@@ -158,7 +158,14 @@ const formatUserInfo = (info) => {
     avatar,
     initials: buildInitials(name)
   };
+
 };
+
+// Helper: Compare two Dates by year/month/day
+function isSameDate(a, b) {
+  if (!a || !b) return false;
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 export function Sessions({ user }) {
   const [searchParams] = useSearchParams();
@@ -208,6 +215,7 @@ export function Sessions({ user }) {
 
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizSession, setQuizSession] = useState(null);
+  const [quizPreviewMode, setQuizPreviewMode] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizStep, setQuizStep] = useState(0);
@@ -215,6 +223,7 @@ export function Sessions({ user }) {
   const [quizResultPoints, setQuizResultPoints] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState(null);
+  const [showGeneratedQuestions, setShowGeneratedQuestions] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const highlightedSessionId = useSessionStore((state) => state.highlightedSessionId);
   const setHighlightedSessionId = useSessionStore((state) => state.setHighlightedSessionId);
@@ -264,6 +273,17 @@ export function Sessions({ user }) {
     loadAll();
   }, [currentUserId, loadSessions, loadJoinedSessions, fetchSessionInvites]);
 
+  // Auto-refresh invites when NotificationWidget triggers global updates
+  useEffect(() => {
+    const onNotify = () => {
+      if (activeTab === 'invites') {
+        fetchSessionInvites();
+      }
+    };
+    window.addEventListener('notificationsUpdated', onNotify);
+    return () => window.removeEventListener('notificationsUpdated', onNotify);
+  }, [activeTab, fetchSessionInvites]);
+
   // Scroll to and highlight accepted session when it's added
   useEffect(() => {
     if (!highlightedSessionId) return;
@@ -286,7 +306,7 @@ export function Sessions({ user }) {
     setQuizCompleted(false);
   }, []);
 
-  const openQuizDialogForSession = (session) => {
+  const openQuizDialogForSession = (session, { preview = false } = {}) => {
     if (!session) return;
 
     resetQuizState();
@@ -304,6 +324,7 @@ export function Sessions({ user }) {
     toast.success('Loading AI-generated quiz from session document');
     setQuizSession(session);
     setQuizQuestions(aiQuestions);
+    setQuizPreviewMode(preview);
     setQuizDialogOpen(true);
   };
 
@@ -311,6 +332,7 @@ export function Sessions({ user }) {
     setQuizDialogOpen(open);
     if (!open) {
       resetQuizState();
+      setQuizPreviewMode(false);
     }
   };
 
@@ -604,7 +626,8 @@ export function Sessions({ user }) {
       }
     } catch (error) {
       console.error('Error generating questions from PDF:', error);
-      toast.error('Failed to generate quiz questions. Make sure Python backend is running.');
+      const message = error?.message || 'Failed to generate quiz questions. Make sure Python backend is running.';
+      toast.error(message);
       throw error;
     } finally {
       setGeneratingQuestions(false);
@@ -679,22 +702,36 @@ export function Sessions({ user }) {
         formData.append(`documents`, doc);
       });
 
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/session/create-with-documents`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        try {
+        const token = localStorage.getItem('authToken');
+        // If token exists, verify it before attempting upload - this gives clearer UI on expired token
+        if (token) {
+          try {
+            await authService.verifyToken();
+          } catch (err) {
+            toast.error('Your session has expired. Please log in again.');
+            await authService.logout();
+            setIsSubmitting(false);
+            return;
           }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to create session with documents');
         }
-
+        // Use sessionService to perform the upload/creation so headers and
+        // credentials are handled consistently through apiRequest.
+        await (await import('../services/api.js')).sessionService.createSessionWithDocuments(formData);
+        // If we reach here the session was created successfully
         toast.success('Session created with documents');
+        // Reload notifications/invites so the UI shows new session invites immediately
+        try {
+          await fetchSessionInvites();
+        } catch (e) {
+          // ignore - if invites fail to load we'll still present success
+        }
+        // Trigger global notification refresh so NotificationWidget updates immediately
+        try { window.dispatchEvent(new Event('notificationsUpdated')); } catch (e) {}
+        // Refresh created sessions list so the UI shows the new session immediately
+        try { await loadSessions(); } catch (e) { console.warn('Failed to reload sessions', e); }
         setGeneratedQuestions(null); // Reset generated questions
+        setShowGeneratedQuestions(false);
         setSessionForm({
           title: '',
           description: '',
@@ -718,7 +755,10 @@ export function Sessions({ user }) {
       try {
         await createSessionStore(payload);
         toast.success('Session created');
+        try { await fetchSessionInvites(); } catch (e) {}
+        try { window.dispatchEvent(new Event('notificationsUpdated')); } catch (e) {}
         setGeneratedQuestions(null); // Reset generated questions
+        setShowGeneratedQuestions(false);
         setSessionForm({
           title: '',
           description: '',
@@ -993,7 +1033,13 @@ export function Sessions({ user }) {
                             mode="single"
                             selected={sessionForm.date}
                             onSelect={(date) => setSessionForm(prev => ({ ...prev, date }))}
-                            disabled={(date) => date < new Date()}
+                            // allow selecting today; only disable dates that are earlier than the start of today
+                            disabled={(date) => {
+                              const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                              const today = new Date();
+                              const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                              return selectedDate < todayStart;
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
@@ -1011,11 +1057,24 @@ export function Sessions({ user }) {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {HOURS_12.map((hour) => (
-                              <SelectItem key={hour} value={hour}>
-                                {hour}
-                              </SelectItem>
-                            ))}
+                            {HOURS_12.map((hour) => {
+                              // Disable hours that are in the past if the selected date is today and period is chosen
+                              const now = new Date();
+                              const isToday = isSameDate(sessionForm.date, now);
+                              let disabledHour = false;
+                              if (isToday && sessionForm.startPeriod) {
+                                const hourNum = Number(hour) % 12;
+                                const selectedHour24 = sessionForm.startPeriod === 'PM' ? hourNum + 12 : hourNum;
+                                if (selectedHour24 < now.getHours()) {
+                                  disabledHour = true;
+                                }
+                              }
+                              return (
+                                <SelectItem key={hour} value={hour} disabled={disabledHour}>
+                                  {hour}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
 
@@ -1027,11 +1086,23 @@ export function Sessions({ user }) {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {MINUTES.map((minute) => (
-                              <SelectItem key={minute} value={minute}>
-                                {minute}
-                              </SelectItem>
-                            ))}
+                            {MINUTES.map((minute) => {
+                              const now = new Date();
+                              const isToday = isSameDate(sessionForm.date, now);
+                              let disabledMinute = false;
+                              if (isToday && sessionForm.startHour && sessionForm.startPeriod) {
+                                const selectedHourNum = Number(sessionForm.startHour) % 12;
+                                const selectedHour24 = sessionForm.startPeriod === 'PM' ? selectedHourNum + 12 : selectedHourNum;
+                                if (selectedHour24 === now.getHours() && Number(minute) < now.getMinutes()) {
+                                  disabledMinute = true;
+                                }
+                              }
+                              return (
+                                <SelectItem key={minute} value={minute} disabled={disabledMinute}>
+                                  {minute}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
 
@@ -1200,6 +1271,30 @@ export function Sessions({ user }) {
                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                            Participants will take this quiz after the session
                          </p>
+                         <div className="mt-2">
+                           <Button size="sm" variant="ghost" onClick={() => setShowGeneratedQuestions(prev => !prev)}>
+                             {showGeneratedQuestions ? 'Hide questions' : 'Preview questions'}
+                           </Button>
+                         </div>
+                         {showGeneratedQuestions && (
+                           <div className="mt-3 space-y-3 border-t pt-3">
+                             {generatedQuestions.map((q, i) => (
+                               <div key={q.id || i} className="p-3 bg-white dark:bg-neutral-900 rounded border">
+                                 <div className="text-sm font-medium">{i + 1}. {q.question}</div>
+                                 <ul className="mt-2 text-sm list-disc list-inside">
+                                   {q.options?.map((opt, idx) => (
+                                     <li key={idx} className={`ml-2 ${opt === q.answer ? 'text-green-700 dark:text-green-300 font-semibold' : ''}`}>
+                                       {opt}
+                                       {opt === q.answer && (
+                                         <span className="ml-2 text-xs text-green-600 dark:text-green-400">(answer)</span>
+                                       )}
+                                     </li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             ))}
+                           </div>
+                         )}
                        </div>
                      )}
                      
@@ -1520,6 +1615,7 @@ export function Sessions({ user }) {
                                 <div className="text-center space-y-3">
                                   {/* Move claim points up above the rating update link */}
                                   <div className="flex flex-col items-center gap-1">
+                                      <div className="flex items-center justify-center gap-2">
                                       <Button
                                         size="sm"
                                         onClick={() => openQuizDialogForSession(session)}
@@ -1544,6 +1640,17 @@ export function Sessions({ user }) {
                                           )}
                                         </span>
                                       </Button>
+                                      {session.quizQuestions && session.quizQuestions.length > 0 && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => openQuizDialogForSession(session, { preview: true })}
+                                          className="h-8 px-3 mt-2 text-xs"
+                                        >
+                                          View quiz
+                                        </Button>
+                                      )}
+                                      </div>
                                       <p className={`text-xs ${claimedPoints[sessionId] ? 'text-green-600 dark:text-green-300' : 'text-muted-foreground'}`}>
                                         {claimedPoints[sessionId]
                                           ? 'Your reward has been added.'
@@ -1789,7 +1896,30 @@ export function Sessions({ user }) {
             </div>
           )}
 
-          {quizTotalQuestions > 0 && !quizCompleted && activeQuizQuestion && (
+          {quizTotalQuestions > 0 && quizPreviewMode && (
+            <div className="space-y-4">
+              {quizQuestions.map((question, index) => (
+                <div key={question.id || index} className="p-3 bg-muted rounded">
+                  <div className="text-sm font-medium">{index + 1}. {question.question}</div>
+                  <ul className="mt-2 text-sm list-disc list-inside">
+                    {question.options.map((opt, idx) => (
+                      <li key={idx} className={`ml-2 ${opt === question.answer ? 'text-green-700 dark:text-green-300 font-semibold' : ''}`}>
+                        {opt}
+                        {opt === question.answer && (
+                          <span className="ml-2 text-xs text-green-600 dark:text-green-400">(answer)</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <div className="mt-2 flex justify-end">
+                <Button onClick={() => handleQuizDialogChange(false)}>Close</Button>
+              </div>
+            </div>
+          )}
+
+          {quizTotalQuestions > 0 && !quizCompleted && activeQuizQuestion && !quizPreviewMode && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <Badge variant="outline">Question {quizStep + 1} of {quizTotalQuestions}</Badge>

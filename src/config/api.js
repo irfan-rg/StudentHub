@@ -56,6 +56,7 @@ export const SESSION_ENDPOINTS = {
   GET_CREATED_SESSIONS: '/session/created-session',
   GET_JOINED_SESSIONS: '/session/joined-session',
   CREATE_SESSION: '/session/create-session',
+  CREATE_WITH_DOCUMENTS: '/session/create-with-documents',
   ACCEPT_SESSION: '/session/accept-session',
   CANCEL_SESSION: '/session/cancel-session',
   DELETE_SESSION: '/session/delete-session',

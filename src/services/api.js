@@ -2,6 +2,7 @@
 // This file contains all the API calls that the frontend components will use
 
 import { API_CONFIG, AUTH_ENDPOINTS, USER_ENDPOINTS, SKILL_ENDPOINTS, MATCHING_ENDPOINTS, SESSION_ENDPOINTS, QA_ENDPOINTS, LEADERBOARD_ENDPOINTS, POINTS_ENDPOINTS } from '../config/api.js';
+import { useAuthStore } from '../stores/useAuthStore.js';
 
 // Helper function to make HTTP requests
 const apiRequest = async (endpoint, options = {}) => {
@@ -18,6 +19,10 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options
   };
 
+  // Ensure we include credentials across the app so cookie-based auth works
+  // and the server can rely on either cookie or Authorization header.
+  config.credentials = 'include';
+
   // If sending FormData, let the browser set the Content-Type with boundary
   if (config.body instanceof FormData) {
     const headers = { ...config.headers };
@@ -28,10 +33,30 @@ const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    // Try to parse JSON, but handle cases where server returned HTML (e.g., 404 page)
+    let data = null;
+    const text = await response.text();
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      data = { message: text };
+    }
     
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      // If request unauthorized or forbidden - set global session expired flag and trigger logout
+      if (response.status === 401 || response.status === 403) {
+        try {
+          const setExpired = useAuthStore.getState().setSessionExpired;
+          if (setExpired) setExpired(true);
+        } catch (e) {
+          // ignore
+        }
+      }
+      const err = new Error(data.message || 'API request failed');
+      // Attach status for callers who want to retry on 401/403
+      err.status = response.status;
+      err.responseData = data;
+      throw err;
     }
     
     return data;
@@ -91,6 +116,22 @@ export const authService = {
       return response;
     } catch (error) {
       throw new Error('Token verification failed');
+    }
+  }
+  ,
+  // Refresh token (server will refresh based on cookie) and return new token
+  refresh: async () => {
+    try {
+      const response = await apiRequest(AUTH_ENDPOINTS.REFRESH, {
+        method: 'POST'
+      });
+      // If successful, persist the token in local storage
+      if (response && response.token) {
+        localStorage.setItem('authToken', response.token);
+      }
+      return response;
+    } catch (error) {
+      throw new Error('Token refresh failed');
     }
   }
 };
@@ -313,6 +354,46 @@ export const sessionService = {
       return response.data?.session || response.data;
     } catch (error) {
       throw new Error('Failed to create session');
+    }
+  },
+
+  // Create new session with documents (FormData). This uses apiRequest so
+  // that we include Authorization and cookies consistently. apiRequest already
+  // handles FormData content-type removal.
+  createSessionWithDocuments: async (formData) => {
+    try {
+      const response = await apiRequest(SESSION_ENDPOINTS.CREATE_WITH_DOCUMENTS, {
+        method: 'POST',
+        body: formData,
+        headers: {}, // do not set Content-Type for FormData
+      });
+      return response.data?.session || response.data;
+    } catch (error) {
+      // If auth error, attempt a one-time verification retry using cookies.
+      if (error && (error.status === 401 || error.status === 403)) {
+        try {
+          // Try to refresh the token (server will refresh based on cookie)
+          // If we can refresh the token, retry the upload once.
+          try {
+            const refreshResult = await authService.refresh();
+            if (refreshResult && refreshResult.token) {
+              // retry once
+              const retry = await apiRequest(SESSION_ENDPOINTS.CREATE_WITH_DOCUMENTS, {
+                method: 'POST',
+                body: formData,
+                headers: {}
+              });
+              return retry.data?.session || retry.data;
+            }
+          } catch (e) {
+            // ignore and fall through
+          }
+        } catch (verifyErr) {
+          // ignore and fall through to session expired handling
+        }
+      }
+
+      throw new Error(error.message || 'Failed to create session with documents');
     }
   },
 

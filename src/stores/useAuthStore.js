@@ -5,6 +5,8 @@ import { authService } from '../services/api.js';
 export const useAuthStore = create(
   persist(
     (set, get) => ({
+      sessionExpired: false,
+      setSessionExpired: (val) => set({ sessionExpired: val }),
       user: null,
       token: null,
       loading: false,
@@ -53,6 +55,8 @@ export const useAuthStore = create(
           console.error('Logout API call failed:', e);
         } finally {
           localStorage.removeItem('authToken');
+          // Reset session expired flag on logout
+          set({ sessionExpired: false });
           localStorage.removeItem('user');
           set({ user: null, token: null, error: null });
         }
