@@ -110,26 +110,38 @@ export const awardQuizPoints = async (req, res, next) => {
             return next(errorHandler(400, 'Missing required fields'));
         }
 
-        const passingScore = Math.ceil(totalQuestions * 0.6); // 60% to pass
-        
-        if (score < passingScore) {
+
+        // No minimum passing requirement — award points based on correct answers
+        // and ensure we do not award more than once (idempotent).
+
+        // Points per correct answer (keep in sync with frontend QUIZ_POINTS_PER_CORRECT)
+        const POINTS_PER_CORRECT = 10;
+
+        // Check whether the user already has a completion record for this session
+        const user = await User.findById(id);
+        if (!user) return next(errorHandler(404, 'User not found'));
+
+        const already = Array.isArray(user.quizCompletions) && user.quizCompletions.find((c) => String(c.sessionId) === String(sessionId));
+        if (already) {
+            // Return the existing award info and do not duplicate
             return res.status(200).json({
-                success: false,
-                message: 'Quiz not passed. Try again!',
-                data: { 
-                    passed: false,
+                success: true,
+                message: 'Quiz already completed',
+                data: {
+                    passed: true,
                     score,
-                    passingScore,
-                    pointsAwarded: 0
+                    totalQuestions,
+                    pointsAwarded: already.awardedPoints,
+                    alreadyAwarded: true,
+                    existing: already
                 }
             });
         }
 
-        // Calculate points based on score
-        const basePoints = POINTS_CONFIG.COMPLETE_SESSION_QUIZ;
-        const bonusPoints = Math.floor((score / totalQuestions) * 20); // Up to 20 bonus points for perfect score
-        const totalPoints = basePoints + bonusPoints;
+        // Compute awarded points directly from number of correct answers
+        const totalPoints = (Number(score) || 0) * POINTS_PER_CORRECT;
 
+        // Use awardPoints helper to persist points and stats
         const result = await awardPoints(
             id,
             totalPoints,
@@ -137,13 +149,20 @@ export const awardQuizPoints = async (req, res, next) => {
             { sessionsCompleted: 1 }
         );
 
+        // Persist a quiz completion record on the user so we don't double award later.
+        // Use an atomic update to avoid overwriting fields modified by awardPoints.
+        await User.findByIdAndUpdate(id, {
+            $push: { quizCompletions: { sessionId, score, awardedPoints: totalPoints } }
+        }, { new: true });
+
         res.status(200).json({
             success: true,
             message: 'Quiz completed successfully!',
             data: {
                 passed: true,
                 score,
-                passingScore,
+                totalQuestions,
+                pointsAwarded: totalPoints,
                 ...result
             }
         });

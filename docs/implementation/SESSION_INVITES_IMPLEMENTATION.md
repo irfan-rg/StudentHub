@@ -103,7 +103,7 @@ All cards use the same structure:
 3. Real-time status based on time
 
 ### After Session:
-1. 1 hour after end time → Auto-marks as "Completed"
+1. Immediately after session end time → Auto-marks as "Completed" (no 1-hour grace period)
 2. Moves to "Completed" section
 3. Rating button appears
 
@@ -118,7 +118,7 @@ const computeSessionStatus = (session) => {
   const gracePeriod = endTime + (60 * 60 * 1000); // +1 hour
   
   if (status === 'cancelled') return 'cancelled';
-  if (now > gracePeriod) return 'completed';
+  if (now > endTime) return 'completed';
   if (now >= sessionDate && now <= endTime) return 'in-progress';
   if (now < sessionDate) return 'upcoming';
   return 'completed';

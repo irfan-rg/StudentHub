@@ -17,7 +17,8 @@ import { Calendar as CalendarComponent } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { useSessionStore } from '../stores/useSessionStore.js';
-import { notificationService, sessionService, authService } from '../services/api.js';
+import { notificationService, sessionService, authService, userService } from '../services/api.js';
+import { useAuthStore } from '../stores/useAuthStore.js';
 import { pdfService } from '../services/pdfService.js';
 
 const DEFAULT_HOST_NAME = 'Session host';
@@ -212,6 +213,50 @@ export function Sessions({ user }) {
   const [invitesError, setInvitesError] = useState(null);
   const [pendingActions, setPendingActions] = useState({});
   const [claimedPoints, setClaimedPoints] = useState({});
+  // store the numeric awarded points per session when awarded locally so UI doesn't show server 0
+  const [claimedPointsAmount, setClaimedPointsAmount] = useState({});
+
+  // Ensure claim state persists across refreshes by deriving it from the
+  // authenticated user's persisted quiz completions (server-side). The backend
+  // stores quiz completions on the user profile so we can be idempotent.
+  // subscribe to auth store user so we pick up server-side profile updates
+  const authUser = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    try {
+      const completions = user?.quizCompletions || [];
+      if (!Array.isArray(completions) || completions.length === 0) return;
+
+      const newClaimed = {};
+      const newAmounts = {};
+
+      completions.forEach((c) => {
+        try {
+          const sid = c.sessionId ? String(c.sessionId) : null;
+          if (!sid) return;
+          newClaimed[sid] = true;
+          if (typeof c.awardedPoints === 'number') {
+            newAmounts[sid] = c.awardedPoints;
+          } else if (c.awardedPoints) {
+            newAmounts[sid] = Number(c.awardedPoints) || 0;
+          }
+        } catch (err) {
+          // ignore malformed entries
+        }
+      });
+
+      if (Object.keys(newClaimed).length > 0) {
+        setClaimedPoints((prev) => ({ ...prev, ...newClaimed }));
+      }
+
+      if (Object.keys(newAmounts).length > 0) {
+        setClaimedPointsAmount((prev) => ({ ...prev, ...newAmounts }));
+      }
+    } catch (err) {
+      // be defensive about unexpected user shape
+      console.warn('Failed to initialize quiz claim state from user profile', err);
+    }
+  }, [user, authUser]);
 
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizSession, setQuizSession] = useState(null);
@@ -222,6 +267,9 @@ export function Sessions({ user }) {
   const [quizScore, setQuizScore] = useState(null);
   const [quizResultPoints, setQuizResultPoints] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  // Do not show answers until user clicks "See correct answers" after submit
+  // when true, open a dedicated modal to view the correct answers (separate from score view)
+  const [showAnswersDialog, setShowAnswersDialog] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState(null);
   const [showGeneratedQuestions, setShowGeneratedQuestions] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
@@ -229,6 +277,7 @@ export function Sessions({ user }) {
   const setHighlightedSessionId = useSessionStore((state) => state.setHighlightedSessionId);
 
   const currentUserId = user?._id || user?.id;
+  const updateUser = useAuthStore((state) => state.updateUser);
 
   const fetchSessionInvites = useCallback(async () => {
     if (!currentUserId) return;
@@ -306,7 +355,7 @@ export function Sessions({ user }) {
     setQuizCompleted(false);
   }, []);
 
-  const openQuizDialogForSession = (session, { preview = false } = {}) => {
+  const openQuizDialogForSession = async (session, { preview = false } = {}) => {
     if (!session) return;
 
     resetQuizState();
@@ -317,6 +366,31 @@ export function Sessions({ user }) {
     if (!aiQuestions || aiQuestions.length === 0) {
       // No quiz available for this session
       toast.error('This session does not have a quiz. The creator did not upload a PDF document for quiz generation.');
+      return;
+    }
+
+    // Prevent re-attempt if user already completed this session's quiz
+    const sessionId = session?.raw?._id || session?.id;
+    // If preview is disabled we should guard against race conditions where
+    // the current user profile hasn't yet been refreshed. Try to refresh the
+    // profile quickly so we can make the authoritative decision server-side.
+    if (!preview && sessionId && !Boolean(claimedPoints[sessionId])) {
+      try {
+        const profile = await userService.getProfile();
+        if (profile && profile.user) updateUser(profile.user);
+        const completions = profile?.user?.quizCompletions || [];
+        if (completions.find((c) => String(c.sessionId) === String(sessionId))) {
+          toast.info('You already completed this quiz. Points already claimed.');
+          return;
+        }
+      } catch (err) {
+        // If this fails, fall back to local state check below.
+        console.warn('Failed to re-check quiz completion before opening quiz', err);
+      }
+    }
+
+    if (!preview && sessionId && Boolean(claimedPoints[sessionId])) {
+      toast.info('You already completed this quiz. Points already claimed.');
       return;
     }
 
@@ -373,6 +447,51 @@ export function Sessions({ user }) {
     setQuizScore(score);
     setQuizResultPoints(score * QUIZ_POINTS_PER_CORRECT);
     setQuizCompleted(true);
+    // default answers hidden until user chooses to view (close answers dialog too)
+    setShowAnswersDialog(false);
+
+    // Auto-award points at submit time. This avoids a separate claim button and ensures
+    // the result is final (backend should handle idempotency).
+    (async () => {
+      try {
+        const { pointsService } = await import('../services/api.js');
+        const sessionId = quizSession?.raw?._id || quizSession?.id;
+        if (!sessionId) return;
+
+        const result = await pointsService.submitQuizCompletion(sessionId, score, quizQuestions.length);
+
+          // Use the server response where possible (server now awards points based on
+          // correct answers). Fall back to computed points for display if the server
+          // does not return a value.
+          const computed = score * QUIZ_POINTS_PER_CORRECT;
+          const serverAward = result?.pointsAwarded;
+          const awarded = typeof serverAward === 'number' ? serverAward : computed;
+
+        // mark as claimed locally so UI disables future claims and remember awarded points
+        setClaimedPoints((prev) => ({ ...prev, [sessionId]: true }));
+        setClaimedPointsAmount((prev) => ({ ...prev, [sessionId]: awarded }));
+
+        toast.success(`🎉 You earned ${awarded} points!`);
+
+        // Refresh current user profile so navbar/dashboard/profile show updated points
+        try {
+          const profile = await userService.getProfile();
+          if (profile && profile.user) updateUser(profile.user);
+        } catch (err) {
+          console.warn('Failed to refresh user profile after quiz award', err);
+        }
+
+        // Show new badges if any
+        if (result?.newBadges && result.newBadges.length > 0) {
+          toast.success(`🏆 New badge${result.newBadges.length > 1 ? 's' : ''}: ${result.newBadges.join(', ')}`);
+        }
+
+      } catch (error) {
+        console.error('Error auto-awarding points:', error);
+        // Show a neutral error message — do not enforce pass/fail messaging.
+        toast.error('Failed to award points right now. Your score is saved; try again later.');
+      }
+    })();
   };
 
   const handleQuizRetake = () => {
@@ -409,26 +528,62 @@ export function Sessions({ user }) {
         quizQuestions.length
       );
 
-      if (result.passed) {
+      // The backend now awards points based on # correct answers and will return
+      // pointsAwarded. Treat that value as authoritative; fall back to computed.
+      const serverAward = result?.pointsAwarded;
+      const computedAward = quizScore * QUIZ_POINTS_PER_CORRECT;
+      const awardedPoints = typeof serverAward === 'number' ? serverAward : computedAward;
+
+      if (result.passed || result.alreadyAwarded || awardedPoints > 0) {
         setClaimedPoints((prev) => ({
           ...prev,
           [sessionId]: true
         }));
 
-        toast.success(`🎉 Quiz passed! You earned ${result.pointsAwarded} points!`);
+        setClaimedPointsAmount((prev) => ({ ...prev, [sessionId]: awardedPoints }));
+        if (result.alreadyAwarded) {
+          toast.info(`Points already awarded: ${awardedPoints} points`);
+        } else {
+          toast.success(`🎉 You earned ${awardedPoints} points!`);
+        }
         
         // Show new badges if any
         if (result.newBadges && result.newBadges.length > 0) {
           toast.success(`🏆 New badge${result.newBadges.length > 1 ? 's' : ''}: ${result.newBadges.join(', ')}`);
         }
         
+        // Update current user profile in the store so UI reflects updated totals
+        try {
+          const profile = await userService.getProfile();
+          if (profile && profile.user) updateUser(profile.user);
+        } catch (err) {
+          console.warn('Failed to refresh user profile after claim', err);
+        }
+
         setQuizDialogOpen(false);
         resetQuizState();
-        
-        // Reload user data to show updated points
-        window.location.reload();
       } else {
-        toast.error(`Quiz score too low. You need ${result.passingScore}/${result.totalQuestions} to pass.`);
+        // Don't show 'too low' messaging — show points that were awarded (if any) or a neutral message.
+        // If server didn't mark passed, still show computed award if > 0 (for backwards compatibility)
+        if (computedAward > 0) {
+          setClaimedPoints((prev) => ({ ...prev, [sessionId]: true }));
+          setClaimedPointsAmount((prev) => ({ ...prev, [sessionId]: computedAward }));
+          toast.success(`🎉 You earned ${computedAward} points!`);
+          if (result.newBadges && result.newBadges.length > 0) {
+            toast.success(`🏆 New badge${result.newBadges.length > 1 ? 's' : ''}: ${result.newBadges.join(', ')}`);
+          }
+          // Update profile if available
+          try {
+            const profile = await userService.getProfile();
+            if (profile && profile.user) updateUser(profile.user);
+          } catch (err) {
+            console.warn('Failed to refresh user profile after claim', err);
+          }
+          setQuizDialogOpen(false);
+          resetQuizState();
+        } else {
+          toast.info('Your score was recorded. No points were awarded for this attempt.');
+        }
       }
     } catch (error) {
       console.error('Error claiming points:', error);
@@ -488,9 +643,53 @@ export function Sessions({ user }) {
     return entry ? { rating: entry.rating || 0, comment: entry.comment || '' } : null;
   }, [currentUserIdStr]);
 
+  // Compute smart session status based on time + duration
+  const computeSessionStatus = useCallback((session) => {
+    const now = new Date();
+    const sessionDate = new Date(session.dateIso || session.sessionOn);
+    const durationMinutes = parseInt(session.duration) || 60;
+    const endTime = new Date(sessionDate.getTime() + durationMinutes * 60 * 1000);
+
+    // Respect manual cancellation
+    if (session.status === 'cancelled') {
+      return 'cancelled';
+    }
+
+    // Auto-complete sessions that ended (immediately after end time)
+    if (now > endTime) {
+      return 'completed';
+    }
+
+    // Show "in-progress" during session window
+    if (now >= sessionDate && now <= endTime) {
+      return 'in-progress';
+    }
+
+    // Upcoming
+    if (now < sessionDate) {
+      return 'upcoming';
+    }
+
+    return 'completed';
+  }, []);
+
   const createdSessions = useMemo(() => {
     return sessionsStore.map((session) => {
       const schedule = getScheduleMeta(session?.dateIso);
+
+      // compute a smart status based on schedule + duration (mirror joinedSessions behavior)
+      const computedStatus = (() => {
+        try {
+          // If server sent a manual/cancelled/completed status, respect cancelled/completed
+          const explicit = typeof session.status === 'string' ? session.status.toLowerCase() : '';
+          if (['cancelled', 'completed'].includes(explicit)) return explicit;
+
+          // Use the same computeSessionStatus logic used for joined sessions
+          return computeSessionStatus({ ...session, dateIso: session.dateIso, duration: session.duration });
+        } catch (e) {
+          return session.status || 'upcoming';
+        }
+      })();
 
       return {
         id: session.id,
@@ -502,13 +701,13 @@ export function Sessions({ user }) {
         time: schedule.timeLabel || session.preferredTimes,
         meetingLink: session.meetingLink,
         meetingAddress: session.meetingAddress,
-        status: session.status,
+        status: computedStatus,
         averageRating: session.averageRating || 0,
         raw: session.raw,
         schedule
       };
     });
-  }, [sessionsStore, getScheduleMeta]);
+  }, [sessionsStore, getScheduleMeta, computeSessionStatus]);
 
   const joinedSessionsByStatus = useMemo(() => {
     const normalized = joinedSessions.map((session) => {
@@ -564,36 +763,7 @@ export function Sessions({ user }) {
   const activeQuizSessionId = quizSession?.raw?._id || quizSession?.id;
   const quizPointsAlreadyClaimed = activeQuizSessionId ? Boolean(claimedPoints[activeQuizSessionId]) : false;
 
-  // Compute smart session status based on time + duration
-  const computeSessionStatus = useCallback((session) => {
-    const now = new Date();
-    const sessionDate = new Date(session.dateIso || session.sessionOn);
-    const durationMinutes = parseInt(session.duration) || 60;
-    const endTime = new Date(sessionDate.getTime() + durationMinutes * 60 * 1000);
-    const oneHourAfterEnd = new Date(endTime.getTime() + 60 * 60 * 1000);
-
-    // Respect manual cancellation
-    if (session.status === 'cancelled') {
-      return 'cancelled';
-    }
-
-    // Auto-complete sessions that ended >1 hour ago
-    if (now > oneHourAfterEnd) {
-      return 'completed';
-    }
-
-    // Show "in-progress" during session window
-    if (now >= sessionDate && now <= endTime) {
-      return 'in-progress';
-    }
-
-    // Upcoming
-    if (now < sessionDate) {
-      return 'upcoming';
-    }
-
-    return 'completed';
-  }, []);
+  
 
   // Generate quiz questions from uploaded PDF
   const handleGenerateQuestionsFromPDF = async (pdfFile) => {
@@ -674,6 +844,13 @@ export function Sessions({ user }) {
     }
     baseDate.setHours(hours24, minutes, 0, 0);
 
+    // Disallow creating sessions that start in the past. Require future start time (>= now).
+    if (baseDate.getTime() <= Date.now()) {
+      toast.error('Please select a start time in the future');
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
       topic: sessionForm.title.trim(),
       details: sessionForm.description.trim(),
@@ -745,7 +922,15 @@ export function Sessions({ user }) {
           meetingAddress: '',
           documents: []
         });
-      } catch (error) {
+        // Update profile in case points were awarded for creating a session
+        try {
+          const profile = await userService.getProfile();
+          if (profile && profile.user) updateUser(profile.user);
+        } catch (err) {
+          console.warn('Failed to refresh profile after creating session', err);
+        }
+
+        } catch (error) {
         toast.error(error.message || 'Failed to create session');
       } finally {
         setIsSubmitting(false);
@@ -755,6 +940,12 @@ export function Sessions({ user }) {
       try {
         await createSessionStore(payload);
         toast.success('Session created');
+        try {
+          const profile = await userService.getProfile();
+          if (profile && profile.user) updateUser(profile.user);
+        } catch (err) {
+          console.warn('Failed to refresh profile after creating session', err);
+        }
         try { await fetchSessionInvites(); } catch (e) {}
         try { window.dispatchEvent(new Event('notificationsUpdated')); } catch (e) {}
         setGeneratedQuestions(null); // Reset generated questions
@@ -832,19 +1023,108 @@ export function Sessions({ user }) {
     }
 
     setPendingActions((prev) => ({ ...prev, [sessionId]: true }));
+
+    // Submit rating first and treat that result as authoritative. If the
+    // subsequent refresh of joined sessions or profile fails, don't surface a
+    // "failure" toast to the user because the rating itself may have been
+    // recorded successfully on the server (we'll log and retry refreshes
+    // silently).
+    let rated = false;
     try {
       await rateSessionStore({ sessionId, rating, comment: ratingComment });
-      await loadJoinedSessions();
+      rated = true;
       toast.success('Rating submitted successfully!');
       setRatingDialogOpen(false);
       setSelectedSession(null);
       setRating(0);
       setRatingComment('');
     } catch (error) {
+      // Some transient errors (network/CORS/timeouts) can still mean the
+      // rating was recorded server-side. Try checking the session directly
+      // (a quick poll) before telling the user the rating failed.
+      try {
+        const { sessionService } = await import('../services/api.js');
+
+        const maxAttempts = 3;
+        let found = false;
+
+        for (let i = 0; i < maxAttempts; i += 1) {
+          try {
+            const latest = await sessionService.getSessionById(sessionId);
+            const ratings = Array.isArray(latest?.ratings) ? latest.ratings : (latest?.data?.ratings || []);
+            if (ratings && ratings.length > 0) {
+              const match = ratings.find((r) => {
+                if (!r) return false;
+                const uid = r.user || r.userId || r.user?._id || r.user?.id;
+                return uid ? String(uid) === String(currentUserId) : false;
+              });
+              if (match) {
+                found = true;
+                break;
+              }
+            }
+          } catch (e) {
+            // ignore - we'll retry
+          }
+
+          // small delay before retry
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 400));
+        }
+
+        if (found) {
+          // The rating was recorded on the server even though our initial
+          // client request errored. Treat as success and refresh client state.
+          try {
+            await loadJoinedSessions();
+          } catch (err) {
+            console.warn('Failed to reload joined sessions after rating (post-error)', err);
+          }
+
+          try {
+            const profile = await userService.getProfile();
+            if (profile && profile.user) updateUser(profile.user);
+          } catch (err) {
+            console.warn('Failed to refresh profile after rating (post-error)', err);
+          }
+
+          toast.success('Rating submitted successfully');
+          setRatingDialogOpen(false);
+          setSelectedSession(null);
+          setRating(0);
+          setRatingComment('');
+          setPendingActions((prev) => ({ ...prev, [sessionId]: false }));
+          return;
+        }
+      } catch (err) {
+        console.warn('Error while checking session after rating error', err);
+      }
+
+      // If we reach here we couldn't verify the rating — show failure to the user
       toast.error(error.message || 'Failed to submit rating');
-    } finally {
       setPendingActions((prev) => ({ ...prev, [sessionId]: false }));
+      return;
     }
+
+    // Try to refresh local session lists and profile. If these fail, warn in
+    // console but do not show a user-facing error (the rating is already
+    // submitted). This prevents confusing failure toasts when later retries
+    // will populate the updated rating.
+    try {
+      await loadJoinedSessions();
+    } catch (err) {
+      console.warn('Failed to reload joined sessions after rating', err);
+    }
+
+    // refresh profile in case rating awarded points
+    try {
+      const profile = await userService.getProfile();
+      if (profile && profile.user) updateUser(profile.user);
+    } catch (err) {
+      console.warn('Failed to refresh profile after rating', err);
+    }
+
+    setPendingActions((prev) => ({ ...prev, [sessionId]: false }));
   };
 
   const handleRatingCancel = () => {
@@ -871,6 +1151,13 @@ export function Sessions({ user }) {
         // Flash highlight on the newly accepted session in Manage tab
         setHighlightedSessionId(sessionId);
         setTimeout(() => setHighlightedSessionId(null), 2000);
+        // Refresh user profile (points may have been awarded for attending)
+        try {
+          const profile = await userService.getProfile();
+          if (profile && profile.user) updateUser(profile.user);
+        } catch (err) {
+          console.warn('Failed to refresh user profile after accepting invite', err);
+        }
       }
 
       setSessionInvites((prev) => prev.filter((item) => item._id !== inviteId));
@@ -1032,7 +1319,39 @@ export function Sessions({ user }) {
                           <CalendarComponent
                             mode="single"
                             selected={sessionForm.date}
-                            onSelect={(date) => setSessionForm(prev => ({ ...prev, date }))}
+                            onSelect={(date) => {
+                              // When user picks a date, if they pick today set sensible default start time
+                              const picked = date instanceof Date ? date : new Date(date);
+                              const now = new Date();
+                              const isToday = isSameDate(picked, now);
+
+                              if (isToday) {
+                                // choose the next available slot rounded to our minute options
+                                const currentMinutes = now.getMinutes();
+                                // find first MINUTES value that's >= currentMinutes + 5 (small buffer)
+                                const buffer = 5;
+                                const threshold = currentMinutes + buffer;
+                                let nextMinute = MINUTES.find(m => Number(m) >= threshold);
+                                let nextHour = now.getHours();
+                                if (!nextMinute) {
+                                  // roll over to next hour
+                                  nextMinute = MINUTES[0];
+                                  nextHour = (nextHour + 1) % 24;
+                                }
+
+                                // convert 24h to 12h and set period
+                                const period = nextHour >= 12 ? 'PM' : 'AM';
+                                let hour12 = nextHour % 12;
+                                if (hour12 === 0) hour12 = 12;
+                                const hourStr = String(hour12).padStart(2, '0');
+                                const minuteStr = String(nextMinute).padStart(2, '0');
+
+                                setSessionForm(prev => ({ ...prev, date: picked, startHour: hourStr, startMinute: minuteStr, startPeriod: period }));
+                              } else {
+                                // not today - reset to default time slot
+                                setSessionForm(prev => ({ ...prev, date: picked, startHour: '09', startMinute: '00', startPeriod: 'AM' }));
+                              }
+                            }}
                             // allow selecting today; only disable dates that are earlier than the start of today
                             disabled={(date) => {
                               const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -1361,7 +1680,7 @@ export function Sessions({ user }) {
                    {createdSessions.slice(0, 5).map((s) => {
                      const sessionId = s.raw?._id || s.id;
                      const removeLoading = Boolean(pendingActions[sessionId]);
-                     const statusLabel = s.status === 'upcoming' ? 'Upcoming' : s.status === 'completed' ? 'Completed' : 'Pending';
+                     const statusLabel = s.status === 'upcoming' ? 'Upcoming' : s.status === 'completed' ? 'Completed' : s.status === 'in-progress' ? 'In Progress' : 'Pending';
 
                      return (
                        <div key={s.id} className="p-4 rounded-lg border bg-muted/40">
@@ -1391,14 +1710,21 @@ export function Sessions({ user }) {
                                  {s.time && <span>&nbsp;at {s.time}</span>}
                                </div>
                                {s.type === 'video' && s.meetingLink && (
-                                 <button
-                                   type="button"
-                                   onClick={() => openInNewTab(s.meetingLink)}
-                                   className="text-blue-600 hover:underline flex items-center gap-1"
-                                 >
-                                   <Video className="h-3 w-3" />
-                                   Join Meeting
-                                 </button>
+                                 s.status === 'completed' ? (
+                                   <div className="text-sm text-foreground flex items-center gap-1">
+                                     <Video className="h-4 w-4" />
+                                     <span>Session expired</span>
+                                   </div>
+                                 ) : (
+                                   <button
+                                     type="button"
+                                     onClick={() => openInNewTab(s.meetingLink)}
+                                     className="text-blue-600 hover:underline flex items-center gap-1"
+                                   >
+                                     <Video className="h-3 w-3" />
+                                     Join Meeting
+                                   </button>
+                                 )
                                )}
                                {s.type === 'inperson' && s.meetingAddress && (
                                  <div className="flex items-center gap-1 text-foreground">
@@ -1877,10 +2203,50 @@ export function Sessions({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Separate dialog for viewing answers so the score dialog stays compact */}
+      <Dialog open={showAnswersDialog} onOpenChange={setShowAnswersDialog}>
+        <DialogContent className="max-w-none w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] rounded-lg border border-border bg-card p-4 shadow-lg max-h-[85vh] overflow-hidden" style={{ maxWidth: '900px' }}>
+          <DialogHeader>
+            <DialogTitle>Quiz Correct Answers</DialogTitle>
+            <DialogDescription>Review your answers for {quizSession?.title ? `"${quizSession.title}"` : 'this session'}</DialogDescription>
+          </DialogHeader>
+
+          <div className="overflow-y-auto max-h-[70vh] space-y-3 pt-2">
+            <div className="flex items-center justify-end">
+              <Button variant="ghost" onClick={() => setShowAnswersDialog(false)}>Back to Score</Button>
+            </div>
+
+            {quizQuestions.map((question) => {
+              const userAnswer = quizAnswers[question.id];
+              const isCorrect = userAnswer === question.answer;
+              return (
+                <div
+                  key={question.id}
+                  className={`rounded-lg border p-3 text-sm ${
+                    isCorrect
+                      ? 'border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-900/10'
+                      : 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-900/10'
+                  }`}
+                >
+                  <p className="font-medium text-foreground">{question.question}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Your answer: <span className={`font-medium ${isCorrect ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{userAnswer}</span>
+                  </p>
+                  {!isCorrect && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Correct answer: <span className="font-medium text-foreground">{question.answer}</span>
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Quiz Dialog */}
       <Dialog open={quizDialogOpen} onOpenChange={handleQuizDialogChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-none w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] rounded-lg border border-border bg-card p-6 shadow-lg max-h-[85vh] overflow-hidden" style={{ maxWidth: '800px' }}>
           <DialogHeader>
             <DialogTitle>Claim Your Session Points</DialogTitle>
             <DialogDescription>
@@ -1987,75 +2353,49 @@ export function Sessions({ user }) {
 
           {quizTotalQuestions > 0 && quizCompleted && (
             <div className="space-y-6">
+              {/* content area scrollable to prevent dialog from expanding too tall */}
+              <div className="overflow-y-auto max-h-[65vh] pr-2">
               <div className="flex flex-col items-center gap-3 text-center">
-                <Badge className={quizHasPassed ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'}>
-                  {quizHasPassed ? 'Quiz passed' : 'Keep trying'}
-                </Badge>
-                <div>
-                  <p className="text-xl font-semibold text-foreground">
-                    You scored {quizScore} out of {quizTotalQuestions}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    You need at least {QUIZ_PASSING_SCORE} correct answers to unlock your reward.
-                  </p>
+                <div id="quiz-score" className="flex items-center gap-3 h-40">
+                  <div className='p-6 bg-green-100 text-green-700 rounded-lg'>
+                    <p className="text-xl font-semibold text-foreground">You scored {quizScore} / {quizTotalQuestions}</p>
+                    <p className="text-sm text-muted-foreground">You earned <strong>{claimedPointsAmount[activeQuizSessionId] ?? quizResultPoints}</strong> points for this attempt.</p>
+                  </div>
                 </div>
+                {/* show anchor to reveal answers only after submit */}
+                {!showAnswersDialog && (
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600 hover:underline"
+                    onClick={() => setShowAnswersDialog(true)}
+                  >
+                    See correct answers
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-3">
-                {quizQuestions.map((question) => {
-                  const userAnswer = quizAnswers[question.id];
-                  const isCorrect = userAnswer === question.answer;
-                  return (
-                    <div
-                      key={question.id}
-                      className={`rounded-lg border p-3 text-sm ${
-                        isCorrect
-                          ? 'border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-900/10'
-                          : 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-900/10'
-                      }`}
-                    >
-                      <p className="font-medium text-foreground">{question.question}</p>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Your answer: <span className={`font-medium ${isCorrect ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{userAnswer}</span>
-                      </p>
-                      {!isCorrect && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Correct answer: <span className="font-medium text-foreground">{question.answer}</span>
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+                {/* answers are shown in a separate dialog (click 'See correct answers') */}
               </div>
 
-              <div className="flex flex-col items-center gap-3 text-center">
+              {/* ensure final action area stays visible */}
+                <div className="flex flex-col items-center gap-3 text-center mt-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Award className="h-4 w-4 text-primary" />
                   <span>
-                    {quizHasPassed
-                      ? `Reward unlocked: ${quizResultPoints} points`
-                      : 'Reward locked until you pass the quiz.'}
+                    You earned {quizResultPoints} points for this attempt.
                   </span>
                 </div>
 
-                {quizHasPassed ? (
-                  <div className="flex flex-col gap-2 w-full md:w-auto">
-                    <Button
-                      onClick={handleQuizClaimPoints}
-                      disabled={quizPointsAlreadyClaimed}
-                      className="bg-purple-600 text-white hover:bg-purple-500"
-                    >
-                      {quizPointsAlreadyClaimed ? 'Points already claimed' : `Claim ${quizResultPoints} points`}
-                    </Button>
-                    {!quizPointsAlreadyClaimed && (
-                      <Button variant="ghost" onClick={handleQuizRetake}>
-                        Retake quiz
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <Button onClick={handleQuizRetake}>Try again</Button>
-                )}
+                <div className="text-sm text-muted-foreground">
+                  {quizPointsAlreadyClaimed ? (
+                    <div className="flex items-center gap-2 justify-center">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>Points awarded: {claimedPointsAmount[activeQuizSessionId] ?? quizResultPoints} points</span>
+                    </div>
+                  ) : (
+                    <div>Points will be awarded automatically for this attempt. This quiz can be attempted only once.</div>
+                  )}
+                </div>
               </div>
             </div>
           )}

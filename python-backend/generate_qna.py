@@ -9,7 +9,7 @@ import tempfile
 import os
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyCmvplxT5l4OcpDuOR3fM_Y83-3JFsOcWo")
+genai.configure(api_key="AIzaSyAJ_1QcfCEaheUhbBdDoXMXpF6DnMNbYHo")
 
 def get_qna():
     print("=== get_qna called ===")

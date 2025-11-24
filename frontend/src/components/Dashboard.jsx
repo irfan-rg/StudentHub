@@ -31,6 +31,8 @@ import {
 import ChatbotWidget from './ChatbotWidget';
 import NotificationWidget from './NotificationWidget';
 import { useSessionStore } from '../stores/useSessionStore';
+import { userService } from '../services/api';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useConnectionsStore } from '../stores/useConnectionsStore';
 
 export function Dashboard({ user }) {
@@ -69,6 +71,7 @@ export function Dashboard({ user }) {
   const setConnections = useConnectionsStore(state => state.setConnections);
   const loadSuggestedConnections = useConnectionsStore(state => state.loadSuggestedConnections);
   const loadConnections = useConnectionsStore(state => state.loadConnections);
+  const updateUser = useAuthStore(state => state.updateUser);
   const [connectModal, setConnectModal] = useState({ isOpen: false, partnerId: null, message: '' });
 
   const levelConfig = {
@@ -221,6 +224,15 @@ export function Dashboard({ user }) {
   };
 
   useEffect(() => {
+    // refresh profile from server when dashboard mounts so points are current
+    (async () => {
+      try {
+        const profile = await userService.getProfile();
+        if (profile && profile.user) updateUser(profile.user);
+      } catch (err) {
+        console.warn('Dashboard profile refresh failed', err);
+      }
+    })();
     // Load suggested connections and existing connections on component mount
     const loadInitialData = async () => {
       try {

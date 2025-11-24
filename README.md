@@ -224,6 +224,24 @@ cd frontend; npm run dev
 
 Then open **http://localhost:5173** in your browser!
 
+### 🔁 Start everything at once (VS Code)
+
+If you're using VS Code, run the batch file to open the project, then use VS Code tasks to start all services in integrated terminals:
+
+```powershell
+# from project root
+.\start-dev.bat
+```
+
+Then in VS Code:
+1. Press `Ctrl+Shift+P` (Command Palette)
+2. Type "Tasks: Run Task"
+3. Select "Start All Services"
+
+This will run frontend, backend, and python-backend in separate integrated terminals within VS Code.
+
+**Individual Services:** You can also run individual services using "Start Frontend", "Start Backend", or "Start Python Backend" tasks.
+
 ### 📝 Test Accounts
 
 After seeding the database, you can use these test accounts:

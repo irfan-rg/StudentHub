@@ -141,8 +141,10 @@ export const userService = {
   // Get user profile
   getProfile: async () => {
     try {
+      // The backend returns { success, message, user }
+      // return the full response so callers can access response.user consistently
       const response = await apiRequest(USER_ENDPOINTS.PROFILE);
-      return response.data;
+      return response;
     } catch (error) {
       throw new Error('Failed to fetch user profile');
     }

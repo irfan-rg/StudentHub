@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -21,7 +21,24 @@ import {
   Calendar
 } from 'lucide-react';
 
+import { userService } from '../services/api';
+import { useAuthStore } from '../stores/useAuthStore';
+
 export function Sidebar({ user, onLogout }) {
+  const updateUser = useAuthStore(state => state.updateUser);
+
+  useEffect(() => {
+    // Ensure sidebar shows the freshest profile from the server on mount
+    (async () => {
+      try {
+        const profile = await userService.getProfile();
+        if (profile && profile.user) updateUser(profile.user);
+      } catch (err) {
+        // non-blocking
+        console.warn('Sidebar profile refresh failed', err);
+      }
+    })();
+  }, [updateUser]);
   const location = useLocation();
   const currentPath = location.pathname;
 

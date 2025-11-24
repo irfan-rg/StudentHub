@@ -68,6 +68,18 @@ const userSchema = mongoose.Schema({
         type: Number,
         default: 0,
     },
+    // store quiz completion records so we can ensure idempotent awarding and audit
+    quizCompletions: [
+        {
+            sessionId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Session'
+            },
+            score: { type: Number, default: 0 },
+            awardedPoints: { type: Number, default: 0 },
+            createdAt: { type: Date, default: Date.now }
+        }
+    ],
     questionsAnswered: {
         type: Number,
         default: 0,

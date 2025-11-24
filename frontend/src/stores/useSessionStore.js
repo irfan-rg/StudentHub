@@ -119,6 +119,16 @@ export const useSessionStore = create(
           const created = await sessionService.createSession(sessionPayload)
           const normalized = normalizeSession(created)
           set({ sessions: normalized ? [normalized, ...get().sessions] : get().sessions, loading: false })
+          // Refresh current user profile in case server awarded points for creating a session
+          try {
+            const { userService } = await import('../services/api.js');
+            const profile = await userService.getProfile();
+            const { useAuthStore } = await import('./useAuthStore.js');
+            useAuthStore.getState().updateUser(profile?.user || {});
+          } catch (err) {
+            // non-blocking
+            console.warn('Failed to refresh profile after creating session', err);
+          }
           return normalized
         } catch (error) {
           set({ error: error.message || 'Failed to create session', loading: false })

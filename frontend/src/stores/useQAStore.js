@@ -126,6 +126,19 @@ export const useQAStore = create(
           const normalized = normalizeQuestion(newQuestion, currentUserId);
           if (normalized) {
             set({ questions: [normalized, ...get().questions], loading: false });
+            // If the current user asked the question and points were awarded, refresh profile
+            const currentUserId = get().currentUserId;
+            if (currentUserId && String(normalized.author?.id) === String(currentUserId)) {
+              try {
+                const { userService } = await import('../services/api.js');
+                const profile = await userService.getProfile();
+                const { useAuthStore } = await import('../stores/useAuthStore.js');
+                // updateUser needs to be invoked from the store itself
+                useAuthStore.getState().updateUser(profile?.user || {});
+              } catch (err) {
+                console.warn('Failed to refresh profile after asking question', err);
+              }
+            }
           } else {
             set({ loading: false });
           }
@@ -151,6 +164,22 @@ export const useQAStore = create(
               ),
               loading: false
             });
+            // If the current user added an answer and points likely were awarded, refresh profile
+            const currentUserId = get().currentUserId;
+            if (currentUserId) {
+              // find the newly added answer (likely last)
+              const addedAnswer = normalized.answerList.find(a => String(a.author?.id) === String(currentUserId));
+              if (addedAnswer) {
+                try {
+                  const { userService } = await import('../services/api.js');
+                  const profile = await userService.getProfile();
+                  const { useAuthStore } = await import('../stores/useAuthStore.js');
+                  useAuthStore.getState().updateUser(profile?.user || {});
+                } catch (err) {
+                  console.warn('Failed to refresh profile after adding answer', err);
+                }
+              }
+            }
           } else {
             set({ loading: false });
           }

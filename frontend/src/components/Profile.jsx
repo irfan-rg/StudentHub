@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -14,6 +14,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner@2.0.3';
 import { userService, skillsService } from '../services/api';
+import { useAuthStore } from '../stores/useAuthStore';
 import { 
   User, 
   Mail, 
@@ -44,6 +45,19 @@ export function Profile({ user, onUpdateUser }) {
   });
 
   const [manageSkillsOpen, setManageSkillsOpen] = useState(false);
+  const updateUser = useAuthStore(state => state.updateUser);
+
+  // Make sure we have the freshest profile when visiting Profile
+  useEffect(() => {
+    (async () => {
+      try {
+        const profile = await userService.getProfile();
+        if (profile && profile.user) updateUser(profile.user);
+      } catch (err) {
+        console.warn('Profile refresh failed', err);
+      }
+    })();
+  }, [updateUser]);
   const [teachSkills, setTeachSkills] = useState(user.skillsCanTeach || []);
   const [learnSkills, setLearnSkills] = useState(user.skillsWantToLearn || []);
   const [searchTerm, setSearchTerm] = useState('');

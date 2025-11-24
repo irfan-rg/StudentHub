@@ -460,6 +460,7 @@ Learning session management with PDF quiz generation.
 1. **Session List View**
    - Upcoming sessions
    - Past sessions (with completion status)
+   - Note: sessions created manually are evaluated on the client by comparing the scheduled date/time and duration to the current time. When a session's scheduled end time passes it will be shown as `Completed` immediately (no grace period) and its meeting link (for video sessions) will display as `Session expired` instead of allowing joins. When scheduling a session for the current day the form will default to the next available start time slot to make same-day scheduling straightforward.
    - Filter by status, type, partner
    - Search by title
 
