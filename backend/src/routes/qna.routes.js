@@ -9,6 +9,7 @@ import {
     upvoteAnswer, 
     upvoteQuestion 
 } from '../controllers/qna.controller.js'
+import { deleteQuestion, deleteAnswer } from '../controllers/qna.controller.js'
 import { verifyToken } from '../utils/verifyUser.js'
 
 const router = express()
@@ -25,5 +26,7 @@ router.put('/upvoteQuestion', verifyToken, upvoteQuestion)
 router.put('/downvoteQuestion', verifyToken, downvoteQuestion)
 router.put('/upvoteAnswer', verifyToken, upvoteAnswer)
 router.put('/downvoteAnswer', verifyToken, downvoteAnswer)
+router.post('/delete-question', verifyToken, deleteQuestion)
+router.post('/delete-answer', verifyToken, deleteAnswer)
 
 export default router

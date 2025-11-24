@@ -456,3 +456,64 @@ export const getQuestionsByUser = async (req, res, next) => {
     }
 
 }
+
+export const deleteQuestion = async (req, res, next) => {
+    try {
+        const { questionId } = req.body;
+        const { id } = req.user;
+
+        if (!questionId) return next(errorHandler(400, 'questionId is required'));
+
+        const question = await Question.findById(questionId);
+        if (!question) return next(errorHandler(404, 'Question not found'));
+
+        // Only the author may delete the question
+        if (String(question.askedBy) !== String(id)) {
+            return next(errorHandler(403, 'Not authorized to delete this question'));
+        }
+
+        await Question.findByIdAndDelete(questionId);
+
+        // Remove any QA notifications related to this question
+        try {
+            await Notification.deleteMany({ 'metadata.questionId': questionId });
+        } catch (err) {
+            console.warn('Failed to clear QA notifications for deleted question', err);
+        }
+
+        res.status(200).json({ success: true, message: 'Question deleted successfully' });
+    } catch (error) {
+        next(errorHandler(500, error.message));
+    }
+}
+
+export const deleteAnswer = async (req, res, next) => {
+    try {
+        const { questionId, answerId } = req.body;
+        const { id } = req.user;
+
+        if (!questionId || !answerId) return next(errorHandler(400, 'questionId and answerId are required'));
+
+        const question = await Question.findById(questionId);
+        if (!question) return next(errorHandler(404, 'Question not found'));
+
+        const answer = question.answers.find(a => String(a._id) === String(answerId));
+        if (!answer) return next(errorHandler(404, 'Answer not found'));
+
+        // Only the user who posted the answer may delete it
+        if (String(answer.answeredBy) !== String(id)) {
+            return next(errorHandler(403, 'Not authorized to delete this answer'));
+        }
+
+        question.answers = question.answers.filter(a => String(a._id) !== String(answerId));
+        await question.save();
+
+        const populated = await Question.findById(question._id)
+            .populate('askedBy', 'name avatar points')
+            .populate('answers.answeredBy', 'name avatar');
+
+        res.status(200).json({ success: true, message: 'Answer deleted', data: { question: populated } });
+    } catch (error) {
+        next(errorHandler(500, error.message));
+    }
+}

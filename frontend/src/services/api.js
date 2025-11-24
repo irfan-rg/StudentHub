@@ -138,6 +138,15 @@ export const authService = {
 
 // User Services
 export const userService = {
+    // Search users by name or email
+    searchUsers: async (query) => {
+      try {
+        const response = await apiRequest(`${USER_ENDPOINTS.SEARCH}?q=${encodeURIComponent(query)}`);
+        return response.data;
+      } catch (error) {
+        throw new Error('Failed to search users');
+      }
+    },
   // Get user profile
   getProfile: async () => {
     try {
@@ -593,6 +602,32 @@ export const qaService = {
     } catch (error) {
       throw new Error('Failed to downvote answer');
     }
+  },
+
+  // Delete a question (author only)
+  deleteQuestion: async (questionId) => {
+    try {
+      const response = await apiRequest(QA_ENDPOINTS.DELETE_QUESTION || '/qna/delete-question', {
+        method: 'POST',
+        body: JSON.stringify({ questionId })
+      });
+      return response.data || response;
+    } catch (error) {
+      throw new Error('Failed to delete question');
+    }
+  },
+
+  // Delete an answer (author only)
+  deleteAnswer: async (questionId, answerId) => {
+    try {
+      const response = await apiRequest(QA_ENDPOINTS.DELETE_ANSWER || '/qna/delete-answer', {
+        method: 'POST',
+        body: JSON.stringify({ questionId, answerId })
+      });
+      return response.data?.question || response.data || response;
+    } catch (error) {
+      throw new Error('Failed to delete answer');
+    }
   }
 };
 
@@ -608,6 +643,7 @@ export const leaderboardService = {
       throw new Error('Failed to fetch leaderboard');
     }
   },
+  // Get user rank
 
   // Get user rank
   getUserRank: async (userId) => {

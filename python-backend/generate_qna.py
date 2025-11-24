@@ -28,7 +28,7 @@ def get_qna():
     user_prompt = """Generate 5-6 multiple choice questions from this document. 
     Format your response as a JSON array with objects having these exact keys:
     - question: the question text
-    - options: array of 4 answer options
+    - options: array of 4 answer options (short in length)
     - answer: the correct answer (must match one of the options exactly)
     
     Return ONLY the JSON array, no markdown formatting, no explanation text."""

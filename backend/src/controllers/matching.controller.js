@@ -47,7 +47,7 @@ export const getSuggestions = async (req, res, next) => {
             const recommendedUsers = await User.find({
                 _id: { $in: userIds },
                 _id: { $ne: id } // Exclude current user
-            }).select('name email college educationLevel avatar skillsCanTeach rating points badges')
+            }).select('name email college educationLevel avatar skillsCanTeach rating points badges sessionsCompleted')
 
             // Merge with similarity scores
             const usersWithSimilarity = recommendedUsers.map(user => {
@@ -71,7 +71,7 @@ export const getSuggestions = async (req, res, next) => {
                 _id: { $ne: id }
             })
                 .limit(10)
-                .select('name email college educationLevel avatar skillsCanTeach rating points badges')
+                .select('name email college educationLevel avatar skillsCanTeach rating points badges sessionsCompleted')
 
             res.status(200).json({
                 success: true,
@@ -128,7 +128,7 @@ export const findUsers = async (req, res, next) => {
         }
 
         const users = await User.find(filter)
-            .select('name email college educationLevel avatar skillsCanTeach skillsWantToLearn rating points badges bio connections')
+            .select('name email college educationLevel avatar skillsCanTeach skillsWantToLearn rating points badges bio connections sessionsCompleted')
             .limit(50)
             .sort({ rating: -1, points: -1 }) // Sort by rating and points
 
@@ -149,7 +149,7 @@ export const getConnections = async (req, res, next) => {
         const { id } = req.user
 
         const user = await User.findById(id)
-            .populate('connections', 'name email college educationLevel avatar skillsCanTeach rating')
+            .populate('connections', 'name email college educationLevel avatar skillsCanTeach rating points sessionsCompleted')
 
         if (!user) {
             return next(errorHandler(404, 'User not found'))
@@ -177,7 +177,7 @@ export const getConnectionRequests = async (req, res, next) => {
             type: 'connection_request',
             isRead: false
         })
-            .populate('sender', 'name email college educationLevel avatar skillsCanTeach rating')
+            .populate('sender', 'name email college educationLevel avatar skillsCanTeach rating points sessionsCompleted')
             .sort({ createdAt: -1 })
 
         // Get requests sent by the user (still pending)
@@ -186,7 +186,7 @@ export const getConnectionRequests = async (req, res, next) => {
             type: 'connection_request',
             isRead: false
         })
-            .populate('recipient', 'name email college educationLevel avatar skillsCanTeach rating')
+            .populate('recipient', 'name email college educationLevel avatar skillsCanTeach rating points sessionsCompleted')
             .sort({ createdAt: -1 })
 
         res.status(200).json({

@@ -1,3 +1,25 @@
+// Search users by name or email (for Discover)
+export const searchUsers = async (req, res, next) => {
+    try {
+        const { q } = req.query;
+        const currentUserId = req.user?.id;
+        if (!q || q.trim().length < 2) {
+            return res.status(400).json({ success: false, message: 'Search query too short' });
+        }
+        // Case-insensitive partial match on name or email
+        const regex = new RegExp(q, 'i');
+        const users = await User.find({
+            $or: [
+                { name: regex },
+                { email: regex }
+            ],
+            _id: { $ne: currentUserId }
+        }).select('name email avatar college skillsCanTeach skillsWantToLearn badges points sessionsCompleted rating');
+        res.status(200).json({ success: true, data: users });
+    } catch (error) {
+        next(errorHandler(500, error.message));
+    }
+};
 import User from '../models/user.model.js'
 import { errorHandler } from '../utils/errorHandler.js'
 

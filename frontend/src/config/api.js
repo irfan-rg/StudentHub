@@ -25,7 +25,8 @@ export const USER_ENDPOINTS = {
   UPDATE_PROFILE: '/user/update-details',
   GET_USER: '/user/:id',
   UPDATE_SETTINGS: '/user/settings',
-  UPLOAD_AVATAR: '/user/avatar'
+  UPLOAD_AVATAR: '/user/avatar',
+  SEARCH: '/user/search'
 };
 
 // Skills Endpoints
@@ -73,6 +74,8 @@ export const QA_ENDPOINTS = {
   DOWNVOTE_QUESTION: '/qna/downvoteQuestion',
   UPVOTE_ANSWER: '/qna/upvoteAnswer',
   DOWNVOTE_ANSWER: '/qna/downvoteAnswer'
+  ,DELETE_QUESTION: '/qna/delete-question'
+  ,DELETE_ANSWER: '/qna/delete-answer'
 };
 
 // Leaderboard Endpoints

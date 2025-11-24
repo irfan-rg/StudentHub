@@ -38,7 +38,7 @@ const normalizeQuestion = (backendQuestion, currentUserId) => {
     createdAt: new Date(backendQuestion.askedAt || backendQuestion.createdAt || Date.now()),
     isAnswered: answers.length > 0,
     userVote,
-    answerList: answers.map(answer => normalizeAnswer(answer, currentUserId)),
+    answerList: (answers || []).slice().sort((a, b) => (new Date(b.answeredAt || b.createdAt)).getTime() - (new Date(a.answeredAt || a.createdAt)).getTime()).map(answer => normalizeAnswer(answer, currentUserId)),
     raw: backendQuestion
   };
 };
@@ -69,6 +69,7 @@ const normalizeAnswer = (backendAnswer, currentUserId) => {
     upvotes: upvotesArray.length,
     downvotes: downvotesArray.length,
     timeAgo: formatTimeAgo(backendAnswer.answeredAt || backendAnswer.createdAt),
+    createdAt: new Date(backendAnswer.answeredAt || backendAnswer.createdAt || Date.now()),
     isAccepted: backendAnswer.isAccepted || false,
     userVote,
     raw: backendAnswer
@@ -316,6 +317,51 @@ export const useQAStore = create(
         } catch (error) {
           // Revert on error
           set({ questions: originalQuestions });
+          throw error;
+        }
+      },
+
+      // Delete a question (only the author may delete)
+      deleteQuestion: async (questionId) => {
+        set({ loading: true, error: null });
+        const original = get().questions;
+        try {
+          // Optimistically remove the question from UI
+          set({ questions: original.filter(q => q.id !== questionId) });
+          await qaService.deleteQuestion(questionId);
+          set({ loading: false });
+        } catch (error) {
+          // Revert on failure
+          set({ questions: original, error: error.message || 'Failed to delete question', loading: false });
+          throw error;
+        }
+      },
+
+      // Delete an answer (only the answer author may delete)
+      deleteAnswer: async (questionId, answerId) => {
+        set({ loading: true, error: null });
+        const originalQuestions = get().questions;
+        try {
+          // Optimistically remove the answer locally
+          set({
+            questions: originalQuestions.map(q => {
+              if (q.id !== questionId) return q;
+              return { ...q, answerList: q.answerList.filter(a => a.id !== answerId), answerCount: Math.max(0, (q.answerCount || 0) - 1) };
+            })
+          });
+
+          const updated = await qaService.deleteAnswer(questionId, answerId);
+          // updated may be the new question object - normalize and replace
+          const currentUserId = get().currentUserId;
+          const normalized = normalizeQuestion(updated, currentUserId);
+          if (normalized) {
+            set({ questions: get().questions.map(q => q.id === questionId ? normalized : q), loading: false });
+          } else {
+            set({ loading: false });
+          }
+        } catch (error) {
+          // Revert on failure
+          set({ questions: originalQuestions, error: error.message || 'Failed to delete answer', loading: false });
           throw error;
         }
       },

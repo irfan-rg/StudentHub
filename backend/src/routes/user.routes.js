@@ -6,7 +6,8 @@ import {
     updateUserDetails,
     verifyUser,
     getLeaderboard,
-    getUserRank
+    getUserRank,
+    searchUsers
 } from '../controllers/user.controller.js'
 import { verifyToken } from '../utils/verifyUser.js'
 
@@ -17,6 +18,7 @@ router.get('/', (req, res) => {
 })
 
 router.get('/profile', verifyToken, getUserProfile)
+router.get('/search', verifyToken, searchUsers)
 router.get('/leaderboard/:filter', verifyToken, getLeaderboard)
 router.get('/leaderboard/rank/:userId', verifyToken, getUserRank)
 router.get('/:id', verifyToken, getUserById)

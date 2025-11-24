@@ -83,53 +83,77 @@ const generateBio = (name, university, skills) => {
     return getRandomItem(bios);
 };
 
-// Generate users
+// Generate users with realistic join dates and activity patterns
 const generateUsers = () => {
     const users = [];
     const allSkills = Object.values(skills).flat();
+    const now = new Date();
     
     indianNames.forEach((name, index) => {
         const university = getRandomItem(indianUniversities);
         const fullName = `${name.first} ${name.last}`;
         const email = `${name.first.toLowerCase()}.${name.last.toLowerCase()}@${university.name.toLowerCase().replace(/\s+/g, '')}.edu.in`;
         
-        // Select random skills to teach (3-6 skills)
-        const teachCount = getRandomNumber(3, 6);
+        // User joined platform between 2-12 months ago (realistic timeline)
+        const monthsAgo = getRandomNumber(2, 12);
+        const joinDate = new Date(now);
+        joinDate.setMonth(joinDate.getMonth() - monthsAgo);
+        joinDate.setDate(getRandomNumber(1, 28));
+        joinDate.setHours(getRandomNumber(8, 22), getRandomNumber(0, 59));
+        
+        // Activity profiles: veteran (20%), active (35%), moderate (30%), new (15%)
+        const rand = Math.random();
+        let activityProfile;
+        if (rand < 0.20) {
+            activityProfile = { type: 'veteran', monthsActive: monthsAgo, avgSessionsPerMonth: 4, avgQuestionsPerMonth: 3 };
+        } else if (rand < 0.55) {
+            activityProfile = { type: 'active', monthsActive: Math.floor(monthsAgo * 0.8), avgSessionsPerMonth: 2, avgQuestionsPerMonth: 1.5 };
+        } else if (rand < 0.85) {
+            activityProfile = { type: 'moderate', monthsActive: Math.floor(monthsAgo * 0.5), avgSessionsPerMonth: 1, avgQuestionsPerMonth: 0.5 };
+        } else {
+            activityProfile = { type: 'new', monthsActive: Math.min(2, monthsAgo), avgSessionsPerMonth: 0.5, avgQuestionsPerMonth: 0.3 };
+        }
+        
+        // Select skills based on activity level
+        const teachCount = activityProfile.type === 'veteran' ? getRandomNumber(5, 8) : 
+                          activityProfile.type === 'active' ? getRandomNumber(4, 6) : 
+                          getRandomNumber(2, 4);
         const teachSkillNames = getRandomItems(allSkills, teachCount);
         const skillsCanTeach = teachSkillNames.map(skillName => ({
             name: skillName,
-            level: getRandomItem(skillLevels),
+            level: activityProfile.type === 'veteran' ? getRandomItem(['intermediate', 'advanced', 'expert']) :
+                   activityProfile.type === 'active' ? getRandomItem(['beginner', 'intermediate', 'advanced']) :
+                   getRandomItem(['beginner', 'intermediate']),
             category: Object.keys(skills).find(key => skills[key].includes(skillName))
         }));
         
-        // Select random skills to learn (2-4 skills, different from teaching)
         const learnSkills = allSkills.filter(s => !teachSkillNames.includes(s));
-        const learnCount = getRandomNumber(2, 4);
+        const learnCount = getRandomNumber(2, 5);
         const skillsWantToLearn = getRandomItems(learnSkills, learnCount).map(skillName => ({
             name: skillName,
             category: Object.keys(skills).find(key => skills[key].includes(skillName))
         }));
         
-        // Random points, sessions, questions based on activity level
-        const activityLevel = Math.random();
-        const points = activityLevel > 0.7 ? getRandomNumber(200, 500) : 
-                       activityLevel > 0.4 ? getRandomNumber(50, 199) : 
-                       getRandomNumber(0, 49);
+        // Points accumulated over time (realistic for activity level)
+        const basePoints = activityProfile.type === 'veteran' ? getRandomNumber(400, 800) :
+                          activityProfile.type === 'active' ? getRandomNumber(150, 400) :
+                          activityProfile.type === 'moderate' ? getRandomNumber(50, 150) :
+                          getRandomNumber(0, 50);
         
-        const sessionsCompleted = Math.floor(points / 50);
-        const questionsAnswered = Math.floor(points / 25);
-        const questionsAsked = getRandomNumber(0, 10);
+        const estimatedSessions = Math.floor(activityProfile.monthsActive * activityProfile.avgSessionsPerMonth);
+        const estimatedQuestions = Math.floor(activityProfile.monthsActive * activityProfile.avgQuestionsPerMonth);
         
-        // Assign badges based on activity
+        // Assign badges based on realistic activity
         const userBadges = [];
-        if (points > 0) userBadges.push('First Step');
-        if (sessionsCompleted > 3) userBadges.push('Helper');
-        if (questionsAnswered > 10) userBadges.push('Knowledge Sharer');
-        if (points > 200) userBadges.push('Quick Learner');
-        if (sessionsCompleted > 10) userBadges.push('Mentor');
-        if (points > 400) userBadges.push('Legend');
+        if (basePoints > 0) userBadges.push('First Step');
+        if (estimatedSessions > 3) userBadges.push('Helper');
+        if (estimatedQuestions > 5) userBadges.push('Knowledge Sharer');
+        if (basePoints > 200) userBadges.push('Quick Learner');
+        if (estimatedSessions > 10) userBadges.push('Mentor');
+        if (basePoints > 500) userBadges.push('Legend');
         
-        const rating = points > 100 ? Number((3.5 + Math.random() * 1.5).toFixed(1)) : 0;
+        const rating = estimatedSessions > 5 ? Number((3.8 + Math.random() * 1.2).toFixed(1)) : 
+                       estimatedSessions > 0 ? Number((3.5 + Math.random() * 1.0).toFixed(1)) : 0;
         
         users.push({
             name: fullName,
@@ -141,22 +165,25 @@ const generateUsers = () => {
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.first}${name.last}`,
             skillsCanTeach,
             skillsWantToLearn,
-            points,
+            points: basePoints,
             badges: userBadges,
-            sessionsCompleted,
-            questionsAnswered,
-            questionsAsked,
+            sessionsCompleted: estimatedSessions,
+            questionsAnswered: estimatedQuestions,
+            questionsAsked: Math.floor(estimatedQuestions * 0.6),
             rating,
-            connections: []
+            connections: [],
+            createdAt: joinDate,
+            _activityProfile: activityProfile // temp metadata for seed logic
         });
     });
     
     return users;
 };
 
-// Generate sessions
+// Generate sessions spread over realistic timeline (past 6 months + next 2 months)
 const generateSessions = (users) => {
     const sessions = [];
+    const now = new Date();
     const topics = [
         'Introduction to React Hooks',
         'Building RESTful APIs with Node.js',
@@ -172,39 +199,57 @@ const generateSessions = (users) => {
         'Mobile App Development',
         'Cybersecurity Fundamentals',
         'UI/UX Design Principles',
-        'Blockchain Technology Overview'
+        'Blockchain Technology Overview',
+        'Advanced JavaScript Patterns',
+        'Testing and TDD Strategies',
+        'GraphQL Deep Dive',
+        'DevOps Best Practices',
+        'React Native Essentials'
     ];
     
     const sessionTypes = ['Video Session', 'In Person'];
     const durations = ['30 minutes', '60 minutes', '90 minutes', '2 hours'];
     
-    // Create 15-20 sessions
-    const sessionCount = getRandomNumber(15, 20);
+    // Create 40-50 sessions (realistic for a growing platform)
+    const sessionCount = getRandomNumber(40, 50);
     
     for (let i = 0; i < sessionCount; i++) {
-        const creator = getRandomItem(users);
-        const topic = getRandomItem(topics);
+        // Pick creator weighted by activity level (active users create more)
+        const activeUsers = users.filter(u => u.sessionsCompleted > 5 || u.points > 150);
+        const creator = Math.random() < 0.7 && activeUsers.length > 0 ? getRandomItem(activeUsers) : getRandomItem(users);
+        
+        // Pick topic relevant to creator's skills (60% of the time)
+        const relevantTopics = topics.filter(t => 
+            creator.skillsCanTeach.some(s => t.toLowerCase().includes(s.name.toLowerCase()))
+        );
+        const topic = relevantTopics.length > 0 && Math.random() < 0.6 ? getRandomItem(relevantTopics) : getRandomItem(topics);
+        
         const sessionType = getRandomItem(sessionTypes);
         const duration = getRandomItem(durations);
         
-        // Random date in next 30 days
-        const daysAhead = getRandomNumber(1, 30);
-        const sessionDate = new Date();
-        sessionDate.setDate(sessionDate.getDate() + daysAhead);
+        // Sessions distributed over past 6 months and next 2 months
+        const daysOffset = getRandomNumber(-180, 60);
+        const sessionDate = new Date(now);
+        sessionDate.setDate(sessionDate.getDate() + daysOffset);
+        sessionDate.setHours(getRandomNumber(9, 20), [0, 15, 30, 45][getRandomNumber(0, 3)]);
         
-        // Some sessions are past (completed)
-        const isPast = Math.random() > 0.6;
-        if (isPast) {
-            sessionDate.setDate(sessionDate.getDate() - getRandomNumber(1, 60));
-        }
+        const isPast = sessionDate < now;
+        const isCompleted = isPast && Math.random() > 0.1; // 90% of past sessions completed
         
-        // Random members (2-5 people)
-        const memberCount = getRandomNumber(2, 5);
-        const possibleMembers = users.filter(u => u.email !== creator.email);
-        const members = getRandomItems(possibleMembers, memberCount).map(u => u._id);
+        // Members: prefer same university, similar skills
+        const sameUniversity = users.filter(u => u.college === creator.college && u.email !== creator.email);
+        const similarSkills = users.filter(u => 
+            u.email !== creator.email && 
+            u.skillsWantToLearn.some(learn => creator.skillsCanTeach.some(teach => teach.name === learn.name))
+        );
         
-        // Ratings for completed sessions
-        const ratings = isPast ? members.slice(0, getRandomNumber(1, memberCount)).map(memberId => ({
+        const memberCount = getRandomNumber(3, 7);
+        let memberPool = [...new Set([...sameUniversity, ...similarSkills, ...users])];
+        memberPool = memberPool.filter(u => u.email !== creator.email);
+        const members = getRandomItems(memberPool, Math.min(memberCount, memberPool.length)).map(u => u._id);
+        
+        // Ratings for completed sessions (70-90% of participants rate)
+        const ratings = isCompleted ? members.slice(0, Math.floor(members.length * (0.7 + Math.random() * 0.2))).map(memberId => ({
             user: memberId,
             rating: getRandomNumber(3, 5),
             comment: getRandomItem([
@@ -212,19 +257,33 @@ const generateSessions = (users) => {
                 'Very informative and well-structured.',
                 'Excellent explanation of concepts.',
                 'Would love more sessions like this.',
-                'Clear and helpful session.'
+                'Clear and helpful session.',
+                'Perfect pace and coverage.',
+                'Answered all my doubts.',
+                'Really enjoyed this!',
+                'Highly recommend.',
+                'Practical examples were great.'
             ]),
-            createdAt: new Date(sessionDate.getTime() + 2 * 60 * 60 * 1000)
+            createdAt: new Date(sessionDate.getTime() + getRandomNumber(1, 24) * 60 * 60 * 1000)
         })) : [];
         
         const averageRating = ratings.length > 0 
             ? Number((ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(2))
             : 0;
         
+        // Quiz questions for completed sessions (60% have quizzes)
+        const hasQuiz = isCompleted && Math.random() < 0.6;
+        const quizQuestions = hasQuiz ? Array(getRandomNumber(3, 6)).fill().map((_, idx) => ({
+            id: `q${i}_${idx}`,
+            question: `Question ${idx + 1} about ${topic}`,
+            options: [`Option A`, `Option B`, `Option C`, `Option D`],
+            answer: getRandomItem([`Option A`, `Option B`, `Option C`, `Option D`])
+        })) : [];
+        
         sessions.push({
             createdBy: creator._id,
             topic,
-            details: `Join us for an interactive session on ${topic}. All skill levels welcome!`,
+            details: `Join us for an interactive session on ${topic}. ${isPast ? 'Session completed successfully!' : 'All skill levels welcome!'}`,
             sessionType,
             duration,
             location: sessionType === 'In Person' ? `${creator.college} Campus, Room ${getRandomNumber(101, 599)}` : undefined,
@@ -234,7 +293,9 @@ const generateSessions = (users) => {
             sessionOn: sessionDate,
             ratings,
             averageRating,
-            status: isPast ? 'Completed' : 'Upcoming'
+            quizQuestions,
+            status: isCompleted ? 'Completed' : isPast ? 'Cancelled' : 'Upcoming',
+            createdAt: new Date(sessionDate.getTime() - getRandomNumber(3, 14) * 24 * 60 * 60 * 1000)
         });
     }
     
@@ -265,21 +326,34 @@ const generateQuestions = (users) => {
     questionTemplates.forEach(template => {
         const asker = getRandomItem(users);
         
-        // Create question
+        // Questions spread over past 12 months (weighted toward recent)
+        const daysAgo = Math.random() < 0.5 ? getRandomNumber(1, 30) : getRandomNumber(31, 365);
+        const askedAt = new Date();
+        askedAt.setDate(askedAt.getDate() - daysAgo);
+        askedAt.setHours(getRandomNumber(8, 23), getRandomNumber(0, 59));
+        
         const question = {
             title: template.title,
             description: `I'm working on a project and need help understanding ${template.tags[0]}. Can someone explain this concept or share resources?`,
             tags: template.tags,
             askedBy: asker._id,
-            upVotes: Array(getRandomNumber(0, 5)).fill().map(() => getRandomItem(users)._id),
+            askedAt,
+            upVotes: Array(getRandomNumber(0, 8)).fill().map(() => getRandomItem(users)._id),
             downVotes: Array(getRandomNumber(0, 2)).fill().map(() => getRandomItem(users)._id),
             answers: []
         };
         
-        // Add 1-3 answers
-        const answerCount = getRandomNumber(1, 3);
+        // Add 0-5 answers (some questions unanswered, popular ones have more)
+        const answerCount = Math.random() < 0.15 ? 0 : getRandomNumber(1, 5);
         for (let i = 0; i < answerCount; i++) {
-            const answerer = getRandomItem(users.filter(u => u.email !== asker.email));
+            // Answerers more likely to have relevant skills
+            const skilledAnswerers = users.filter(u => 
+                u.email !== asker.email && 
+                u.skillsCanTeach.some(s => template.tags.some(tag => tag.toLowerCase().includes(s.name.toLowerCase())))
+            );
+            const answerer = skilledAnswerers.length > 0 && Math.random() < 0.7 ? 
+                getRandomItem(skilledAnswerers) : 
+                getRandomItem(users.filter(u => u.email !== asker.email));
             const answerTexts = [
                 `Here's a detailed explanation: ${template.tags[0]} is commonly used for... I recommend checking out the official documentation.`,
                 `I've worked with this before. The key concept is... Let me know if you need more clarification.`,
@@ -287,9 +361,15 @@ const generateQuestions = (users) => {
                 `I had the same doubt earlier. What worked for me was... Feel free to ask if you have questions.`
             ];
             
+            // create answer timestamp after question askedAt (within a few days)
+            const answerDelayDays = getRandomNumber(0, Math.max(1, Math.floor(daysAgo / 2)));
+            const answeredAt = new Date(askedAt.getTime());
+            answeredAt.setDate(answeredAt.getDate() + answerDelayDays + getRandomNumber(0, 2));
+
             question.answers.push({
                 answer: getRandomItem(answerTexts),
                 answeredBy: answerer._id,
+                answeredAt,
                 upVotes: Array(getRandomNumber(0, 8)).fill().map(() => getRandomItem(users)._id),
                 downVotes: Array(getRandomNumber(0, 1)).fill().map(() => getRandomItem(users)._id)
             });
@@ -323,104 +403,99 @@ const seedDatabase = async () => {
         const users = await User.insertMany(usersData);
         console.log(`✅ Created ${users.length} users\n`);
         
-        // Generate connections and connection requests
-        console.log('🔗 Creating connections and connection requests...');
-        let connectionCount = 0;
-        let requestCount = 0;
-        let acceptedNotifCount = 0;
-        let declinedNotifCount = 0;
+        // Give each user some connections (friends on platform)
+        console.log('🔗 Setting up user connections...');
         
-        // Create some direct connections (5-7 connections)
-        for (let i = 0; i < 7; i++) {
-            const user1 = getRandomItem(users);
-            const user2 = getRandomItem(users.filter(u => u._id.toString() !== user1._id.toString()));
+        for (const user of users) {
+            // Each user gets 3-8 connections (existing friends)
+            const connectionCount = getRandomNumber(3, 8);
             
-            if (!user1.connections.includes(user2._id) && !user2.connections.includes(user1._id)) {
-                user1.connections.push(user2._id);
-                user2.connections.push(user1._id);
-                await user1.save();
-                await user2.save();
-                connectionCount++;
-                
-                // 40% chance to create a connection_accepted notification
-                if (Math.random() < 0.4) {
-                    await Notification.create({
-                        recipient: user1._id,
-                        sender: user2._id,
-                        type: 'connection_accepted',
-                        title: 'Connection Accepted',
-                        message: `${user2.name} accepted your connection request`,
-                        isRead: Math.random() < 0.5,
-                        metadata: {
-                            actionType: 'view',
-                            actionUrl: `/connections`
-                        }
-                    });
-                    acceptedNotifCount++;
-                }
-            }
-        }
-        
-        // Create pending connection requests (8-10 requests)
-        for (let i = 0; i < 10; i++) {
-            const sender = getRandomItem(users);
-            const recipient = getRandomItem(users.filter(u => 
-                u._id.toString() !== sender._id.toString() && 
-                !sender.connections.includes(u._id)
-            ));
+            // Prefer connecting with users from same university or with shared skills
+            const sameUni = users.filter(u => 
+                u._id.toString() !== user._id.toString() && 
+                u.college === user.college &&
+                !user.connections.includes(u._id)
+            );
             
-            if (recipient) {
-                // Check if request already exists
-                const existingRequest = await Notification.findOne({
-                    sender: sender._id,
-                    recipient: recipient._id,
-                    type: 'connection_request'
-                });
-                
-                if (!existingRequest) {
-                    await Notification.create({
-                        recipient: recipient._id,
-                        sender: sender._id,
-                        type: 'connection_request',
-                        title: 'New Connection Request',
-                        message: `${sender.name} wants to connect with you`,
-                        metadata: {
-                            actionType: 'accept',
-                            actionUrl: `/connections/${sender._id}`
-                        }
-                    });
-                    requestCount++;
-                }
-            }
-        }
-        
-        // Create some connection_declined notifications (3-5)
-        for (let i = 0; i < 4; i++) {
-            const decliner = getRandomItem(users);
-            const declined = getRandomItem(users.filter(u => 
-                u._id.toString() !== decliner._id.toString() && 
-                !decliner.connections.includes(u._id)
-            ));
+            const withSharedSkills = users.filter(u => 
+                u._id.toString() !== user._id.toString() && 
+                !user.connections.includes(u._id) &&
+                (u.skillsCanTeach.some(s1 => user.skillsWantToLearn.some(s2 => s2.name === s1.name)) ||
+                 u.skillsWantToLearn.some(s1 => user.skillsCanTeach.some(s2 => s2.name === s1.name)))
+            );
             
-            if (declined) {
-                await Notification.create({
-                    recipient: declined._id,
-                    sender: decliner._id,
-                    type: 'connection_declined',
-                    title: 'Connection Declined',
-                    message: `${decliner.name} declined your connection request`,
-                    isRead: Math.random() < 0.6,
-                    metadata: {
-                        actionType: 'view',
-                        actionUrl: `/connections`
+            // 60% from preferred pool, 40% random
+            const preferredPool = [...new Set([...sameUni, ...withSharedSkills])];
+            const potentialConnections = [];
+            
+            for (let i = 0; i < connectionCount; i++) {
+                let newConnection;
+                if (preferredPool.length > 0 && Math.random() < 0.6) {
+                    newConnection = getRandomItem(preferredPool);
+                    preferredPool.splice(preferredPool.indexOf(newConnection), 1);
+                } else {
+                    const available = users.filter(u => 
+                        u._id.toString() !== user._id.toString() && 
+                        !user.connections.includes(u._id) &&
+                        !potentialConnections.includes(u._id)
+                    );
+                    if (available.length > 0) {
+                        newConnection = getRandomItem(available);
                     }
-                });
-                declinedNotifCount++;
+                }
+                
+                if (newConnection && !user.connections.includes(newConnection._id)) {
+                    user.connections.push(newConnection._id);
+                    potentialConnections.push(newConnection._id);
+                }
+            }
+            
+            await user.save();
+        }
+        
+        console.log(`✅ Users now have connections\n`);
+        
+        // Create some pending connection requests (incoming requests for each user)
+        console.log('📨 Creating connection requests...');
+        let totalRequests = 0;
+        
+        for (const user of users) {
+            // Each user gets 2-5 incoming connection requests
+            const requestCount = getRandomNumber(2, 5);
+            
+            for (let i = 0; i < requestCount; i++) {
+                const sender = getRandomItem(users.filter(u => 
+                    u._id.toString() !== user._id.toString() && 
+                    !user.connections.includes(u._id)
+                ));
+                
+                if (sender) {
+                    // Check if request already exists
+                    const existingRequest = await Notification.findOne({
+                        sender: sender._id,
+                        recipient: user._id,
+                        type: 'connection_request'
+                    });
+                    
+                    if (!existingRequest) {
+                        await Notification.create({
+                            recipient: user._id,
+                            sender: sender._id,
+                            type: 'connection_request',
+                            title: 'New Connection Request',
+                            message: `${sender.name} wants to connect with you`,
+                            metadata: {
+                                actionType: 'accept',
+                                actionUrl: `/connections/${sender._id}`
+                            }
+                        });
+                        totalRequests++;
+                    }
+                }
             }
         }
         
-        console.log(`✅ Created ${connectionCount} connections, ${requestCount} pending requests`);
-        console.log(`✅ Created ${acceptedNotifCount} accepted and ${declinedNotifCount} declined notifications\n`);
+        console.log(`✅ Created ${totalRequests} pending connection requests\n`);
         
         // Generate and insert sessions
         console.log('📅 Generating sessions...');
@@ -442,12 +517,99 @@ const seedDatabase = async () => {
             }
         }
         console.log('✅ Sessions linked to users\n');
+
+        // Recalculate and update sessionsCompleted for users based on linked sessions
+        console.log('🔁 Recalculating sessionsCompleted from linked sessions...');
+        for (const u of users) {
+            // Count completed sessions where the user is creator or a member
+            const completedCount = sessions.filter(s => s.status === 'Completed' && (String(s.createdBy) === String(u._id) || (s.members || []).some(m => String(m) === String(u._id)))).length;
+            // If we don't have any completed sessions, keep the previous sessionsCompleted as a fallback
+            const newCount = completedCount || u.sessionsCompleted || 0;
+            await User.findByIdAndUpdate(u._id, { sessionsCompleted: newCount });
+        }
+        console.log('✅ sessionsCompleted updated from sessions\n');
+
+        // Add some quiz completion records for active users (30% of users have quiz completions)
+        console.log('🧪 Adding sample quiz completion records for some users...');
+        const completedSessions = sessions.filter(s => s.status === 'Completed');
+        if (completedSessions.length > 0) {
+            for (const u of users) {
+                if (Math.random() < 0.30) { // 30% users have quiz completions
+                    const sampleCount = getRandomNumber(1, Math.min(4, completedSessions.length));
+                    const chosen = getRandomItems(completedSessions, sampleCount);
+                    const qrs = chosen.map(sess => ({
+                        sessionId: sess._id,
+                        score: getRandomNumber(60, 100),
+                        awardedPoints: getRandomNumber(10, 50),
+                        createdAt: new Date(sess.sessionOn.getTime() + (1000 * 60 * 60 * getRandomNumber(2, 6)))
+                    }));
+                    await User.findByIdAndUpdate(u._id, { $push: { quizCompletions: { $each: qrs } } });
+                }
+            }
+        }
+        console.log('✅ Sample quiz completion records added\n');
         
         // Generate and insert questions
         console.log('❓ Generating questions...');
         const questionsData = generateQuestions(users);
         const questions = await Question.insertMany(questionsData);
         console.log(`✅ Created ${questions.length} questions\n`);
+
+        // Create notifications for some QA activity (question answered / qa_activity)
+        console.log('🔔 Creating sample QA notifications...');
+        for (const q of questions) {
+            if (!Array.isArray(q.answers) || q.answers.length === 0) continue;
+            for (const a of q.answers) {
+                // 40% chance to create a notification for the asker
+                if (Math.random() < 0.4) {
+                    await Notification.create({
+                        recipient: q.askedBy,
+                        sender: a.answeredBy,
+                        type: 'question_answered',
+                        title: 'Your question received an answer',
+                        message: 'Someone answered your question — check it out!',
+                        isRead: Math.random() < 0.5,
+                        metadata: { questionId: q._id, answerId: a._id, actionType: 'view', actionUrl: `/qna?questionId=${q._id}` }
+                    });
+                }
+
+                // 25% chance to create a 'qa_activity' (upvote/mention) for the answer owner
+                if (Math.random() < 0.25) {
+                    const possibleRecipient = q.askedBy;
+                    await Notification.create({
+                        recipient: possibleRecipient,
+                        sender: a.answeredBy,
+                        type: 'qa_activity',
+                        title: 'QA activity',
+                        message: 'There was activity on a question you care about',
+                        isRead: Math.random() < 0.6,
+                        metadata: { questionId: q._id, answerId: a._id, actionType: 'view', actionUrl: `/qna?questionId=${q._id}` }
+                    });
+                }
+            }
+        }
+        console.log('✅ Sample QA notifications created\n');
+
+        // Create some session_invite notifications for a few sessions (simulate invites not accepted yet)
+        console.log('📨 Creating sample session_invite notifications...');
+        const upcomingSessions = sessions.filter(s => s.status === 'Upcoming');
+        for (const s of upcomingSessions.slice(0, Math.min(5, upcomingSessions.length))) {
+            // invite up to 2 users not in the session
+            const notIn = users.filter(u => !s.members.map(m => String(m)).includes(String(u._id)) && String(u._id) !== String(s.createdBy));
+            const toInvite = getRandomItems(notIn, Math.min(2, notIn.length));
+            for (const invitee of toInvite) {
+                await Notification.create({
+                    recipient: invitee._id,
+                    sender: s.createdBy,
+                    type: 'session_invite',
+                    title: 'You have been invited to a session',
+                    message: `${getRandomItem(users).name} invited you to join a session on ${s.topic}`,
+                    isRead: false,
+                    metadata: { sessionId: s._id, actionType: 'accept', actionUrl: `/sessions/${s._id}` }
+                });
+            }
+        }
+        console.log('✅ Sample session_invite notifications created\n');
         
         // Summary
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -455,19 +617,16 @@ const seedDatabase = async () => {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         console.log('📊 Summary:');
         console.log(`   👥 Users: ${users.length}`);
-        console.log(`   🔗 Connections: ${connectionCount}`);
-        console.log(`   📬 Pending Requests: ${requestCount}`);
-        console.log(`   ✅ Accepted Notifications: ${acceptedNotifCount}`);
-        console.log(`   ❌ Declined Notifications: ${declinedNotifCount}`);
         console.log(`   📅 Sessions: ${sessions.length}`);
-        console.log(`   ❓ Questions: ${questions.length}\n`);
+        console.log(`   ❓ Questions: ${questions.length}`);
+        console.log(`   📬 Connection Requests: ${totalRequests}\n`);
         
         console.log('🔐 Test Login Credentials:');
         console.log('   Email: arjun.sharma@iitdelhi.edu.in');
         console.log('   Password: password123\n');
         
         console.log('💡 All users have the same password: password123');
-        console.log('💡 Check notifications to see pending connection requests!\n');
+        console.log('💡 Each user has 3-8 connections and 2-5 pending requests\n');
         
         process.exit(0);
     } catch (error) {

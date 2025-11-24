@@ -15,7 +15,6 @@ import {
   Calendar, 
   Star, 
   MapPin, 
-  Clock, 
   Filter,
   UserPlus,
   Video,
@@ -26,6 +25,7 @@ import {
   Trash
 } from 'lucide-react';
 import { useConnectionsStore } from '../stores/useConnectionsStore';
+import { userService } from '../services/api';
 
 // Move levelLabels outside component to prevent recreation on every render
 const levelLabels = {
@@ -117,41 +117,44 @@ export function SkillMatching({ user }) {
     return () => clearInterval(interval);
   }, [loadConnections, loadSuggestedConnections]);
 
-  // Whenever suggestions change, apply current filters/search on top
+  // Whenever suggestions or searchTerm change, update students list
   useEffect(() => {
-    // Build filtered list from ML suggestions
-    let base = Array.isArray(suggested) ? [...suggested] : [];
-
-    // Apply search
-    if (searchTerm && searchTerm.trim() !== '') {
-      const term = searchTerm.trim().toLowerCase();
-      base = base.filter((s) =>
-        s.name?.toLowerCase().includes(term) ||
-        s.college?.toLowerCase().includes(term) ||
-        s.skillsCanTeach?.some((sk) => sk.name?.toLowerCase().includes(term))
-      );
-    }
-
-    // Apply skill filter
-    if (selectedSkill && selectedSkill !== 'all') {
-      base = base.filter((s) =>
-        s.skillsCanTeach?.some((sk) => sk.name === selectedSkill)
-      );
-    }
-
-    // Apply university filter
-    if (selectedUniversity && selectedUniversity !== 'all') {
-      base = base.filter((s) => s.college === selectedUniversity);
-    }
-
-    // Apply level filter
-    if (selectedLevel && selectedLevel !== 'all') {
-      base = base.filter((s) =>
-        s.skillsCanTeach?.some((sk) => sk.level === selectedLevel)
-      );
-    }
-
-    setStudents(base);
+    const fetchStudents = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        let base = [];
+        if (searchTerm && searchTerm.trim().length > 1) {
+          // Use global search API
+          base = await userService.searchUsers(searchTerm.trim());
+        } else {
+          // Use ML suggestions
+          base = Array.isArray(suggested) ? [...suggested] : [];
+        }
+        // Apply skill filter
+        if (selectedSkill && selectedSkill !== 'all') {
+          base = base.filter((s) =>
+            s.skillsCanTeach?.some((sk) => sk.name === selectedSkill)
+          );
+        }
+        // Apply university filter
+        if (selectedUniversity && selectedUniversity !== 'all') {
+          base = base.filter((s) => s.college === selectedUniversity);
+        }
+        // Apply level filter
+        if (selectedLevel && selectedLevel !== 'all') {
+          base = base.filter((s) =>
+            s.skillsCanTeach?.some((sk) => sk.level === selectedLevel)
+          );
+        }
+        setStudents(base);
+      } catch (e) {
+        setError('Failed to search users');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStudents();
   }, [suggested, searchTerm, selectedSkill, selectedUniversity, selectedLevel]);
 
   // Get unique skills for filter (from suggestions)
@@ -453,7 +456,7 @@ export function SkillMatching({ user }) {
                   <div className="text-xs text-muted-foreground">Points</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-sm text-green-600 dark:text-green-400">{student.sessions}</div>
+                  <div className="font-semibold text-sm text-green-600 dark:text-green-400">{(student.sessions ?? student.sessionsCompleted ?? '—')}</div>
                   <div className="text-xs text-muted-foreground">Sessions</div>
                 </div>
                 <div className="text-center">
@@ -466,10 +469,10 @@ export function SkillMatching({ user }) {
               </div>
 
               {/* Availability */}
-              <div className="flex items-center gap-2 mb-4 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{student.availability}</span>
-              </div>
+                <div className="flex items-center gap-2 mb-4 text-sm">
+                  {/* availability text only; removed timer icon for clarity */}
+                  <span className="text-muted-foreground">{student.availability}</span>
+                </div>
 
               {/* Actions */}
               <Button 

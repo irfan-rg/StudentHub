@@ -30,6 +30,8 @@ import {
   Heart,
   Share,
   MoreHorizontal,
+  Trash,
+  Loader2,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -62,6 +64,9 @@ export function QAForum({ user }) {
   const addAnswer = useQAStore(state => state.addAnswer);
   const voteQuestion = useQAStore(state => state.voteQuestion);
   const voteAnswer = useQAStore(state => state.voteAnswer);
+  const deleteQuestion = useQAStore(state => state.deleteQuestion);
+  const deleteAnswer = useQAStore(state => state.deleteAnswer);
+    const [deletingIds, setDeletingIds] = useState({});
   const setCurrentUserId = useQAStore(state => state.setCurrentUserId);
 
   const location = useLocation();
@@ -320,6 +325,7 @@ export function QAForum({ user }) {
                     {question.author.points}
                   </div>
                 </div>
+                {/* card-level Delete removed - delete is only available inside the modal (author-only) */}
               </div>
             </div>
           </div>
@@ -779,6 +785,41 @@ export function QAForum({ user }) {
                           <Share className="h-4 w-4 mr-1" />
                           Share
                         </Button>
+                        {/* show delete when the current user is the author of the question */}
+                        {user && (String(user.id || user._id) === String(selectedQuestion?.raw?.askedBy?.id || selectedQuestion?.raw?.askedBy?._id || selectedQuestion?.raw?.askedBy)) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Delete question"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm('Delete this question? This cannot be undone.')) return;
+                              try {
+                                setDeletingIds((prev) => ({ ...prev, [selectedQuestion.id]: true }));
+                                await deleteQuestion(selectedQuestion.id);
+                                // Close thread modal now that the question is gone
+                                setSelectedQuestion(null);
+                                setIsThreadModalOpen(false);
+                                toast.success('Question deleted');
+                              } catch (err) {
+                                toast.error(err.message || 'Failed to delete question');
+                              } finally {
+                                setDeletingIds((prev) => ({ ...prev, [selectedQuestion.id]: false }));
+                              }
+                            }}
+                            className="text-muted-foreground hover:text-foreground p-1 flex items-center gap-2"
+                            disabled={Boolean(deletingIds[selectedQuestion.id])}
+                          >
+                            {deletingIds[selectedQuestion.id] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) :(
+                              <>
+                                <Trash className="h-4 w-4" />
+                                <span className="text-sm">Delete</span>
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -800,7 +841,7 @@ export function QAForum({ user }) {
               {/* Answers List - Scrollable */}
               <div className="flex-1 overflow-y-auto min-h-0" style={{ minHeight: '300px' }}>
                 <div className="px-4 pt-2 pb-4 space-y-3">
-                  {selectedQuestion?.answerList?.map((answer) => (
+                  {(selectedQuestion?.answerList || []).slice().sort((a, b) => (new Date(b.createdAt)).getTime() - (new Date(a.createdAt)).getTime()).map((answer) => (
                     <div key={answer.id} className="border rounded-lg p-3 hover:bg-muted/20 transition-colors">
                       <div className="flex gap-3">
                         <div className="flex flex-col items-center gap-2 min-w-[40px]">
@@ -841,10 +882,42 @@ export function QAForum({ user }) {
                               <span>•</span>
                               <span>{answer.timeAgo}</span>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground p-1" onClick={() => toast.info(`Reply feature Coming Soon!`)}>
-                              <Reply className="h-3 w-3 mr-1" />
-                              Reply
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground p-1 flex items-center gap-2" onClick={() => toast.info(`Reply feature Coming Soon!`)}>
+                                <Reply className="h-3 w-3 mr-1" />
+                                Reply
+                              </Button>
+                              {user && (String(user.id || user._id) === String(answer.raw?.answeredBy?.id || answer.raw?.answeredBy?._id || answer.raw?.answeredBy)) && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      aria-label="Delete answer"
+                                      className="text-muted-foreground hover:text-foreground p-1 flex items-center gap-2"
+                                      onClick={async () => {
+                                        if (!confirm('Delete this answer? This cannot be undone.')) return;
+                                        try {
+                                          setDeletingIds(prev => ({ ...prev, [`${selectedQuestion.id}-${answer.id}`]: true }));
+                                          await deleteAnswer(selectedQuestion.id, answer.id);
+                                          toast.success('Answer deleted');
+                                        } catch (err) {
+                                          toast.error(err.message || 'Failed to delete answer');
+                                        } finally {
+                                          setDeletingIds(prev => ({ ...prev, [`${selectedQuestion.id}-${answer.id}`]: false }));
+                                        }
+                                      }}
+                                      disabled={Boolean(deletingIds[`${selectedQuestion.id}-${answer.id}`])}
+                                    >
+                                      {deletingIds[`${selectedQuestion.id}-${answer.id}`] ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <Trash className="h-4 w-4" />
+                                          <span className="text-sm">Delete</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+                          </div>
                           </div>
                         </div>
                       </div>
