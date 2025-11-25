@@ -255,27 +255,55 @@ function ProfilePage({ user, updateUser }) {
 
 
 
-function SettingsPage({ user }) {
+  function SettingsPage({ user }) {
   const { theme } = useTheme();
-  const [settings, setSettings] = useState({
-    theme: theme,
-    fontSize: 'medium',
-    compactMode: false
+
+  // Load settings from localStorage if available so changes persist across reloads
+  const [settings, setSettings] = useState(() => {
+    try {
+      const raw = localStorage.getItem('appSettings');
+      if (raw) return JSON.parse(raw);
+    } catch (err) {
+      console.warn('Failed to parse saved settings:', err);
+    }
+
+    return {
+      theme: theme,
+      fontSize: 'medium',
+      compactMode: false
+    };
   });
 
   // Settings Handler
   const updateSettings = (newSettings) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-    
-    // TODO: Save settings to backend if user is logged in
+    setSettings(prev => {
+      const merged = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem('appSettings', JSON.stringify(merged));
+      } catch (err) {
+        console.warn('Failed to persist settings locally:', err);
+      }
+      return merged;
+    });
+
+    // TODO: Save settings to backend if user is logged in (recommended for multi-device persistence)
     if (user) {
       // api.updateUserSettings(user.id, { ...settings, ...newSettings });
     }
   };
 
   // Update settings when theme changes
+  // Keep saved settings and localStorage in sync when the theme context changes
   useEffect(() => {
-    setSettings(prev => ({ ...prev, theme }));
+    setSettings(prev => {
+      const merged = { ...prev, theme };
+      try {
+        localStorage.setItem('appSettings', JSON.stringify(merged));
+      } catch (err) {
+        console.warn('Failed to persist settings locally:', err);
+      }
+      return merged;
+    });
   }, [theme]);
 
   // Font Size Management

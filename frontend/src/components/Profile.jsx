@@ -31,7 +31,9 @@ import {
   Plus,
   Award,
   ArrowRight,
-  Settings
+  Settings,
+  ChevronDown,
+  Search
 } from 'lucide-react';
 
 export function Profile({ user, onUpdateUser }) {
@@ -760,15 +762,20 @@ export function Profile({ user, onUpdateUser }) {
                             )}
                           </div>
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="outline-none">
-                              <Badge variant="outline" className="text-xs capitalize cursor-pointer">
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-6 px-2 text-xs capitalize hover:bg-accent/50"
+                              >
                                 {typeof skill === 'object' ? skill.level : 'beginner'}
-                              </Badge>
+                                <ChevronDown className="h-3 w-3 ml-1" />
+                              </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {['beginner','intermediate','advanced','expert'].map((lvl) => (
                                 <DropdownMenuItem key={lvl} onClick={() => updateTeachSkillLevel(typeof skill === 'string' ? skill : skill.name, lvl)}>
-                                  {levelLabels?.[lvl]?.label || lvl}
+                                  {levelLabels?.[lvl]?.icon} {levelLabels?.[lvl]?.label || lvl}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuContent>
@@ -808,15 +815,17 @@ export function Profile({ user, onUpdateUser }) {
 
           {/* Edit Controls */}
           {isEditing && (
-            <div className="flex gap-3">
-              <Button onClick={handleSave} className="flex-1">
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-              <Button onClick={handleCancel} variant="outline" className="flex-1">
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
+            <div className="sticky bottom-0 bg-background border-t border-border p-4 -mx-6 -mb-6 mt-6">
+              <div className="flex gap-3">
+                <Button onClick={handleCancel} variant="outline" className="flex-1">
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} className="flex-1">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -830,65 +839,77 @@ export function Profile({ user, onUpdateUser }) {
             <DialogDescription className="text-muted-foreground">Update your teaching skills and learning goals</DialogDescription>
           </DialogHeader>
 
-          <div className="mb-4 space-y-3">
-            <Label htmlFor="skill-search">Search Skills</Label>
-            <Input
-              id="skill-search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search for skills..."
-              className="w-full"
-            />
-          </div>
-
           <Tabs defaultValue="learn" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="learn">Skills I Want to Learn</TabsTrigger>
               <TabsTrigger value="teach">Skills I Can Teach</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="teach" className="space-y-4">
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-2 pb-2 border-b border-border">
-                <Button
-                  size="sm"
-                  variant={selectedCategoryTeach === 'all' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => setSelectedCategoryTeach('all')}
-                >
-                  All Categories
-                </Button>
-                {Object.keys(skillsDatabase).map((category) => (
-                  <Button
-                    key={category}
-                    size="sm"
-                    variant={selectedCategoryTeach === category ? 'default' : 'outline'}
-                    className="h-8"
-                    onClick={() => setSelectedCategoryTeach(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
+            {/* Search and Filter Bar */}
+            <div className="flex gap-3 items-center ">
+              <div className="relative bg-card border border-border rounded-lg" style={{ flex: '0 0 70%' }}>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search for Skills . . ."
+                  className="pl-10 w-full font-medium text-foreground"
+                />
               </div>
+              <div style={{ flex: '0 0 30%' }} className="flex justify-end bg-card border border-border rounded-lg">
+                <Select value={selectedCategoryTeach} onValueChange={(value) => {
+                  setSelectedCategoryTeach(value);
+                  setSelectedCategoryLearn(value);
+                }}>
+                  <SelectTrigger className="w-full font-medium">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {Object.keys(skillsDatabase).map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
+            <TabsContent value="teach" className="space-y-4">
               {teachSkills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {teachSkills.map((s) => {
-                    const skillName = typeof s === 'string' ? s : s.name;
-                    const skillLevel = typeof s === 'object' ? s.level : 'beginner';
-                    const info = levelLabels[skillLevel] || levelLabels.beginner;
-                    return (
-                      <span key={skillName || Math.random()} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${info.color}`}>
-                        {info.icon} {skillName}
-                        <button onClick={() => removeTeachSkill(skillName)} className="text-muted-foreground hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Selected Teaching Skills</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {teachSkills.map((s) => {
+                      const skillName = typeof s === 'string' ? s : s.name;
+                      const skillLevel = typeof s === 'object' ? s.level : 'beginner';
+                      const info = levelLabels[skillLevel] || levelLabels.beginner;
+                      return (
+                        <div key={skillName || Math.random()} className="flex items-center justify-between p-3 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{info.icon}</span>
+                            <span className="text-sm font-medium text-foreground">{skillName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={`text-xs ${info.color}`}>
+                              {info.label}
+                            </Badge>
+                            <button
+                              onClick={() => removeTeachSkill(skillName)}
+                              className="text-muted-foreground hover:text-destructive p-1 hover:bg-destructive/10 rounded"
+                              title="Remove skill"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
                 {filteredSkillsForTeaching
                   .filter((n) => {
                     // Check if skill already exists in teachSkills array
@@ -898,69 +919,54 @@ export function Profile({ user, onUpdateUser }) {
                     });
                   })
                   .map((name) => (
-                    <div key={name} className="space-y-1">
-                      <div className="text-sm font-medium text-foreground text-center mt-2">{name}</div>
-                      <div className="flex gap-1 justify-center">
-                        {['beginner','intermediate','advanced','expert'].map((lvl) => {
-                          const info = levelLabels[lvl];
-                          return (
-                            <button
-                              key={lvl}
-                              type="button"
-                              onClick={() => addTeachSkill(name, lvl)}
-                              className={`text-xs px-2 py-1 rounded border hover:bg-accent ${info.color}`}
-                              title={`Add ${name} as ${info.label}`}
-                            >
-                              {info.icon}
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div key={name} className="flex items-center justify-center gap-2 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative">
+                      <span className="text-sm font-medium text-foreground text-center">{name}</span>
+                      <Select onValueChange={(level) => addTeachSkill(name, level)}>
+                        <SelectTrigger className="absolute right-2 top-1/2 -translate-y-1/2 border-0 bg-transparent shadow-none p-1 h-6 w-6 justify-end">
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['beginner','intermediate','advanced','expert'].map((lvl) => {
+                            const info = levelLabels[lvl];
+                            return (
+                              <SelectItem key={lvl} value={lvl}>
+                                {info.icon} {info.label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
                     </div>
-                ))}
+                  ))}
               </div>
             </TabsContent>
 
             <TabsContent value="learn" className="space-y-4">
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-2 pb-2 border-b border-border">
-                <Button
-                  size="sm"
-                  variant={selectedCategoryLearn === 'all' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => setSelectedCategoryLearn('all')}
-                >
-                  All Categories
-                </Button>
-                {Object.keys(skillsDatabase).map((category) => (
-                  <Button
-                    key={category}
-                    size="sm"
-                    variant={selectedCategoryLearn === category ? 'default' : 'outline'}
-                    className="h-8"
-                    onClick={() => setSelectedCategoryLearn(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-
               {learnSkills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {learnSkills.map((skill) => {
-                    const skillName = typeof skill === 'string' ? skill : skill.name;
-                    return (
-                      <span key={skillName || Math.random()} className="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
-                        {skillName}
-                        <button onClick={() => toggleLearnSkill(skillName)} className="text-muted-foreground hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Selected Learning Skills</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {learnSkills.map((skill) => {
+                      const skillName = typeof skill === 'string' ? skill : skill.name;
+                      return (
+                        <div key={skillName || Math.random()} className="flex items-center justify-between p-3 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-foreground">{skillName}</span>
+                          </div>
+                          <button
+                            onClick={() => toggleLearnSkill(skillName)}
+                            className="text-muted-foreground hover:text-destructive p-1 hover:bg-destructive/10 rounded"
+                            title="Remove skill"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
                 {filteredSkillsForLearning
                   .filter((name) => {
                     // Check if skill already exists in learnSkills array
@@ -974,25 +980,26 @@ export function Profile({ user, onUpdateUser }) {
                       key={name}
                       type="button"
                       onClick={() => toggleLearnSkill(name)}
-                      className="text-sm p-2 border border-border rounded hover:bg-accent text-left text-foreground"
+                      className="flex items-center justify-center p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors text-sm font-medium text-foreground"
                     >
-                      <Plus className="h-3 w-3 inline mr-1" />
                       {name}
                     </button>
-                ))}
+                  ))}
               </div>
             </TabsContent>
           </Tabs>
 
-          <div className="flex gap-3 pt-2">
-            <Button onClick={handleSaveSkills} className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              Save Skills
-            </Button>
-            <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
+          <div className="sticky bottom-0 bg-background border-t border-border p-4 -mx-6 -mb-6 mt-4">
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setManageSkillsOpen(false)} className="flex-1">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={handleSaveSkills} className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
+                Save Skills
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1025,13 +1032,15 @@ export function Profile({ user, onUpdateUser }) {
             {/* Upload option removed as per requirement */}
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button onClick={handleSelectAvatarFromGallery} disabled={!selectedAvatar || isUploading} className="flex-1">
-              Save Selection
-            </Button>
-            <Button variant="outline" onClick={() => setAvatarDialogOpen(false)} disabled={isUploading} className="flex-1">
-              Cancel
-            </Button>
+          <div className="sticky bottom-0 bg-background border-t border-border p-4 -mx-6 -mb-6 mt-4">
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setAvatarDialogOpen(false)} disabled={isUploading} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleSelectAvatarFromGallery} disabled={!selectedAvatar || isUploading} className="flex-1">
+                Save Selection
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

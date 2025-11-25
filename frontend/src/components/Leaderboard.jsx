@@ -38,7 +38,8 @@ export function Leaderboard({ user }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await leaderboardService.getLeaderboard(filter, 50);
+      // Only fetch the top 10 for the leaderboard UI
+      const response = await leaderboardService.getLeaderboard(filter, 5);
       
       if (response && response.topUsers) {
         setLeaderboardData(response.topUsers);
@@ -130,9 +131,17 @@ export function Leaderboard({ user }) {
 
   const LeaderboardRow = ({ userData, index }) => {
     const isCurrentUser = userData._id === user?._id;
-    
+    const isTenthCurrent = isCurrentUser && userData.rank === 10;
+
+    // If the current user is rank 10, apply a stronger highlight.
+    const cardClass = isTenthCurrent
+      ? 'ring-4 ring-amber-400 bg-amber-50 dark:bg-amber-900/20'
+      : isCurrentUser
+      ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+      : 'bg-card';
+
     return (
-      <Card className={`${isCurrentUser ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-card'} hover:shadow-md transition-shadow border-border`}>
+      <Card className={`${cardClass} hover:shadow-md transition-shadow border-border`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             {/* Rank */}
@@ -276,9 +285,10 @@ export function Leaderboard({ user }) {
                     </CardContent>
                   </Card>
                 ) : (
-                  leaderboardData.map((userData, index) => (
-                    <LeaderboardRow key={userData._id} userData={userData} index={index} />
-                  ))
+                    // Show only the top 10 users from the returned data (should already be limited by service)
+                    leaderboardData.slice(0, 10).map((userData, index) => (
+                      <LeaderboardRow key={userData._id} userData={userData} index={index} />
+                    ))
                 )}
               </div>
               {currentUserData && !currentUserInLeaderboard && (
@@ -298,7 +308,7 @@ export function Leaderboard({ user }) {
                     </CardContent>
                   </Card>
                 ) : (
-                  leaderboardData.map((userData, index) => (
+                  leaderboardData.slice(0, 10).map((userData, index) => (
                     <LeaderboardRow key={userData._id} userData={userData} index={index} />
                   ))
                 )}
@@ -320,7 +330,7 @@ export function Leaderboard({ user }) {
                     </CardContent>
                   </Card>
                 ) : (
-                  leaderboardData.map((userData, index) => (
+                  leaderboardData.slice(0, 10).map((userData, index) => (
                     <LeaderboardRow key={userData._id} userData={userData} index={index} />
                   ))
                 )}

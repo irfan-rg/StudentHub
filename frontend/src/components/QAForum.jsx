@@ -33,7 +33,8 @@ import {
   Trash,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Tag
 } from 'lucide-react';
 import { useQAStore } from '../stores/useQAStore';
 
@@ -605,6 +606,35 @@ export function QAForum({ user }) {
         </CardContent>
       </Card>
 
+      {/* Popular Tags */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground flex items-center gap-2 font-semibold">
+            <Tag className="h-5 w-5 text-blue-600" />
+            Popular Tags
+          </CardTitle>
+          {/* <CardDescription className="text-muted-foreground">Browse questions by topic</CardDescription> */}
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            {popularTags.map((tag) => (
+              <Badge 
+                key={tag} 
+                variant={selectedTag === tag ? "default" : "outline"}
+                className="w-8 h-8 cursor-pointer hover:bg-accent/50 transition-colors font-medium flex items-center justify-center"
+                onClick={() => {
+                  const newTag = selectedTag === tag ? '' : tag;
+                  setSelectedTag(newTag);
+                  setFilterTag(newTag);
+                }}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="recent" className="space-y-4">
         <TabsList className="bg-card border-border">
           <TabsTrigger value="recent" className="flex items-center gap-2">
@@ -688,27 +718,6 @@ export function QAForum({ user }) {
           )}
         </TabsContent>
       </Tabs>
-
-      <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Popular Tags</CardTitle>
-            <CardDescription className="text-muted-foreground">Browse questions by topic</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {popularTags.map((tag) => (
-                <Badge 
-                  key={tag} 
-                  variant={selectedTag === tag ? "default" : "outline"}
-                className="cursor-pointer hover:bg-accent/50"
-                  onClick={() => setFilterTag(selectedTag === tag ? '' : tag)}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
       {/* Question Thread Modal */}
       <Dialog open={isThreadModalOpen} onOpenChange={setIsThreadModalOpen}>

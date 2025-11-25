@@ -308,38 +308,33 @@ export function Signup({ onSignup, loading, error }) {
             </div>
 
             <div className="space-y-6">
-              {/* Category Filters */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedCategoryLearn === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategoryLearn('all')}
-                  disabled={loading}
-                >
-                  All Categories
-                </Button>
-                {Object.keys(skillsDatabase).map(category => (
-                  <Button
-                    key={category}
-                    variant={selectedCategoryLearn === category ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedCategoryLearn(category)}
+              {/* Search and Category Filter Bar */}
+              <div className="flex gap-3 items-center">
+                <div className="relative" style={{ flex: '0 0 70%' }}>
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search for skills you want to learn..."
+                    value={skillSearchLearn}
+                    onChange={(e) => setSkillSearchLearn(e.target.value)}
+                    className="pl-10 w-full h-12 rounded-lg"
                     disabled={loading}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Search */}
-              <div>
-                <Input
-                  placeholder="Search for skills you want to learn..."
-                  value={skillSearchLearn}
-                  onChange={(e) => setSkillSearchLearn(e.target.value)}
-                  className="h-12"
-                  disabled={loading}
-                />
+                  />
+                </div>
+                <div style={{ flex: '0 0 30%' }} className="flex justify-end">
+                  <Select value={selectedCategoryLearn} onValueChange={setSelectedCategoryLearn}>
+                    <SelectTrigger className="w-full h-12 rounded-lg px-4">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {Object.keys(skillsDatabase).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Selected Learning Goals */}
@@ -404,38 +399,33 @@ export function Signup({ onSignup, loading, error }) {
             </div>
 
             <div className="space-y-6">
-              {/* Category Filters */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedCategoryTeach === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategoryTeach('all')}
-                  disabled={loading}
-                >
-                  All Categories
-                </Button>
-                {Object.keys(skillsDatabase).map(category => (
-                  <Button
-                    key={category}
-                    variant={selectedCategoryTeach === category ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedCategoryTeach(category)}
+              {/* Search and Category Filter Bar */}
+              <div className="flex gap-3 items-center">
+                <div className="relative" style={{ flex: '0 0 70%' }}>
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search for skills..."
+                    value={skillSearchTeach}
+                    onChange={(e) => setSkillSearchTeach(e.target.value)}
+                    className="pl-10 w-full h-12 rounded-lg"
                     disabled={loading}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Search */}
-              <div>
-                <Input
-                  placeholder="Search for skills..."
-                  value={skillSearchTeach}
-                  onChange={(e) => setSkillSearchTeach(e.target.value)}
-                  className="h-12"
-                  disabled={loading}
-                />
+                  />
+                </div>
+                <div style={{ flex: '0 0 30%' }} className="flex justify-end">
+                  <Select value={selectedCategoryTeach} onValueChange={setSelectedCategoryTeach}>
+                    <SelectTrigger className="w-full h-12 rounded-lg px-4">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {Object.keys(skillsDatabase).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Selected Skills */}
