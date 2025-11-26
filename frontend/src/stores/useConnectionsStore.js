@@ -17,7 +17,7 @@ export const useConnectionsStore = create(
         set({ isLoading: true, error: null });
         try {
           const token = localStorage.getItem('authToken');
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/suggestions`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/matching/suggestions?mode=learn`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',

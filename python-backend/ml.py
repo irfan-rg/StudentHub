@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 from get_all_users import get_all_users
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder, StandardScaler
 import pandas as pd
@@ -29,11 +31,13 @@ def get_recommend_users(new_user, all_users_in_cluster, num_recommendations=5):
     new_user_features = np.hstack([new_edu_ohe, new_skills_mlb, new_badges_mlb, new_num_scaled])
 
     similarities = cosine_similarity(new_user_features, df_features)[0]
+    all_users_in_cluster = all_users_in_cluster.copy()
     all_users_in_cluster['similarity'] = (similarities * 100).round(2)
 
     top_similar_users = all_users_in_cluster.sort_values(by='similarity', ascending=False)
 
-    return top_similar_users.head(20).sample(n=num_recommendations)[['_id', 'similarity']].to_dict(orient='records')
+    available = min(num_recommendations, len(top_similar_users.head(20)))
+    return top_similar_users.head(20).sample(n=available)[['_id', 'similarity']].to_dict(orient='records')
 
 def use_k_means_model():
 

@@ -61,7 +61,7 @@ export function Dashboard({ user }) {
         matchPercentage: (typeof conn.matchPercentage === 'number' && conn.matchPercentage > 0) 
           ? conn.matchPercentage 
           : ((index * 37) % 41) + 60  // Same pseudo-random as SkillMatching
-      }))
+      })).sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0))
     : [];
   const connectionsRaw = useConnectionsStore(state => state.connections);
   const connections = Array.isArray(connectionsRaw) ? connectionsRaw : [];

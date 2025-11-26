@@ -14,9 +14,16 @@ export const getSuggestions = async (req, res, next) => {
         }
 
         // Prepare user data for Python ML model
+        // Default to finding teachers for the skills the user wants to learn, but allow mode query param
+        const mode = req.query.mode || 'learn'; // 'learn' (find teachers) or 'teach' (find similar teachers)
+        const skillsToMatch = (mode === 'teach')
+            ? currentUser.skillsCanTeach?.map(s => s.name) || []
+            : currentUser.skillsWantToLearn?.map(s => s.name) || currentUser.skillsCanTeach?.map(s => s.name) || [];
+
         const userData = {
             educationLevel: currentUser.educationLevel,
-            skillsCanTeach: currentUser.skillsCanTeach.map(s => s.name),
+            // ML backend expects field 'skillsCanTeach' for the features matrix; pass skillsToMatch under that field
+            skillsCanTeach: skillsToMatch,
             badges: currentUser.badges,
             points: currentUser.points,
             sessionsCompleted: currentUser.sessionsCompleted,
@@ -48,7 +55,17 @@ export const getSuggestions = async (req, res, next) => {
                 _id: { $in: userIds },
                 _id: { $ne: id } // Exclude current user
             }).select('name email college educationLevel avatar skillsCanTeach rating points badges sessionsCompleted')
-
+            // If we're in 'learn' mode (finding teachers), ensure recommended users actually teach the skill the requester wants to learn
+            if (mode === 'learn' && skillsToMatch && skillsToMatch.length > 0) {
+                const filteredBySkill = recommendedUsers.filter(u => {
+                    const teaches = Array.isArray(u.skillsCanTeach) ? u.skillsCanTeach.map(s => s.name) : [];
+                    return skillsToMatch.some(sk => teaches.includes(sk));
+                });
+                // If any recommended users match the skill requirement, use them; otherwise keep the original set
+                if (filteredBySkill.length > 0) {
+                    recommendedUsers.splice(0, recommendedUsers.length, ...filteredBySkill);
+                }
+            }
             // Merge with similarity scores
             const usersWithSimilarity = recommendedUsers.map(user => {
                 const mlUser = recommendedUserIds.find(u => u._id === user._id.toString())
@@ -72,11 +89,16 @@ export const getSuggestions = async (req, res, next) => {
             })
                 .limit(10)
                 .select('name email college educationLevel avatar skillsCanTeach rating points badges sessionsCompleted')
+            // Include a similarity field (if already computed in DB as matchPercentage) so front-end can display match percentage even in fallback
+            const fallbackWithSimilarity = fallbackUsers.map(u => ({
+                ...u.toObject(),
+                similarity: u.matchPercentage || 0
+            }));
 
             res.status(200).json({
                 success: true,
                 message: 'Suggestions fetched (fallback mode)',
-                data: { matches: fallbackUsers }
+                data: { matches: fallbackWithSimilarity }
             })
         }
 

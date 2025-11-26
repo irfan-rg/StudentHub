@@ -454,6 +454,77 @@ const seedDatabase = async () => {
         }
         
         console.log(`✅ Users now have connections\n`);
+
+        // --- New: Add matchPercentage + ensure alternate users share skills with a base user ---
+        console.log('🔬 Adjusting match percentages and skills to create realistic matches...');
+        // Choose a base user to be the reference for matches (use the first user)
+        const baseUser = users[0];
+        const baseSkills = Array.isArray(baseUser.skillsCanTeach) ? baseUser.skillsCanTeach.map(s => s.name) : [];
+
+        for (let idx = 0; idx < users.length; idx++) {
+            const u = users[idx];
+            // Skip base user from changes
+            if (String(u._id) === String(baseUser._id)) {
+                // assign a high match percentage for base user as reference
+                await User.findByIdAndUpdate(u._id, { matchPercentage: 100 });
+                continue;
+            }
+
+            // For every other user (even indices), enforce skill overlap with baseUser
+            if (idx % 2 === 0) {
+                // pick 1-3 base skills to ensure overlap
+                const overlapCount = Math.min(baseSkills.length, getRandomNumber(1, Math.min(3, baseSkills.length)));
+                const chosenOverlap = getRandomItems(baseSkills, overlapCount);
+
+                // Add chosen base skills to the user's teach skills if missing
+                const existingTeachNames = (u.skillsCanTeach || []).map(s => s.name);
+                const toAdd = chosenOverlap.filter(s => !existingTeachNames.includes(s));
+                for (const skillToAdd of toAdd) {
+                    const skillCategory = Object.keys(skills).find(key => skills[key].includes(skillToAdd));
+                    const newSkill = {
+                        name: skillToAdd,
+                        level: getRandomItem(['intermediate', 'advanced', 'expert']),
+                        category: skillCategory || ''
+                    };
+                    u.skillsCanTeach.push(newSkill);
+                }
+            }
+
+            // Now compute a realistic match percentage based on overlap, skill levels, points, sessions, and rating
+            const otherTeach = (u.skillsCanTeach || []).map(s => s.name);
+            const overlap = baseSkills.filter(s => otherTeach.includes(s)).length;
+
+            // base score and contributions
+            let score = 30; // baseline
+            score += overlap * 12; // overlap is strong signal
+
+            // boost based on levels for the overlapped skills
+            let levelBoost = 0;
+            for (const s of u.skillsCanTeach || []) {
+                if (baseSkills.includes(s.name)) {
+                    if (s.level === 'expert') levelBoost += 8;
+                    else if (s.level === 'advanced') levelBoost += 5;
+                    else if (s.level === 'intermediate') levelBoost += 3;
+                }
+            }
+            score += levelBoost;
+
+            // normalize points and sessions contribution (small)
+            score += Math.min(18, Math.floor((u.points || 0) / 40));
+            score += Math.min(10, Math.floor((u.sessionsCompleted || 0) / 2));
+            score += Math.min(6, Math.floor(((u.rating || 0) - 3.0) * 2)); // small boost for higher rating
+
+            // random small noise so percentages vary per person
+            score += getRandomNumber(-6, 6);
+
+            // clamp, but keep > 10
+            const finalPct = Math.max(8, Math.min(98, Math.round(score)));
+
+            u.matchPercentage = finalPct;
+            // save updates to DB: replace document skillsCanTeach and matchPercentage
+            await User.findByIdAndUpdate(u._id, { skillsCanTeach: u.skillsCanTeach, matchPercentage: u.matchPercentage });
+        }
+        console.log('✅ Match percentages and skills adjusted\n');
         
         // Create some pending connection requests (incoming requests for each user)
         console.log('📨 Creating connection requests...');

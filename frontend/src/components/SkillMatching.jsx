@@ -182,11 +182,14 @@ export function SkillMatching({ user }) {
         });
 
     // Add a stable random-looking percentage if none provided
-    return base.map((student, index) => {
+    const withPercent = base.map((student, index) => {
       if (typeof student.matchPercentage === 'number' && student.matchPercentage > 0) return student;
       const pseudoRandom = ((index * 37) % 41) + 60; // 60–100 range
       return { ...student, matchPercentage: pseudoRandom };
     });
+
+    // Sort by matchPercentage descending
+    return withPercent.sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
   }, [students, connections]);
 
   const handleConnect = (student) => {
