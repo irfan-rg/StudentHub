@@ -9,11 +9,11 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **AI-Powered Student Hub** is a modern web application that helps students connect with peers, share knowledge, schedule learning sessions, and grow together. Built with a dual backend architecture combining Node.js for core functionality and Python for AI/ML features.
 
-### 🌟 Key Features
+###  Key Features
 
 - **🤝 Smart Matching**: ML-powered student matching based on skills and learning goals
 - **📚 Learning Sessions**: Schedule and manage collaborative learning sessions
@@ -26,7 +26,7 @@
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ### System Overview
 
@@ -83,7 +83,7 @@
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 AI-Powered-Student-Hub/
@@ -123,7 +123,7 @@ AI-Powered-Student-Hub/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -203,7 +203,7 @@ npm run dev
 
 Frontend will run on **http://localhost:5173**
 
-### 🎯 Quick Start (All Services)
+###  Quick Start (All Services)
 
 For convenience, start all services in separate terminals:
 
@@ -224,7 +224,7 @@ cd frontend; npm run dev
 
 Then open **http://localhost:5173** in your browser!
 
-### 🔁 Start everything at once (VS Code)
+###  Start everything at once (VS Code)
 
 If you're using VS Code, run the batch file to open the project, then use VS Code tasks to start all services in integrated terminals:
 
@@ -242,7 +242,7 @@ This will run frontend, backend, and python-backend in separate integrated termi
 
 **Individual Services:** You can also run individual services using "Start Frontend", "Start Backend", or "Start Python Backend" tasks.
 
-### 📝 Test Accounts
+###  Test Accounts
 
 After seeding the database, you can use these test accounts:
 
@@ -254,9 +254,9 @@ After seeding the database, you can use these test accounts:
 
 ---
 
-## 💡 Features in Detail
+##  Features in Detail
 
-### 1. 🎯 Smart Student Matching
+### 1.  Smart Student Matching
 
 Uses machine learning (K-means clustering + cosine similarity) to suggest the best study partners based on:
 - Skills overlap (what you want to learn vs what they can teach)
@@ -270,7 +270,7 @@ Uses machine learning (K-means clustering + cosine similarity) to suggest the be
 - Returns top matches sorted by compatibility
 - Frontend displays with match percentage
 
-### 2. 📅 Learning Sessions
+### 2.  Learning Sessions
 
 Create and manage collaborative learning sessions:
 - **Schedule sessions** with specific partners
@@ -280,7 +280,7 @@ Create and manage collaborative learning sessions:
 - **Generate AI quizzes** from uploaded materials
 - **Earn points** after completing sessions
 
-### 3. 📄 AI-Powered Quiz Generation
+### 3.  AI-Powered Quiz Generation
 
 Automatically generate quizzes from study materials:
 - Upload PDF documents during session creation
@@ -290,7 +290,7 @@ Automatically generate quizzes from study materials:
 - Points awarded based on performance (60%+ to pass)
 - Uses Google Gemini for intelligent question generation
 
-### 4. 💬 Q&A Forum
+### 4.  Q&A Forum
 
 Community-driven knowledge sharing:
 - **Ask questions** with detailed descriptions
@@ -301,7 +301,7 @@ Community-driven knowledge sharing:
 - **Pagination** for browsing large discussions
 - **Points system** for participation
 
-### 5. 🏆 Gamification & Points
+### 5.  Gamification & Points
 
 Earn points for active participation:
 - **+50 points**: Complete a learning session
@@ -316,7 +316,7 @@ Track your progress on the **Leaderboard**:
 - Check points history
 - Compete with peers
 
-### 6. 🔔 Notification System
+### 6.  Notification System
 
 Stay updated with real-time notifications:
 - **Connection requests** - Accept or decline
@@ -327,7 +327,7 @@ Stay updated with real-time notifications:
 
 Polls backend every 30 seconds for new notifications.
 
-### 7. 🤖 AI Chatbot
+### 7.  AI Chatbot
 
 Get instant help with an AI-powered assistant:
 - Ask questions about the platform
@@ -335,7 +335,7 @@ Get instant help with an AI-powered assistant:
 - Powered by Ollama (Llama 3.2)
 - Contextual and helpful responses
 
-### 8. 👤 Profile Management
+### 8.  Profile Management
 
 Customize your learning profile:
 - **Skills to Learn**: What you want to master
@@ -347,7 +347,7 @@ Customize your learning profile:
 
 ---
 
-## 🎨 User Interface
+##  User Interface
 
 ### Modern & Responsive Design
 - Clean, intuitive interface
@@ -367,7 +367,7 @@ Customize your learning profile:
 
 ---
 
-## 🔐 Security Features
+##  Security Features
 
 - **JWT Authentication**: Secure token-based auth
 - **Password Hashing**: bcrypt with salt rounds
@@ -380,7 +380,7 @@ Customize your learning profile:
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 Comprehensive documentation is available in the `docs/` folder:
 
@@ -403,7 +403,7 @@ Comprehensive documentation is available in the `docs/` folder:
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Run Tests
 
@@ -429,7 +429,7 @@ Use the provided Postman collection:
 
 ---
 
-## 🚀 Deployment
+##  Deployment
 
 ### Frontend Deployment (Vercel/Netlify)
 
@@ -477,7 +477,7 @@ MONGODB_URI=your-mongodb-uri
 
 ---
 
-## 🛠️ Development
+##  Development
 
 ### Code Structure
 
@@ -522,7 +522,7 @@ MONGODB_URI=your-mongodb-uri
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -560,7 +560,18 @@ MONGODB_URI=your-mongodb-uri
 
 ---
 
-## 🤝 Contributing
+##  Team Members
+
+This project was built collaboratively by a dedicated team:
+
+- Dheemanth SH
+- Md. Irfan G
+- Mohan Kumar S
+- Monisha Aradhya CM
+
+*Thank you to all contributors for your hard work and creativity!*
+
+##  Contributing
 
 We welcome contributions! Here's how:
 
@@ -580,13 +591,13 @@ We welcome contributions! Here's how:
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Radix UI** - Accessible component primitives
 - **Shadcn/ui** - Beautiful UI components
@@ -601,7 +612,7 @@ See [docs/reference/Attributions.md](docs/reference/Attributions.md) for complet
 
 ---
 
-## 📞 Contact & Support
+##  Contact & Support
 
 - **Repository**: [github.com/irfan-rg/StudentHub](https://github.com/irfan-rg/StudentHub)
 - **Issues**: [GitHub Issues](https://github.com/irfan-rg/StudentHub/issues)
@@ -609,7 +620,7 @@ See [docs/reference/Attributions.md](docs/reference/Attributions.md) for complet
 
 ---
 
-## 🗺️ Roadmap
+##  Roadmap
 
 ### Planned Features
 
@@ -626,7 +637,7 @@ See [docs/reference/Attributions.md](docs/reference/Attributions.md) for complet
 
 ---
 
-## 📊 Project Stats
+##  Project Stats
 
 - **Frontend Components**: 20+ React components
 - **API Endpoints**: 50+ REST endpoints
@@ -637,7 +648,7 @@ See [docs/reference/Attributions.md](docs/reference/Attributions.md) for complet
 
 ---
 
-## 🎓 Learning Resources
+##  Learning Resources
 
 Built while learning:
 - React and modern frontend patterns
@@ -653,8 +664,6 @@ Built while learning:
 **Built with ❤️ by the StudentHub Team**
 
 *Empowering students to learn together, grow together.*
-
----
 
 **Last Updated**: November 23, 2025  
 **Version**: 1.0.0
