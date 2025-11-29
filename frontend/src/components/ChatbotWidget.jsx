@@ -1,60 +1,162 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
+// Input removed: menu-driven assistant
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Sparkles, Users, BookOpen, FileText, MessageSquare, PlusCircle, TrendingUp, Trophy, User , Clock, Award, Reply, Settings} from 'lucide-react';
 
 // Lightweight, client-only chatbot widget
 export default function ChatbotWidget({ user }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [personalizationOn, setPersonalizationOn] = useState(true);
-  const scrollRef = useRef(null);
+  // Menu-driven assistant
+  // menuStack tracks navigation history for go-back functionality
+  const [menuStack, setMenuStack] = useState([]);
+  const [currentMenu, setCurrentMenu] = useState('main');
+  // no scrollRef necessary for the simplified, menu-focused UI
 
+  // (No scrolling to handle in the simplified menu-only interface)
+
+  // no input focus since we're menu-driven
+
+  // Keyboard shortcuts: Esc to close; M to jump to main menu; B to go back
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const handler = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+      if (e.key.toLowerCase() === 'm') goToMainMenu();
+      if (e.key.toLowerCase() === 'b') handleAction({ type: 'back' });
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [menuStack, currentMenu, open]);
+
+  // When the assistant panel opens for the first time, show Main Menu
+  useEffect(() => {
+    if (open) {
+      goToMainMenu();
     }
-  }, [messages, open]);
+  }, [open]);
 
-  const topTeachSkill = useMemo(() => {
-    if (!user?.skillsCanTeach?.length) return null;
-    return user.skillsCanTeach.find(s => ['expert', 'advanced'].includes(s.level)) || user.skillsCanTeach[0];
+  // Centralized IVR menu structure built from the current user (if any)
+  const topLearnSkills = useMemo(() => (user?.skillsWantToLearn || []).slice(0, 3).map(s => (typeof s === 'string' ? s : s.name)), [user]);
+  // Teaching skills removed from this IVR to simplify UX — we no longer expose a Find Students menu
+
+  const menus = useMemo(() => {
+    const learnSkills = topLearnSkills;
+    // teachSkills removed; teach menu no longer part of IVR
+
+    const learnMenu = [
+      { label: 'View Mentors', type: 'navigate', to: '/matching', icon: <Users className="h-4 w-4" />, desc: 'Browse mentors for the skills you want.' },
+      ...learnSkills.map(skill => ({ label: `${skill} Mentors`, type: 'navigate',icon: <BookOpen className="h-4 w-4" />, to: `/matching?skill=${encodeURIComponent(skill)}`, desc: `Mentors for ${skill}` })),
+      { label: 'Back', type: 'back', icon: <Reply className="h-4 w-4" />, desc: 'Return to main menu' }
+    ];
+
+    // teachMenu intentionally removed per request — we won't include 'Find Students' in the main menu
+
+    const profileTo = '/profile' + (user?.id ? `?id=${user.id}` : '');
+    return {
+      main: [
+        { label: 'Find Mentor', type: 'menu', menu: 'learn', icon: <Users className="h-5 w-5" />, desc: 'Find mentors who teach the skills you want to learn.' },
+        { label: 'Q&A Forum', type: 'menu', menu: 'qa', icon: <MessageSquare className="h-5 w-5" />, desc: 'Ask questions or browse community answers.' },
+        { label: 'Create Session', type: 'menu', menu: 'session', icon: <PlusCircle className="h-5 w-5" />, desc: 'Schedule a study session with peers.' },
+        { label: 'Leaderboard', type: 'menu', menu: 'leaderboard', icon: <Trophy className="h-5 w-5" />, desc: 'Check top contributors and your rank.' },
+        { label: 'Profile', type: 'menu', menu: 'profile', icon: <User className="h-5 w-5" />, desc: 'Update skills and public profile.' }
+      ],
+      learn: learnMenu,
+      // 'teach' menu intentionally removed – not included in menus
+      qa: [
+        { label: 'Go to Q&A Forum', type: 'navigate', to: '/qa', icon: <MessageSquare className="h-4 w-4" />, desc: 'Read or ask community questions.' },
+        { label: 'My Questions', type: 'navigate',icon: <MessageCircle className="h-4 w-4" />, to: '/qa?mine=true', desc: 'See questions you asked' },
+        { label: 'Top Questions', type: 'navigate',icon: <TrendingUp className="h-4 w-4" />, to: '/qa?sort=top', desc: 'Browse popular community questions' },
+        { label: 'Back', type: 'back', icon: <Reply className="h-4 w-4" />, desc: 'Return to main menu' }
+      ],
+      session: [
+        { label: 'Create Session', type: 'navigate', to: '/sessions', icon: <PlusCircle className="h-4 w-4" />, desc: 'Host a study session with peers.' },
+        { label: 'Quick 30-min', type: 'navigate',icon: <Clock className="h-4 w-4" />, to: '/sessions?duration=30', desc: 'Schedule a short 30-minute session' },
+        { label: '1-hour Deep Dive', type: 'navigate',icon: <Clock className="h-4 w-4" />, to: '/sessions?duration=60', desc: 'Schedule a 1-hour session' },
+        { label: 'Upload Materials', type: 'navigate', to: '/sessions?upload=true', icon: <FileText className="h-4 w-4" />, desc: 'Attach materials to a session.' },
+        { label: 'Back', type: 'back', icon: <Reply className="h-4 w-4" />, desc: 'Return to main menu' }
+      ],
+      leaderboard: [
+        { label: 'View Leaderboard', type: 'navigate', to: '/leaderboard', icon: <Trophy className="h-4 w-4" />, desc: 'See top contributors and ranks.' },
+        { label: 'My Rank', type: 'navigate',icon: <Award className="h-4 w-4" />, to: '/leaderboard?me=true', desc: 'See where you stand' },
+        { label: 'Back', type: 'back', icon: <Reply className="h-4 w-4" />, desc: 'Return to main menu' }
+      ],
+      profile: [
+        { label: 'Edit Profile', type: 'navigate', to: '/profile', icon: <User className="h-4 w-4" />, desc: 'Update profile and skills to improve matches.' },
+        { label: 'View Profile', type: 'navigate',icon: <Settings className="h-4 w-4" />, to: profileTo, desc: 'View your public profile' },
+        { label: 'Back', type: 'back', icon: <Reply className="h-4 w-4" />, desc: 'Return to main menu' }
+      ]
+    };
   }, [user]);
-  const topLearnSkill = useMemo(() => {
-    if (!user?.skillsWantToLearn?.length) return null;
-    return user.skillsWantToLearn[0];
-  }, [user]);
 
-  const suggestedPrompts = useMemo(() => {
-    const prompts = [];
-    if (topLearnSkill) prompts.push(`Who can teach me ${topLearnSkill}?`);
-    if (topTeachSkill) prompts.push(`Find students who want to learn ${topTeachSkill.name}`);
-    prompts.push('What should I do next?');
-    prompts.push('Show my points and rank');
-    prompts.push('Draft a question about React');
-    return prompts.slice(0, 5);
-  }, [topLearnSkill, topTeachSkill]);
+  // Note: Menu definitions have been centralized in the `menus` object above. These functions were removed.
 
-  const addBot = (content, actions = []) => {
-    setMessages(prev => [...prev, { role: 'bot', content, actions, ts: Date.now() }]);
+  // No message state; menu-driven UI, so addBot/addUser removed
+
+  const pushMenu = (menuKey) => {
+    setMenuStack(prev => [...prev, currentMenu]);
+    setCurrentMenu(menuKey);
   };
-  const addUser = (content) => {
-    setMessages(prev => [...prev, { role: 'user', content, ts: Date.now() }]);
+
+  const popMenu = () => {
+    let prevMenu = 'main';
+    setMenuStack(prev => {
+      const copy = [...prev];
+      const popped = copy.pop();
+      prevMenu = popped || 'main';
+      return copy;
+    });
+    setCurrentMenu(prevMenu);
+    return prevMenu;
+  };
+
+  const getMenuTitle = (key) => {
+    switch (key) {
+      case 'learn': return 'Find Mentor';
+      // case 'teach' removed because 'Find Students' has been removed from main menu
+      case 'qa': return 'Q&A Forum';
+      case 'session': return 'Create Session';
+      case 'leaderboard': return 'Leaderboard';
+      case 'profile': return 'Profile';
+      case 'main':
+      default:
+        return 'Main Menu';
+    }
+  };
+
+  const presentMenu = (menuKey) => {
+    // Switch the visible menu
+    setCurrentMenu(menuKey);
+  };
+
+  const goToMainMenu = () => {
+    setMenuStack([]);
+    setCurrentMenu('main');
+  };
+
+  const getActionsForMenu = (menuKey) => {
+    return menus[menuKey] || menus.main;
   };
 
   const handleAction = (action) => {
     if (!action) return;
-    switch (action.type) {
+    const { type, menu, to, label } = action;
+    switch (type) {
       case 'navigate':
-        navigate(action.to);
+        navigate(to);
+        setOpen(false);
         break;
-      case 'prefill_question': {
-        navigate('/qa');
+      case 'menu':
+        // Present submenu
+        pushMenu(menu);
+        presentMenu(menu);
+        break;
+      case 'back': {
+        const prev = popMenu();
+        if (prev === 'main') goToMainMenu();
+        else presentMenu(prev);
         break;
       }
       default:
@@ -62,98 +164,11 @@ export default function ChatbotWidget({ user }) {
     }
   };
 
-  const intentReply = (text) => {
-    const q = text.toLowerCase();
+  // handler kept for compatibility but not used directly; presentMenu(menuKey) is preferred
 
-    // Simple routes
-    if (q.includes('who can teach') || q.startsWith('who can teach')) {
-      const skill = text.replace(/who can teach( me)?/i, '').trim() || topLearnSkill || 'a skill you like';
-      return {
-        content: `You can find peers who teach ${skill} in Matching. I can take you there now.`,
-        actions: [
-          { label: 'View matches', type: 'navigate', to: `/matching?skill=${encodeURIComponent(skill)}` }
-        ]
-      };
-    }
+  // Input-free / menu-driven: No handleSend function required.
 
-    if (q.includes('find students') || q.includes('who wants to learn')) {
-      const skill = text.replace(/find students( who want to learn)?/i, '').trim() || (topTeachSkill?.name || 'your skill');
-      return {
-        content: `Great idea. Try posting a session offer for ${skill} or browsing Matching to invite students.`,
-        actions: [
-          { label: 'Open Matching', type: 'navigate', to: `/matching?skill=${encodeURIComponent(skill)}` },
-          { label: 'Go to Sessions', type: 'navigate', to: '/sessions' }
-        ]
-      };
-    }
-
-    if (q.includes('what should i do next') || q.includes('next')) {
-      const name = personalizationOn ? user?.name?.split(' ')[0] : 'there';
-      const pointers = [];
-      if (topLearnSkill) pointers.push(`- Connect with a mentor for ${topLearnSkill}`);
-      if (topTeachSkill) pointers.push(`- Offer a 30-min intro session on ${topTeachSkill.name}`);
-      pointers.push('- Ask a question in the forum');
-      return {
-        content: `Here are smart next steps ${name}:
-${pointers.join('\n')}`,
-        actions: [
-          topLearnSkill ? { label: `Find ${topLearnSkill} mentors`, type: 'navigate', to: `/matching?skill=${encodeURIComponent(topLearnSkill)}` } : null,
-          { label: 'Create session', type: 'navigate', to: '/sessions' },
-          { label: 'Ask a question', type: 'navigate', to: '/qa' }
-        ].filter(Boolean)
-      };
-    }
-
-    if (q.includes('points') || q.includes('rank') || q.includes('leaderboard')) {
-      const points = user?.points ?? 0;
-      return {
-        content: `You currently have ${points} points. Check the leaderboard to see your position and top contributors.`,
-        actions: [
-          { label: 'View Leaderboard', type: 'navigate', to: '/leaderboard' }
-        ]
-      };
-    }
-
-    if (q.includes('question') || q.startsWith('draft')) {
-      const base = personalizationOn && topLearnSkill ? `How to get better at ${topLearnSkill}?` : 'How to learn React effectively?';
-      return {
-        content: `Here is a draft you can use in Q&A:\n\n"${base}"\n\nI can take you to the Q&A page to post it.`,
-        actions: [
-          { label: 'Go to Q&A', type: 'navigate', to: '/qa' }
-        ]
-      };
-    }
-
-    if (q.includes('profile') || q.includes('update skills') || q.includes('skills')) {
-      return {
-        content: 'You can update your profile and skills here. Keeping skills accurate improves matches.',
-        actions: [
-          { label: 'Open Profile', type: 'navigate', to: '/profile' }
-        ]
-      };
-    }
-
-    // Fallback
-    return {
-      content: 'I can help you find matches, plan sessions, post questions, check points, or update your profile. Try one of the prompts below.',
-      actions: []
-    };
-  };
-
-  const handleSend = () => {
-    const text = query.trim();
-    if (!text) return;
-    addUser(text);
-    const { content, actions } = intentReply(text);
-    addBot(content, actions);
-    setQuery('');
-  };
-
-  const handlePromptClick = (prompt) => {
-    addUser(prompt);
-    const { content, actions } = intentReply(prompt);
-    addBot(content, actions);
-  };
+  // Not used but kept for compatibility if we want to wire up prompts later
 
   return (
     <>
@@ -184,9 +199,9 @@ ${pointers.join('\n')}`,
               style={{ position: 'fixed', bottom: 88, right: 16, zIndex: 2147483647, width: '30rem', maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}
             >
               <Card className="bg-card border-border shadow-xl overflow-hidden">
-                <CardHeader className="py-2 px-3">
+                <CardHeader className="px-4 pt-4 pb-2 border-b border-border">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm flex items-center gap-2">
+                    <CardTitle className="text-lg flex font-bold items-center gap-2">
                       <Sparkles className="h-4 w-4 text-purple-600" />
                       Study Assistant
                     </CardTitle>
@@ -200,75 +215,44 @@ ${pointers.join('\n')}`,
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {personalizationOn ? 'Personalized' : 'Generic'} suggestions
-                    </div>
-                    <button
-                      className="text-sm underline text-blue-700 dark:text-blue-300"
-                      onClick={() => setPersonalizationOn((v) => !v)}
-                    >
-                      {personalizationOn ? 'Turn off' : 'Turn on'}
-                    </button>
-                  </div>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm"
+                <CardContent className="pb-3 text-sm"
                   style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: '65vh' }}
                 >
-                  {/* Suggested prompts */}
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {suggestedPrompts.map((p, i) => (
+                  {/* Header and action list for current menu */}
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-base font-medium">{getMenuTitle(currentMenu)}</div>
+                        <div className="text-xs text-muted-foreground">{menuStack.length ? `Back to ${getMenuTitle(menuStack[menuStack.length-1] || 'main')}` : 'Use the menu below'}</div>
+                        {currentMenu === 'learn' && topLearnSkills.length > 0 && (
+                          <div className="text-xs text-muted-foreground">Learning: {topLearnSkills.join(', ')}</div>
+                        )}
+                        {/* Teaching details removed — 'Find Students' menu no longer present */}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {menuStack.length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => handleAction({ type: 'back' })} title="Back">Back</Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={() => goToMainMenu()} title="Main menu">Main</Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                    {getActionsForMenu(currentMenu).map((a, i) => (
                       <button
                         key={i}
-                        className="text-sm px-2 py-1 rounded-md bg-muted hover:bg-muted/50 text-foreground"
-                        onClick={() => handlePromptClick(p)}
+                        onClick={() => handleAction(a)}
+                        className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background hover:bg-muted/50 text-left"
+                        aria-label={a.label}
                       >
-                        {p}
+                        <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">{a.icon}</div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{a.label}</div>
+                          {a.desc && <div className="text-xs text-muted-foreground">{a.desc}</div>}
+                        </div>
+                        <div className="text-muted-foreground text-xs">{a.type === 'navigate' ? 'Open' : a.type === 'menu' ? 'Explore' : ''}</div>
                       </button>
                     ))}
-                  </div>
-
-                  {/* Chat area */}
-                  <div
-                    ref={scrollRef}
-                    className="border border-border rounded-md p-2 bg-background text-sm overflow-y-auto overflow-x-hidden"
-                    style={{ maxHeight: '45vh', wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                  >
-                    {messages.length === 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Ask me about matches, sessions, points, or posting in Q&A. I’ll tailor suggestions using your profile.
-                      </div>
-                    )}
-                    {messages.map((m, idx) => (
-                      <div key={idx} className={`mb-3 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                        <div className={`inline-block max-w-[85%] rounded-md px-2 py-1 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                          {m.content}
-                        </div>
-                        {m.actions && m.actions.length > 0 && (
-                          <div className={`mt-2 flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {m.actions.map((a, i) => (
-                              <Button key={i} size="sm" variant="outline" onClick={() => handleAction(a)} className="text-sm">
-                                {a.label}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Input */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-                      placeholder="Ask something..."
-                      className="text-sm"
-                    />
-                    <Button onClick={handleSend} size="icon">
-                      <Send className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
