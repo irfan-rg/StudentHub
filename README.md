@@ -44,7 +44,7 @@
 │               │      │                 │
 │ • Auth        │      │ • ML Matching   │
 │ • Sessions    │      │ • Quiz Gen      │
-│ • Q&A         │      │ • Chatbot       │
+│ • Q&A         │      │ • Navigation Assistant (menu-driven)       │
 │ • Points      │      │ • AI Features   │
 └───────┬───────┘      └────────┬────────┘
         │                       │
@@ -74,9 +74,9 @@
 - **File Upload**: Multer
 - **Validation**: Express Validator
 
-#### Backend (Python)
+-#### Backend (Python)
 - **Framework**: Flask
-- **AI/ML**: Ollama (LLMs), Google Gemini
+- **AI/ML**: Google Gemini
 - **ML Library**: Scikit-learn (K-means clustering)
 - **PDF Processing**: PyMuPDF
 - **Database**: PyMongo
@@ -109,7 +109,7 @@ AI-Powered-Student-Hub/
 ├── python-backend/            # Python AI/ML services
 │   ├── app.py               # Flask server
 │   ├── ml.py                # ML matching algorithm
-│   ├── llm.py               # Chatbot service
+│   ├── llm.py               # Assistant/navigation service (LLM/AI features optional)
 │   ├── generate_qna.py      # Quiz generator
 │   └── requirements.txt
 │
@@ -133,7 +133,7 @@ Before you begin, ensure you have the following installed:
 - **Python** (v3.11+) - [Download](https://www.python.org/)
 - **MongoDB** (v6.0+) - [Download](https://www.mongodb.com/) or use MongoDB Atlas
 - **Git** - [Download](https://git-scm.com/)
-- **Ollama** (for AI features) - [Download](https://ollama.ai/)
+<!-- Ollama removed from the core prerequisites — the assistant no longer requires a local LLM setup -->
 
 ### Installation
 
@@ -177,8 +177,7 @@ pip install -r requirements.txt
 GEMINI_API_KEY=your-gemini-api-key-here
 "@ | Out-File -FilePath .env -Encoding utf8
 
-# Install Ollama model (one-time setup)
-ollama pull llama3.2:3b
+<!-- Ollama model installation removed: not required for the navigation assistant -->
 
 # Start the server
 python app.py
@@ -327,13 +326,12 @@ Stay updated with real-time notifications:
 
 Polls backend every 30 seconds for new notifications.
 
-### 7.  AI Chatbot
+### 7.  In-app Navigation Assistant
 
-Get instant help with an AI-powered assistant:
-- Ask questions about the platform
-- Get study tips and advice
-- Powered by Ollama (Llama 3.2)
-- Contextual and helpful responses
+Quickly navigate the platform and launch common actions using a lightweight, menu-driven assistant:
+- Jump to relevant pages (Matching, Sessions, Q&A, Leaderboard, Profile)
+- Create or join sessions, post questions, and view matches
+- Client-side navigation assistant; not powered by a local LLM
 
 ### 8.  Profile Management
 
@@ -473,7 +471,7 @@ GEMINI_API_KEY=your-api-key
 MONGODB_URI=your-mongodb-uri
 ```
 
-3. Ensure Ollama is available or use API-based LLM
+3. LLM support is optional: if you plan to use AI-based features (e.g., quiz generation enhancements), ensure your deployment has the required LLM runtime or API available and configured.
 
 ---
 
@@ -601,7 +599,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Radix UI** - Accessible component primitives
 - **Shadcn/ui** - Beautiful UI components
-- **Ollama** - Local LLM inference
+<!-- Ollama (optional) removed from main setup instructions -->
 - **Google Gemini** - AI quiz generation
 - **MongoDB** - Database platform
 - **Vercel** - Hosting and deployment
@@ -656,7 +654,7 @@ Built while learning:
 - MongoDB and Mongoose
 - JWT authentication
 - Machine learning integration
-- AI/LLM integration (Ollama, Gemini)
+- AI/LLM integration (Google Gemini; LLM runtime optional)
 - Full-stack development
 
 ---
