@@ -49,10 +49,12 @@ export function Dashboard({ user }) {
     sessionLink: '' // Added sessionLink field
   });
   const sessions = useSessionStore(state => state.sessions);
+  const joinedSessions = useSessionStore(state => state.joinedSessions);
   const createSession = useSessionStore(state => state.createSession);
   const updateSession = useSessionStore(state => state.updateSession);
   const deleteSession = useSessionStore(state => state.deleteSession);
   const loadSessions = useSessionStore(state => state.loadSessions);
+  const loadJoinedSessions = useSessionStore(state => state.loadJoinedSessions);
 
   const suggestedConnectionsRaw = useConnectionsStore(state => state.suggested);
   const suggestedConnections = Array.isArray(suggestedConnectionsRaw) 
@@ -233,20 +235,19 @@ export function Dashboard({ user }) {
         console.warn('Dashboard profile refresh failed', err);
       }
     })();
-    // Load suggested connections and existing connections on component mount
     const loadInitialData = async () => {
       try {
         await Promise.all([
           loadSuggestedConnections(),
           loadConnections(),
-          loadSessions()
+          loadJoinedSessions()
         ]);
         console.log('Dashboard loaded connections:', connections.length);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       }
     };
-    
+
     loadInitialData();
 
     // Poll connections in background to reflect status updates from other users
@@ -255,7 +256,7 @@ export function Dashboard({ user }) {
       loadSuggestedConnections();
     }, 10000);
     return () => clearInterval(interval);
-  }, [loadSuggestedConnections, loadConnections, loadSessions]);
+  }, [loadSuggestedConnections, loadConnections, loadJoinedSessions]);
 
   useEffect(() => {
     // Log connections when they change
@@ -267,8 +268,8 @@ export function Dashboard({ user }) {
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}! 👋</h1>
-          <p className="text-muted-foreground mt-4">Ready to learn and share knowledge today?</p>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
+          <p className="text-muted-foreground font-medium mt-4">Ready to learn and share knowledge today?</p>
         </div>
       </div>
 
@@ -281,7 +282,7 @@ export function Dashboard({ user }) {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
                     <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                   </div>
                   <Icon className={`h-8 w-8 ${stat.color}`} />
@@ -300,11 +301,11 @@ export function Dashboard({ user }) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
+                  <CardTitle className="flex items-center gap-2 text-foreground font-bold">
                     <Users className="h-5 w-5 text-blue-600" />
                     Suggested Study Partners
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground mt-4">
+                  <CardDescription className="text-muted-foreground mt-4 font-medium">
                     AI-matched partners based on your learning goals
                   </CardDescription>
                 </div>
@@ -332,14 +333,27 @@ export function Dashboard({ user }) {
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-foreground">{connection.name}</h4>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 text-xs">
-                              {connection.matchPercentage}% match
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{connection.college}</p>
+                          <h4 className="font-semibold text-medium text-foreground">{connection.name}</h4>
+                          <p className="text-sm font-medium mt-2 text-muted-foreground">{connection.college}</p>
                         </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 text-xs mb-2 px-2 py-1">
+                          {connection.matchPercentage}% Match
+                        </Badge>
+                        {/* <Button 
+                          size="sm"
+                          disabled={connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())) || connectionRequests[connection.id]}
+                          onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
+                        >
+                          {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())) ? (
+                            <Badge>Connected</Badge>
+                          ) : connectionRequests[connection.id] ? (
+                            <Badge variant="secondary">Pending</Badge>
+                          ) : (
+                            <UserPlus className="h-3 w-3" />
+                          )}
+                        </Button> */}
                       </div>
                     </div>
                     
@@ -347,13 +361,13 @@ export function Dashboard({ user }) {
                     <div className="mb-3">
                       <div className="flex items-center gap-1 mb-2">
                         <Target className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium text-muted-foreground">Can teach:</span>
+                        <span className="text-sm font-medium text-muted-foreground">Can teach:</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {connection.skillsCanTeach.map((skill, index) => {
                           const config = levelConfig[skill.level];
                           return (
-                            <div key={index} className="flex items-center gap-1 text-xs">
+                            <div key={index} className="flex items-center gap-1 text-sm">
                               <span className="font-medium text-foreground">{skill.name}</span>
                               <span className={`${config.color}`}>({config.icon} {config.label})</span>
                             </div>
@@ -363,9 +377,9 @@ export function Dashboard({ user }) {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{connection.points} points</span>
-                        <span>{connection.sessions} sessions</span>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{connection.points} Points</span>
+                        <span>{connection.sessionsCompleted} Sessions</span>
                       </div>
                        <div className="flex gap-2">
                          <Button 
@@ -374,11 +388,11 @@ export function Dashboard({ user }) {
                            onClick={() => setConnectModal({ isOpen: true, partnerId: connection.id, message: '' })}
                          >
                            {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())) ? (
-                             <Badge>Connected</Badge>
+                             <span className="text-xs font-semibold text-green-700">Connected</span>
                            ) : connectionRequests[connection.id] ? (
-                             <Badge variant="secondary">Pending</Badge>
+                             <span className="text-xs font-semibold text-yellow-700">Pending</span>
                            ) : (
-                             <UserPlus className="h-3 w-3" />
+                             <span className="flex items-center gap-1 text-xs font-semibold">Connect</span>
                            )}
                          </Button>
                        </div>
@@ -407,11 +421,11 @@ export function Dashboard({ user }) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
+                  <CardTitle className="flex items-center gap-2 text-foreground font-bold">
                     <Target className="h-5 w-5 text-green-600" />
                     Your Teaching Skills
                   </CardTitle>
-                    <CardDescription className="text-muted-foreground mt-4">
+                    <CardDescription className="text-muted-foreground mt-4 font-medium">
                     Skills ready to share with the community
                   </CardDescription>
                 </div>
@@ -486,40 +500,70 @@ export function Dashboard({ user }) {
           {/* Upcoming Sessions */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-bold">
                 <Calendar className="h-5 w-5 text-green-600" />
                 Upcoming Sessions
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Array.isArray(sessions) && sessions.length > 0 ? (
-                  sessions.map((session) => (
-                    <div key={session.id} className="p-3 border border-border rounded-lg">
+                {(() => {
+                  // Filter out sessions that are completed or in the past and sort by nearest time
+                  const now = new Date();
+                  const upcoming = (Array.isArray(joinedSessions) ? joinedSessions : [])
+                    .filter(s => {
+                      const st = (s.status || '');
+                      if (st === 'completed' || st === 'done' || st === 'cancelled' || st === 'cancelled') return false;
+                      if (s.dateIso) {
+                        const d = new Date(s.dateIso);
+                        if (!isNaN(d.getTime()) && d < now) return false;
+                      }
+                      return true;
+                    })
+                    .sort((a, b) => {
+                      const da = a.dateIso ? new Date(a.dateIso).getTime() : 0;
+                      const db = b.dateIso ? new Date(b.dateIso).getTime() : 0;
+                      return da - db;
+                    });
+                  if (upcoming.length === 0) {
+                    return (
+                      <p className="text-xs text-muted-foreground text-center py-4">No upcoming sessions yet</p>
+                    );
+                  }
+                  return upcoming.slice(0, 3).map((session) => {
+                    // Fallback: if partner is a 24-char ObjectId string, try to resolve name from
+                    // connections or suggestedConnections already loaded in the Dashboard to avoid additional API calls
+                    let partnerName = session.partner;
+                    if (partnerName && typeof partnerName === 'string' && /^[a-fA-F0-9]{24}$/.test(partnerName)) {
+                      const c = connections.find(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerName?.toString()))
+                          || suggestedConnections.find(conn => (conn._id?.toString() || conn.id?.toString()) === (partnerName?.toString()));
+                      if (c) partnerName = c.name;
+                    }
+                    return (
+                      <div key={session.id} className="p-3 border border-border rounded-lg">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm text-foreground">{session.title}</h4>
+                        <h4 className="font-medium text-md text-foreground ">{session.title}</h4>
                         <Badge 
                           variant={session.status === 'confirmed' ? 'default' : 'outline'}
-                          className="text-xs"
+                          className="text-xs  px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
                         >
                           {session.status}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">with {session.partner}</p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <p className="text-sm font-medium text-muted-foreground"> {partnerName || session.partner}</p>
+                      <div className="flex items-center gap-2 mt-2 text-sm  text-foreground">
                         <Calendar className="h-3 w-3" />
                         <span>{session.date} at {session.time}</span>
                       </div>
-                      {session.sessionLink && (
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      {/* {session.sessionLink && (
+                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                           <span>Link: {session.sessionLink}</span>
                         </div>
-                      )}
+                      )} */}
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">No upcoming sessions yet</p>
-                )}
+                  );
+                  })
+                })()}
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -535,18 +579,18 @@ export function Dashboard({ user }) {
           {/* Connections */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-bold">
                 <Users className="h-5 w-5 text-purple-600" />
                 Connections
               </CardTitle>
-              <CardDescription className="text-muted-foreground mt-4">
+              <CardDescription className="text-muted-foreground mt-4 font-medium">
                 Your existing study partners
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {connections.length > 0 ? (
-                  connections.map((connection) => (
+                  connections.slice(0, 5).map((connection) => (
                     <div key={connection.id} className="p-3 border border-border rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
@@ -556,7 +600,7 @@ export function Dashboard({ user }) {
                         />
                         <div>
                           <h4 className="font-semibold text-foreground">{connection.name}</h4>
-                          <p className="text-xs text-muted-foreground">{connection.college}</p>
+                          <p className="text-sm font-medium text-muted-foreground">{connection.college}</p>
                         </div>
                       </div>
                       <Button size="sm" variant="destructive" onClick={() => handleDeleteConnection(connection.id)}>
@@ -579,138 +623,6 @@ export function Dashboard({ user }) {
           </Card>
         </div>
       </div>
-
-      {/* Session Scheduling Modal */}
-      <Dialog open={sessionModal.isOpen} onOpenChange={(open) => setSessionModal({ isOpen: open, partnerId: null, isEdit: false, sessionId: null })}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Schedule Study Session</DialogTitle>
-            <DialogDescription>
-              Plan a learning session with your study partner
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label htmlFor="session-title">Session Title</Label>
-              <Input
-                id="session-title"
-                value={sessionForm.title}
-                onChange={(e) => setSessionForm(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="e.g., React Hooks Deep Dive"
-              />
-            </div>
-            
-            <div className="space-y-3">
-              <Label htmlFor="session-description">Description (Optional)</Label>
-              <Textarea
-                id="session-description"
-                value={sessionForm.description}
-                onChange={(e) => setSessionForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="What topics will you cover?"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-3">
-              <Label htmlFor="session-partner">Select Partner</Label>
-              <Select 
-                value={sessionForm.partnerId?.toString() || ''} 
-                onValueChange={(value) => setSessionForm(prev => ({ ...prev, partnerId: parseInt(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a partner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suggestedConnections
-                    .filter(connection => !connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (connection._id?.toString() || connection.id?.toString())))
-                    .map((connection) => (
-                    <SelectItem key={connection.id} value={connection.id.toString()}>
-                      {connection.name} ({connection.college})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <Label htmlFor="session-type">Session Type</Label>
-                <Select value={sessionForm.type} onValueChange={(value) => setSessionForm(prev => ({ ...prev, type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="video">Video Call</SelectItem>
-                    <SelectItem value="inperson">In Person</SelectItem>
-                    <SelectItem value="group">Group Session</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-3">
-                <Label htmlFor="session-duration">Duration</Label>
-                <Select value={sessionForm.duration} onValueChange={(value) => setSessionForm(prev => ({ ...prev, duration: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="90">1.5 hours</SelectItem>
-                    <SelectItem value="120">2 hours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <Label htmlFor="session-date">Date</Label>
-                <Input
-                  id="session-date"
-                  type="date"
-                  value={sessionForm.date}
-                  onChange={(e) => setSessionForm(prev => ({ ...prev, date: e.target.value }))}
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <Label htmlFor="session-time">Time</Label>
-                <Input
-                  id="session-time"
-                  type="time"
-                  value={sessionForm.time}
-                  onChange={(e) => setSessionForm(prev => ({ ...prev, time: e.target.value }))}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <Label htmlFor="session-link">Attach Session Link</Label>
-              <Input
-                id="session-link"
-                value={sessionForm.sessionLink}
-                onChange={(e) => setSessionForm(prev => ({ ...prev, sessionLink: e.target.value }))}
-                placeholder="e.g., https://meet.google.com/abc-defg-hij"
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-              <Button onClick={handleSubmitSession} className="flex-1">
-                {sessionModal.isEdit ? 'Update Session' : 'Schedule Session'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setSessionModal({ isOpen: false, partnerId: null, isEdit: false, sessionId: null })}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Connect Request Modal */}
       <Dialog open={connectModal.isOpen} onOpenChange={(open) => setConnectModal({ isOpen: open, partnerId: null, message: '' })}>

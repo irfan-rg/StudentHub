@@ -424,7 +424,7 @@ export function Profile({ user, onUpdateUser }) {
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold text-foreground mb-2">My Profile</h1>
-          <p className="text-muted-foreground">Manage your information and skills</p>
+          <p className="text-muted-foreground font-medium">Manage your information and skills</p>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -500,16 +500,16 @@ export function Profile({ user, onUpdateUser }) {
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
-                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
+                    <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
+                    <div className="flex font-medium items-center justify-center gap-1 text-muted-foreground mt-1">
                       <Mail className="h-4 w-4" />
                       <span className="text-sm">{user.email}</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
+                    <div className="flex font-medium items-center justify-center gap-1 text-muted-foreground mt-1">
                       <MapPin className="h-4 w-4" />
                       <span className="text-sm">{user.college}</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-muted-foreground mt-1">
+                    <div className="flex font-medium items-center justify-center gap-1 text-muted-foreground mt-1">
                       <GraduationCap className="h-4 w-4" />
                       <span className="text-sm capitalize">{user.educationLevel?.replace('-', ' ')}</span>
                     </div>
@@ -523,7 +523,7 @@ export function Profile({ user, onUpdateUser }) {
           <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
-                <CardTitle className="flex items-center gap-2 text-foreground">
+                <CardTitle className="flex  items-center gap-2 text-foreground font-medium">
                   <Trophy className="h-5 w-5 text-yellow-600" />
                   Performance Snapshot
                 </CardTitle>
@@ -531,7 +531,7 @@ export function Profile({ user, onUpdateUser }) {
                   {levelLabel}
                 </Badge>
               </div>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-muted-foreground font-medium text-sm mt-2">
                 Radar view of how you&apos;re tracking toward your goals
               </CardDescription>
             </CardHeader>
@@ -602,7 +602,7 @@ export function Profile({ user, onUpdateUser }) {
           {/* Badges */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-medium">
                 <Award className="h-5 w-5 text-yellow-600" />
                 Achievements
               </CardTitle>
@@ -625,7 +625,7 @@ export function Profile({ user, onUpdateUser }) {
           {/* Bio Section */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-medium">
                 <User className="h-5 w-5" />
                 About Me
               </CardTitle>
@@ -643,7 +643,7 @@ export function Profile({ user, onUpdateUser }) {
                   />
                 </div>
               ) : (
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed font-medium">
                   {formData.bio}
                 </p>
               )}
@@ -653,11 +653,11 @@ export function Profile({ user, onUpdateUser }) {
           {/* Learning Goals */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-medium">
                 <BookOpen className="h-5 w-5 text-blue-600" />
                 Learning Goals
-              </CardTitle>
-              <CardDescription className="text-muted-foreground mt-4">
+              </CardTitle> 
+              <CardDescription className="text-muted-foreground mt-4 font-medium">
                 {user.skillsWantToLearn?.length || 0} skills you want to master
               </CardDescription>
             </CardHeader>
@@ -683,7 +683,7 @@ export function Profile({ user, onUpdateUser }) {
                   </div>
                   
                   <div className="pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground font-medium">
                       We'll help you find mentors for these skills through our AI matching system.
                     </p>
                   </div>
@@ -709,11 +709,11 @@ export function Profile({ user, onUpdateUser }) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
+                  <CardTitle className="flex items-center gap-2 text-foreground font-medium">
                     <Target className="h-5 w-5 text-green-600" />
                     Teaching Skills
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground mt-4">
+                  <CardDescription className="text-muted-foreground mt-4 font-medium">
                     {user.skillsCanTeach?.length || 0} skills available for sharing
                   </CardDescription>
                 </div>

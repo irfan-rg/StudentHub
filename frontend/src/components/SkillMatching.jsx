@@ -14,6 +14,7 @@ import {
   MessageSquare, 
   Calendar, 
   Star, 
+  Clock,
   MapPin, 
   Filter,
   UserPlus,
@@ -242,7 +243,7 @@ export function SkillMatching({ user }) {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-foreground mb-4">Find Your Perfect Study Partner</h1>
-        <p className="text-muted-foreground">Connect with students who can teach you new skills and learn from your expertise</p>
+        <p className="text-muted-foreground font-medium">Connect with students who can teach you new skills and learn from your expertise</p>
       </div>
 
       {/* Search and Filters */}
@@ -400,8 +401,8 @@ export function SkillMatching({ user }) {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{student.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground font-medium">
+                      {/* <MapPin className="h-3 w-3" /> */}
                       {student.college}
                     </div>
                   </div>
@@ -480,13 +481,18 @@ export function SkillMatching({ user }) {
               {/* Actions */}
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="w-full"
+                variant="default" 
+                className="w-full bg-black text-white px-3 py-1 rounded "
                 onClick={() => handleConnect(student)}
                 disabled={connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())) || !!connectionRequests[student.id]}
               >
-                <UserPlus className="h-4 w-4 mr-1" />
-                {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())) ? 'Connected' : connectionRequests[student.id] ? 'Pending' : 'Connect'}
+                {connections.some(conn => (conn._id?.toString() || conn.id?.toString()) === (student._id?.toString() || student.id?.toString())) ? (
+                  <span className="text-sm font-semibold text-green-700">Connected</span>
+                ) : connectionRequests[student.id] ? (
+                  <span className="flex text-sm font-semibold text-yellow-700"><Clock className="h-4 w-4 mr-2" />Pending</span>
+                ) : (
+                  <span className="flex items-center gap-1 text-sm font-semibold"><UserPlus className="h-4 w-4 mr-2" />Connect</span>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -547,7 +553,7 @@ export function SkillMatching({ user }) {
                         </div>
                         <div>
                           <h3 className="font-semibold text-foreground">{student.name}</h3>
-                          <p className="text-sm text-muted-foreground">{student.college}</p>
+                          <p className="text-sm text-muted-foreground font-medium">{student.college}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-center gap-2">

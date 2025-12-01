@@ -160,7 +160,7 @@ export function Leaderboard({ user }) {
                   <h3 className="font-semibold text-foreground">{userData.name}</h3>
                   {isCurrentUser && <Badge variant="secondary">You</Badge>}
                 </div>
-                <p className="text-sm text-muted-foreground">{userData.college}</p>
+                <p className="text-sm text-muted-foreground font-medium">{userData.college}</p>
                 <div className="flex gap-2 mt-1">
                   {(userData.badges || []).slice(0, 2).map((badge, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
@@ -193,7 +193,7 @@ export function Leaderboard({ user }) {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2 text-foreground">🏆 Leaderboard</h1>
-        <p className="text-muted-foreground">See how you rank among the community</p>
+        <p className="text-muted-foreground font-medium">See how you rank among the community</p>
       </div>
 
       {/* Loading State */}
@@ -235,7 +235,7 @@ export function Leaderboard({ user }) {
                   </Avatar>
                   <div>
                     <h2 className="text-2xl font-bold">{displayCurrentUser?.name}</h2>
-                    <p className="text-blue-100">Rank #{displayCurrentUserRank} • {displayCurrentUser?.points || 0} points</p>
+                    <p className="text-blue-100 ">Rank #{displayCurrentUserRank} • {displayCurrentUser?.points || 0} points</p>
                     <Badge variant="secondary" className="mt-1 bg-white/20 text-white">
                       {displayCurrentUser?.badges?.[0] || 'Member'}
                     </Badge>
@@ -378,31 +378,31 @@ export function Leaderboard({ user }) {
           {/* Achievement Progress */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-foreground font-medium">
                 <Zap className="h-5 w-5 text-yellow-500" />
                 Your Progress
               </CardTitle>
-              <CardDescription className="text-muted-foreground">Track your journey to the next achievements</CardDescription>
+              <CardDescription className="text-muted-foreground font-medium">Track your journey to the next achievements</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-foreground">Sessions Completed</span>
-                  <span className="text-muted-foreground">{displayCurrentUser?.sessionsCompleted || 0}/50</span>
+                  <span className="text-foreground font-medium">Sessions Completed</span>
+                  <span className="text-muted-foreground font-medium">{displayCurrentUser?.sessionsCompleted || 0}/50</span>
                 </div>
                 <Progress value={((displayCurrentUser?.sessionsCompleted || 0) / 50) * 100} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-foreground">Questions Answered</span>
-                  <span className="text-muted-foreground">{displayCurrentUser?.questionsAnswered || 0}/50</span>
+                  <span className="text-foreground font-medium">Questions Answered</span>
+                  <span className="text-muted-foreground font-medium">{displayCurrentUser?.questionsAnswered || 0}/50</span>
                 </div>
                 <Progress value={((displayCurrentUser?.questionsAnswered || 0) / 50) * 100} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-foreground">Total Points</span>
-                  <span className="text-muted-foreground">{displayCurrentUser?.points || 0}/1000</span>
+                  <span className="text-foreground font-medium">Total Points</span>
+                  <span className="text-muted-foreground font-medium">{displayCurrentUser?.points || 0}/1000</span>
                 </div>
                 <Progress value={((displayCurrentUser?.points || 0) / 1000) * 100} className="h-2" />
               </div>

@@ -1231,7 +1231,7 @@ export function Sessions({ user }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Sessions</h1>
-          <p className="text-muted-foreground mt-4">Create and track your study sessions</p>
+          <p className="text-muted-foreground mt-4 font-medium">Create and track your study sessions</p>
         </div>
       </div>
 
@@ -1265,7 +1265,7 @@ export function Sessions({ user }) {
                <Card className="bg-card border-border">
                  <CardHeader>
                    <CardTitle className="font-bold text-2xl">Create a new session</CardTitle>
-                   <CardDescription className="mt-2">Set details and share with a study partner</CardDescription>
+                   <CardDescription className="mt-2 font-medium">Set details and share with a study partner</CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-4">
                    <div className="space-y-3">
@@ -1646,7 +1646,7 @@ export function Sessions({ user }) {
                          </div>
                        </div>
                      )}
-                     <div className="text-xs text-muted-foreground">Supported: PDF, DOC, DOCX, TXT, PPTX, XLSX (Max 10MB each)</div>
+                     <div className="text-xs text-muted-foreground font-medium">Supported: PDF, DOC, DOCX, TXT, PPTX, XLSX (Max 10MB each)</div>
                    </div>
                   </div>
 
@@ -1665,7 +1665,7 @@ export function Sessions({ user }) {
                <Card className="bg-card border-border h-fit">
                  <CardHeader>
                    <CardTitle className="text-2xl font-bold">Your Created Sessions</CardTitle>
-                   <CardDescription className="text-m mt-2">Recently created sessions</CardDescription>
+                   <CardDescription className="text-m mt-2 font-medium">Recently created sessions</CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-3">
                    {sessionsLoading && (
@@ -1693,7 +1693,7 @@ export function Sessions({ user }) {
                                </Avatar>
                                <div>
                                  <div className="font-medium text-foreground leading-tight">{s.title}</div>
-                                 <div className="text-xs text-muted-foreground">
+                                 <div className="text-xs font-medium text-muted-foreground">
                                    Hosted by you
                                    {' • '}
                                    {s.type === 'video' ? 'Video' : 'In Person'} • {s.duration} mins
@@ -1701,10 +1701,10 @@ export function Sessions({ user }) {
                                </div>
                              </div>
                              {s.description && (
-                               <div className="text-sm text-muted-foreground mb-2 leading-snug">{s.description}</div>
+                               <div className="text-sm font-medium text-muted-foreground mb-2 leading-snug">{s.description}</div>
                              )}
-                             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                               <div className="flex items-center gap-1 whitespace-nowrap">
+                             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium">
+                               <div className="flex items-center gap-1 whitespace-nowrap ">
                                  <Calendar className="h-3 w-3" />
                                  {s.date}
                                  {s.time && <span>&nbsp;at {s.time}</span>}
@@ -1735,15 +1735,15 @@ export function Sessions({ user }) {
                              </div>
                            </div>
                            <div className="flex flex-col items-center gap-2">
-                             <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 flex items-center gap-1">
+                             <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 flex items-center gap-1 px-2 py-1">
                                <Clock className="h-3 w-3" />
                                {statusLabel}
                              </Badge>
                              <Button
-                               variant="outline"
+                               variant="destructive"
                                onClick={() => removeCreatedSession(s.id)}
                                disabled={removeLoading}
-                               className="h-8 mt-2 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/20"
+                               className=""
                              >
                                {removeLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
                              </Button>
@@ -1769,7 +1769,7 @@ export function Sessions({ user }) {
            <Card className="bg-card border-border">
              <CardHeader>
                <CardTitle className="font-bold text-2xl">Sessions You've Joined</CardTitle>
-               <CardDescription className="mt-2">Sessions you've signed up for from other creators</CardDescription>
+               <CardDescription className="mt-2 font-medium">Sessions you've signed up for from other creators</CardDescription>
              </CardHeader>
             <CardContent className="space-y-4">
               {totalJoinedSessions === 0 && (
@@ -1783,7 +1783,7 @@ export function Sessions({ user }) {
                     <Card className="bg-card border-border h-fit">
                       <CardHeader>
                         <CardTitle className="text-xl font-bold flex items-center gap-2"><Clock className="h-4 w-4" /> Pending</CardTitle>
-                        <CardDescription className="mt-1">Upcoming and in-progress sessions</CardDescription>
+                        <CardDescription className="mt-1 font-medium">Upcoming and in-progress sessions</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {pendingJoinedSessions.map((session) => {
@@ -1815,7 +1815,7 @@ export function Sessions({ user }) {
                                     </Avatar>
                                     <div>
                                       <div className="font-medium text-foreground leading-tight">{session.title}</div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-xs text-muted-foreground font-medium">
                                         Hosted by {session.creator.name}
                                         {' • '}
                                         {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
@@ -1823,9 +1823,9 @@ export function Sessions({ user }) {
                                     </div>
                                   </div>
                                   {session.description && (
-                                    <div className="text-sm text-muted-foreground mb-2 leading-snug">{session.description}</div>
+                                    <div className="text-sm text-muted-foreground mb-2 leading-snug font-medium">{session.description}</div>
                                   )}
-                                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium">
                                     <div className="flex items-center gap-1 whitespace-nowrap">
                                       <Calendar className="h-3 w-3" />
                                       {session.dateLabel}
@@ -1879,7 +1879,7 @@ export function Sessions({ user }) {
                     <Card className="bg-card border-border h-fit">
                       <CardHeader>
                         <CardTitle className="text-xl font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Completed</CardTitle>
-                        <CardDescription className="mt-1">Sessions you've already finished</CardDescription>
+                        <CardDescription className="mt-1 font-medium">Sessions you've already finished</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {completedJoinedSessions.map((session) => {
@@ -1899,7 +1899,7 @@ export function Sessions({ user }) {
                                     </Avatar>
                                     <div>
                                       <div className="font-medium text-foreground leading-tight">{session.title}</div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-xs text-muted-foreground font-medium">
                                         Hosted by {session.creator.name}
                                         {' • '}
                                         {session.type === 'video' ? 'Video' : 'In Person'} • {session.duration} mins
@@ -1907,9 +1907,9 @@ export function Sessions({ user }) {
                                     </div>
                                   </div>
                                   {session.description && (
-                                    <div className="text-sm text-muted-foreground mb-2 leading-snug">{session.description}</div>
+                                    <div className="text-sm text-muted-foreground mb-2 leading-snug font-medium">{session.description}</div>
                                   )}
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
                                     <Calendar className="h-3 w-3" />
                                     {session.dateLabel}
                                     {session.timeLabel && <span>&nbsp;at {session.timeLabel}</span>}
@@ -2013,14 +2013,14 @@ export function Sessions({ user }) {
                 <Inbox className="h-6 w-6" />
                 Session Invites
               </CardTitle>
-              <CardDescription className="mt-2">
+              <CardDescription className="mt-2 font-medium">
                 Pending invitations from your connections
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {invitesLoading && (
                 <div className="text-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground font-medium" />
                   <p className="text-sm text-muted-foreground mt-2">Loading invites...</p>
                 </div>
               )}
@@ -2035,7 +2035,7 @@ export function Sessions({ user }) {
                 <div className="text-center py-12">
                   <Inbox className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
                   <p className="text-lg font-medium text-muted-foreground">No pending invites</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 font-medium">
                     When someone invites you to a session, it will appear here
                   </p>
                 </div>

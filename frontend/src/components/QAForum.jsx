@@ -278,7 +278,7 @@ export function QAForum({ user }) {
               )}
             </div>
 
-            <p className="text-muted-foreground mb-3 line-clamp-2">{question.content}</p>
+            <p className="text-muted-foreground mb-3 line-clamp-2 font-medium">{question.content}</p>
 
             <div className="flex flex-wrap gap-2 mb-3">
               {question.tags.map((tag) => (
@@ -410,7 +410,7 @@ export function QAForum({ user }) {
         {/* Header */}
         <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2 text-foreground">Q&A Forum</h1>
-        <p className="text-muted-foreground">Ask questions, share knowledge, and learn from peers</p>
+        <p className="text-muted-foreground font-medium">Ask questions, share knowledge, and learn from peers</p>
         </div>
 
         {/* Ask Question Button */}

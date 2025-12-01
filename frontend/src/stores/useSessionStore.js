@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { sessionService } from '../services/api.js'
+import { sessionService, userService } from '../services/api.js'
 
 const normalizeSession = (session) => {
   if (!session) return null
@@ -36,6 +36,7 @@ const normalizeSession = (session) => {
     duration: sessionDoc.duration || '',
     preferredTimes: sessionDoc.preferedTimings || sessionDoc.preferredTimes || '',
     meetingLink: sessionDoc.link || sessionDoc.meetingLink || '',
+    sessionLink: sessionDoc.sessionLink || sessionDoc.link || sessionDoc.meetingLink || '',
     meetingAddress: sessionDoc.location || sessionDoc.meetingAddress || '',
     dateIso: isoDate,
     status: normalizedStatus,
@@ -48,6 +49,7 @@ const normalizeSession = (session) => {
   const otherUser = session.otherUser || session.connectionUser || session.connection || session.partner || sessionDoc.otherUser || null
   if (otherUser) {
     normalized.otherUser = otherUser
+    normalized.partner = otherUser.name || otherUser.fullName || otherUser?.displayName || (typeof otherUser === 'string' ? otherUser : '')
   }
 
   // Also include createdBy (creator) if available for easier UI access
@@ -55,6 +57,24 @@ const normalizeSession = (session) => {
   const creatorSource = sessionDoc.createdBy || sessionDoc.creator || session.original?.createdBy || session.raw?.createdBy || session.createdBy || session.owner || session.host;
   if (creatorSource) {
     normalized.creator = creatorSource
+  }
+
+  // Populate a readable date/time for convenience
+  if (normalized.dateIso) {
+    try {
+      const d = new Date(normalized.dateIso)
+      if (!isNaN(d.getTime())) {
+        normalized.date = d.toLocaleDateString();
+        normalized.time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (err) {
+      // ignore formatting errors
+    }
+  }
+
+  // If no partner provided, try to populate from creator if available (for joined sessions)
+  if (!normalized.partner && normalized.creator) {
+    normalized.partner = normalized.creator.name || normalized.creator.fullName || (typeof normalized.creator === 'string' ? normalized.creator : '')
   }
 
   return normalized
@@ -76,8 +96,23 @@ export const useSessionStore = create(
         try {
           const data = await sessionService.getCreatedSessions()
           const normalized = Array.isArray(data) ? data.map(normalizeSession).filter(Boolean) : []
-          set({ sessions: normalized, loading: false })
-          return normalized;
+          // If partner is an ObjectId string, try to resolve the partner name from userService
+          const normalizedWithNames = await Promise.all(normalized.map(async (s) => {
+            if (s && s.partner && typeof s.partner === 'string' && /^[a-fA-F0-9]{24}$/.test(s.partner)) {
+              try {
+                const user = await userService.getUserById(s.partner)
+                if (user) {
+                  const n = user.name || user.user?.name || user.fullName || user.displayName
+                  if (n) s.partner = n
+                }
+              } catch (err) {
+                // ignore errors, leave ID as-is
+              }
+            }
+            return s
+          }))
+          set({ sessions: normalizedWithNames, loading: false })
+          return normalizedWithNames;
         } catch (error) {
           console.error('Error loading sessions:', error);
           set({ error: error.message || 'Failed to load sessions', loading: false, sessions: [] })
@@ -105,6 +140,22 @@ export const useSessionStore = create(
             }
           }))
           normalized = rehydrated
+          // Resolve partner names for any entries where partner is an objectId
+          const normalizedWithNames = await Promise.all(normalized.map(async (s) => {
+            if (s && s.partner && typeof s.partner === 'string' && /^[a-fA-F0-9]{24}$/.test(s.partner)) {
+              try {
+                const user = await userService.getUserById(s.partner)
+                if (user) {
+                  const n = user.name || user.user?.name || user.fullName || user.displayName
+                  if (n) s.partner = n
+                }
+              } catch (err) {
+                // ignore
+              }
+            }
+            return s
+          }))
+          normalized = normalizedWithNames
           set({ joinedSessions: normalized, loading: false })
           return normalized
         } catch (error) {
@@ -117,7 +168,15 @@ export const useSessionStore = create(
         set({ loading: true, error: null })
         try {
           const created = await sessionService.createSession(sessionPayload)
-          const normalized = normalizeSession(created)
+          let normalized = normalizeSession(created)
+          if (normalized && normalized.partner && typeof normalized.partner === 'string' && /^[a-fA-F0-9]{24}$/.test(normalized.partner)) {
+            try {
+              const user = await userService.getUserById(normalized.partner)
+              if (user) normalized.partner = user.name || user.fullName || user.displayName || normalized.partner
+            } catch (err) {
+              // ignore
+            }
+          }
           set({ sessions: normalized ? [normalized, ...get().sessions] : get().sessions, loading: false })
           // Refresh current user profile in case server awarded points for creating a session
           try {
@@ -154,7 +213,15 @@ export const useSessionStore = create(
         set({ loading: true, error: null })
         try {
           const updated = await sessionService.updateSession(sessionId, updates)
-          const normalized = normalizeSession(updated)
+          let normalized = normalizeSession(updated)
+          if (normalized && normalized.partner && typeof normalized.partner === 'string' && /^[a-fA-F0-9]{24}$/.test(normalized.partner)) {
+            try {
+              const user = await userService.getUserById(normalized.partner)
+              if (user) normalized.partner = user.name || user.fullName || user.displayName || normalized.partner
+            } catch (err) {
+              // ignore
+            }
+          }
           if (normalized) {
             set({
               sessions: get().sessions.map(session => session.id === normalized.id ? normalized : session),
@@ -174,7 +241,15 @@ export const useSessionStore = create(
         set({ loading: true, error: null })
         try {
           const updated = await sessionService.rateSession({ sessionId, rating, comment })
-          const normalized = normalizeSession(updated)
+          let normalized = normalizeSession(updated)
+          if (normalized && normalized.partner && typeof normalized.partner === 'string' && /^[a-fA-F0-9]{24}$/.test(normalized.partner)) {
+            try {
+              const user = await userService.getUserById(normalized.partner)
+              if (user) normalized.partner = user.name || user.fullName || user.displayName || normalized.partner
+            } catch (err) {
+              // ignore
+            }
+          }
           if (normalized) {
             set({
               sessions: get().sessions.map(session => session.id === normalized.id ? normalized : session),
@@ -201,5 +276,8 @@ export const useSessionStore = create(
     }
   )
 )
+
+// Export normalizeSession for tests and external utilities
+export { normalizeSession };
 
 
