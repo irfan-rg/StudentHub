@@ -236,7 +236,7 @@ This will run frontend, backend, and python-backend in separate integrated termi
 
 **Individual Services:** You can also run individual services using "Start Frontend", "Start Backend", or "Start Python Backend" tasks.
 
-**Note:** The VS Code tasks configuration should be set up in `.vscode/tasks.json` to define these tasks. Each task should run the appropriate command (`npm run dev` or `python app.py`) in the correct directory (frontend, backend, or python-backend).
+**Note:** You'll need to create a VS Code tasks configuration file at `.vscode/tasks.json` to define these tasks. Each task should run the appropriate command (`npm run dev` or `python app.py`) in the correct directory (frontend, backend, or python-backend).
 
 ###  Test Accounts
 
