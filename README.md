@@ -15,14 +15,14 @@
 
 ###  Key Features
 
-- **🤝 Smart Matching**: ML-powered student matching based on skills and learning goals
-- **📚 Learning Sessions**: Schedule and manage collaborative learning sessions
-- **💬 Q&A Forum**: Ask questions, share knowledge, and help each other
-- **📄 AI Quiz Generator**: Upload PDFs and automatically generate quizzes using AI
-- **🏆 Gamification**: Earn points, climb the leaderboard, and track progress
-- **🔔 Real-time Notifications**: Stay updated on connections, sessions, and interactions
-- **🌙 Dark Mode**: Beautiful UI with light and dark themes
-- **💻 Modern Tech Stack**: React, Node.js, Python, MongoDB
+- **Smart Matching**: ML-powered student matching based on skills and learning goals
+- **Learning Sessions**: Schedule and manage collaborative learning sessions
+- **Q&A Forum**: Ask questions, share knowledge, and help each other
+- **AI Quiz Generator**: Upload PDFs and automatically generate quizzes using AI
+- **Gamification**: Earn points, climb the leaderboard, and track progress
+- **Real-time Notifications**: Stay updated on connections, sessions, and interactions
+- **Dark Mode**: Beautiful UI with light and dark themes
+- **Modern Tech Stack**: React, Node.js, Python, MongoDB
 
 ---
 
@@ -225,21 +225,18 @@ Then open **http://localhost:5173** in your browser!
 
 ###  Start everything at once (VS Code)
 
-If you're using VS Code, run the batch file to open the project, then use VS Code tasks to start all services in integrated terminals:
+If you're using VS Code, you can use the VS Code tasks configuration to start all services in integrated terminals:
 
-```powershell
-# from project root
-.\start-dev.bat
-```
-
-Then in VS Code:
-1. Press `Ctrl+Shift+P` (Command Palette)
-2. Type "Tasks: Run Task"
-3. Select "Start All Services"
+1. Open the project in VS Code
+2. Press `Ctrl+Shift+P` (Command Palette)
+3. Type "Tasks: Run Task"
+4. Select "Start All Services"
 
 This will run frontend, backend, and python-backend in separate integrated terminals within VS Code.
 
 **Individual Services:** You can also run individual services using "Start Frontend", "Start Backend", or "Start Python Backend" tasks.
+
+**Note:** The VS Code tasks configuration should be set up in `.vscode/tasks.json` to define these tasks. Each task should run the appropriate command (`npm run dev` or `python app.py`) in the correct directory (frontend, backend, or python-backend).
 
 ###  Test Accounts
 
