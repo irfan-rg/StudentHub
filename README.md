@@ -160,7 +160,7 @@ PORT=5000
 # Seed the database with sample data
 npm run seed
 
-# Start the server
+# Start the server (or use VS Code tasks - see Quick Start section)
 npm run dev
 ```
 
@@ -179,7 +179,7 @@ GEMINI_API_KEY=your-gemini-api-key-here
 
 <!-- Ollama model installation removed: not required for the navigation assistant -->
 
-# Start the server
+# Start the server (or use VS Code tasks - see Quick Start section)
 python app.py
 ```
 
@@ -196,7 +196,7 @@ npm install
 VITE_API_URL=http://localhost:5000/api
 "@ | Out-File -FilePath .env -Encoding utf8
 
-# Start the development server
+# Start the development server (or use VS Code tasks - see Quick Start section)
 npm run dev
 ```
 
@@ -225,21 +225,18 @@ Then open **http://localhost:5173** in your browser!
 
 ###  Start everything at once (VS Code)
 
-If you're using VS Code, run the batch file to open the project, then use VS Code tasks to start all services in integrated terminals:
+If you're using VS Code, you can start all services at once using the integrated tasks configuration:
 
-```powershell
-# from project root
-.\start-dev.bat
-```
+1. Open the project in VS Code
+2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open the Command Palette
+3. Type "Tasks: Run Task"
+4. Select "Start All Services"
 
-Then in VS Code:
-1. Press `Ctrl+Shift+P` (Command Palette)
-2. Type "Tasks: Run Task"
-3. Select "Start All Services"
+This will launch the frontend, backend, and python-backend in separate integrated terminals within VS Code.
 
-This will run frontend, backend, and python-backend in separate integrated terminals within VS Code.
+**Individual Services:** You can also run individual services by selecting "Start Frontend", "Start Backend", or "Start Python Backend" tasks from the same menu.
 
-**Individual Services:** You can also run individual services using "Start Frontend", "Start Backend", or "Start Python Backend" tasks.
+**Note:** The tasks configuration is located in `.vscode/tasks.json` at the project root.
 
 ###  Test Accounts
 
