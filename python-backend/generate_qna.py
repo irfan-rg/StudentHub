@@ -9,7 +9,10 @@ import tempfile
 import os
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyD9Mu_1Lq7SYmXLl-6sybhllmkvRDfbsY0")
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable is not set")
+genai.configure(api_key=GEMINI_API_KEY)
 
 def get_qna():
     print("=== get_qna called ===")
