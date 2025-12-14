@@ -181,6 +181,17 @@ export default function NotificationWidget({ user }) {
         const hasConnectionAccepted = fetched.some(n => n.type === 'connection_accepted' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
         const hasConnectionDeclined = fetched.some(n => n.type === 'connection_declined' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
         
+        // For accepted notifications, clear the pending state and add to connections immediately
+        if (hasConnectionAccepted) {
+          const acceptedNotifications = fetched.filter(n => n.type === 'connection_accepted' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
+          acceptedNotifications.forEach(notif => {
+            const accepterId = notif.sender?._id || notif.sender?.id || notif.sender;
+            if (accepterId) {
+              useConnectionsStore.getState().clearConnectionRequest(accepterId);
+            }
+          });
+        }
+        
         // For declined notifications, clear the pending state immediately
         if (hasConnectionDeclined) {
           const declinedNotifications = fetched.filter(n => n.type === 'connection_declined' && new Date(n.createdAt || n.timestamp).getTime() > lastFetch);
@@ -192,10 +203,12 @@ export default function NotificationWidget({ user }) {
           });
         }
         
-        // Always reload requests when we get connection response notifications
+        // Always reload requests and connections when we get connection response notifications
         if (hasConnectionDeclined || hasConnectionAccepted) {
           await useConnectionsStore.getState().loadConnectionRequests();
           await useConnectionsStore.getState().loadConnections();
+          // Also refresh suggestions to update the UI
+          await useConnectionsStore.getState().loadSuggestedConnections();
         }
       } catch (err) {
         console.error('Failed to reload connections from notification:', err);
@@ -348,6 +361,8 @@ export default function NotificationWidget({ user }) {
         await useConnectionsStore.getState().loadConnectionRequests();
         if (action === 'accept') {
           await useConnectionsStore.getState().loadConnections();
+          // Refresh suggestions so Dashboard updates the top 3 list
+          await useConnectionsStore.getState().loadSuggestedConnections();
         } else {
           // On decline, also reload connections to ensure UI is updated
           await useConnectionsStore.getState().loadConnections();
