@@ -1,5 +1,11 @@
 from flask import Flask
 from flask_cors import CORS
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
 from llm import ask_model
 from ml import use_k_means_model
 from flask import jsonify
