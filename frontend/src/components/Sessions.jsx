@@ -304,7 +304,14 @@ export function Sessions({ user }) {
         return invite;
       }));
 
-      setSessionInvites(hydrated);
+      // Sort invites by createdAt descending (most recent first)
+      const sortedInvites = hydrated.sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return dateB - dateA;
+      });
+
+      setSessionInvites(sortedInvites);
     } catch (error) {
       setInvitesError(error.message || 'Failed to load session invites');
     } finally {
@@ -704,8 +711,14 @@ export function Sessions({ user }) {
         status: computedStatus,
         averageRating: session.averageRating || 0,
         raw: session.raw,
-        schedule
+        schedule,
+        dateIso: session.dateIso
       };
+    }).sort((a, b) => {
+      // Sort by date descending (most recent first)
+      const dateA = new Date(a.dateIso || a.raw?.sessionOn);
+      const dateB = new Date(b.dateIso || b.raw?.sessionOn);
+      return dateB - dateA;
     });
   }, [sessionsStore, getScheduleMeta, computeSessionStatus]);
 
@@ -744,10 +757,24 @@ export function Sessions({ user }) {
       };
     });
 
+    // Sort upcoming sessions chronologically (soonest first)
+    const sortUpcoming = (sessions) => sessions.sort((a, b) => {
+      const dateA = new Date(a.raw?.sessionOn || a.dateIso);
+      const dateB = new Date(b.raw?.sessionOn || b.dateIso);
+      return dateA - dateB; // ascending - soonest first
+    });
+
+    // Sort completed/cancelled sessions reverse chronologically (most recent first)
+    const sortCompleted = (sessions) => sessions.sort((a, b) => {
+      const dateA = new Date(a.raw?.sessionOn || a.dateIso);
+      const dateB = new Date(b.raw?.sessionOn || b.dateIso);
+      return dateB - dateA; // descending - most recent first
+    });
+
     return {
-      upcoming: normalized.filter((session) => !['completed', 'cancelled'].includes(session.status)),
-      completed: normalized.filter((session) => session.status === 'completed'),
-      cancelled: normalized.filter((session) => session.status === 'cancelled')
+      upcoming: sortUpcoming(normalized.filter((session) => !['completed', 'cancelled'].includes(session.status))),
+      completed: sortCompleted(normalized.filter((session) => session.status === 'completed')),
+      cancelled: sortCompleted(normalized.filter((session) => session.status === 'cancelled'))
     };
   }, [joinedSessions, getScheduleMeta, extractUserRating]);
 
