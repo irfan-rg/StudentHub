@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { ThemeToggle } from './ui/theme-toggle';
+import { StudyHubMark } from './StudyHubMark';
 import { 
   Home, 
   User, 
@@ -13,7 +14,6 @@ import {
   Settings as SettingsIcon, 
   LogOut,
   Star,
-  Zap,
   HelpCircle,
   Mail,
   Info,
@@ -65,8 +65,8 @@ export function Sidebar({ user, onLogout }) {
       <div className="p-6 border-b border-sidebar-border">
         {/* Logo and Name */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-            <Zap className="h-6 w-6 text-white" />
+          <div className="bg-sidebar-primary text-sidebar-primary-foreground p-2 rounded-lg ring-1 ring-sidebar-ring/20">
+            <StudyHubMark className="h-6 w-6" />
           </div>
           <span className="font-bold text-xl text-sidebar-foreground">StudyHub</span>
         </div>

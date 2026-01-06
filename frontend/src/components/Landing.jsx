@@ -8,6 +8,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner@2.0.3';
 import { BookOpen, Users, Trophy, MessageSquare, Star, Zap, CheckCircle, ArrowRight, Play, Mail, Lock, GraduationCap, Moon, Sun } from 'lucide-react';
+import { StudyHubMark } from './StudyHubMark';
 import { useTheme } from '../contexts/ThemeContext';
 
 export function Landing({ onLogin, loading, error }) {
@@ -137,7 +138,7 @@ export function Landing({ onLogin, loading, error }) {
           <div className="text-center max-w-4xl mx-auto">
             <div className="flex justify-center mb-8">
               <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
-                <BookOpen className="h-12 w-12" />
+                <StudyHubMark className="h-12 w-12 text-white" />
               </div>
               
             </div>
